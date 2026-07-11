@@ -7,11 +7,38 @@ This document governs security capability boundaries.
 Separate authentication, authorization, policy, audit, and digital trust responsibilities.
 
 ## Security Areas
+- Identity: owns technical principal identity and principal lifecycle.
 - Authentication: prove identity.
 - Authorization: determine allowed action.
+- RBAC: role-based authorization authority for roles, permissions, role-permission links, and principal-role assignments.
 - Policy: configurable decision authority for advanced rules.
 - Audit: immutable evidence of relevant actions.
 - Digital Trust: integrity, acceptance, and non-repudiation concepts.
+
+## Boundary Ownership
+- Identity owns SecurityPrincipal, SecurityPrincipalType, technical principal identity, and principal lifecycle.
+- Authentication proves a principal identity.
+- Authorization determines whether an authenticated principal may perform an action.
+- RBAC owns Role, Permission, RolePermission, and PrincipalRoleAssignment.
+- Policy may refine authorization decisions in a future phase but does not own basic RBAC.
+- Audit owns immutable security evidence.
+- Digital Trust owns integrity, acceptance, and non-repudiation concepts.
+- Party is business identity and is not owned by Identity, Authentication, Authorization, RBAC, Policy, Audit, or Digital Trust.
+- SecurityPrincipal may reference Party for human principals but must not duplicate Party profile or business data.
+
+## IDENTITY-1 Service Contract Boundary
+IDENTITY-1 may define:
+- Identity principal query and lifecycle contracts.
+- Role and permission query contracts.
+- Role-assignment command contracts.
+- Authorization decision contract interface only when the decision input and output can be fully defined without runtime policy implementation.
+
+IDENTITY-1 must not define:
+- Authentication credentials.
+- Authentication provider implementation.
+- Authorization runtime enforcement unless explicitly approved by the slice.
+- Provider-specific infrastructure.
+- JWT, cookies, OAuth, OpenID Connect, ASP.NET Identity, LDAP, external identity providers, or other provider choices.
 
 ## Capability Examples
 - Policy must be able to compose critical-risk and outside-business-hours conditions.
@@ -20,8 +47,11 @@ Separate authentication, authorization, policy, audit, and digital trust respons
 - Digital Trust may use acceptance methods such as electronic signature, PIN, NFC, smart card, and biometrics.
 
 ## Rules
+- Identity is not Party.
 - Authentication is not authorization.
 - Authorization is not audit.
+- RBAC is not Policy.
+- Policy is not basic RBAC.
 - Audit is not authentication.
 - Integrity proof is not user authentication.
 - Security decisions require explicit authority before implementation.

@@ -13,6 +13,13 @@ Define the logical entities and relationships required by the domain. It is not 
 - Lock
 - Location
 - Party
+- SecurityPrincipal
+- SecurityPrincipalType
+- Role
+- Permission
+- RolePermission
+- PrincipalRoleAssignment
+- AuthorizationScopeType
 - Loan
 - Return
 - LifecycleState
@@ -40,6 +47,13 @@ Define the logical entities and relationships required by the domain. It is not 
 | Lock | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative | Current baseline |
 | Location | Location boundary | key-inventory-domain-contract.md | Authoritative | Current baseline |
 | Party | Party boundary | key-inventory-domain-contract.md | Authoritative | Current baseline |
+| SecurityPrincipal | Identity boundary | security-capability-contract.md | Authoritative | IDENTITY-1 |
+| SecurityPrincipalType | Identity boundary | security-capability-contract.md | Authoritative vocabulary | IDENTITY-1 |
+| Role | Authorization boundary | security-capability-contract.md | Authoritative | IDENTITY-1 |
+| Permission | Authorization boundary | security-capability-contract.md | Authoritative | IDENTITY-1 |
+| RolePermission | Authorization boundary | security-capability-contract.md | Authoritative | IDENTITY-1 |
+| PrincipalRoleAssignment | Authorization boundary | security-capability-contract.md | Authoritative | IDENTITY-1 |
+| AuthorizationScopeType | Authorization boundary | security-capability-contract.md | Authoritative vocabulary | IDENTITY-1 |
 | Loan | Loan aggregate | key-inventory-domain-contract.md | Authoritative for loan issuance intent and completion workflow, not possession | Current baseline |
 | Return | Return aggregate | key-inventory-domain-contract.md | Authoritative for return workflow, not possession | Current baseline |
 | LifecycleState | Lifecycle boundary | key-inventory-domain-contract.md | Authoritative vocabulary | Current baseline |
@@ -65,6 +79,63 @@ Define the logical entities and relationships required by the domain. It is not 
 - LifecycleTransition is the authority for valid lifecycle transition rules.
 - KeyLifecycleProjection is derived from authoritative lifecycle events, rebuildable, and non-authoritative.
 - KeyAsset must not contain an authoritative mutable lifecycle status.
+
+## Identity and RBAC Logical Contract
+### SecurityPrincipal
+- Purpose: represent a technical principal that may be authenticated and authorized.
+- Owning aggregate or boundary: Identity boundary.
+- Authoritative or derived: Authoritative.
+- Required relationships: may reference Party for human principals; references SecurityPrincipalType; may have PrincipalRoleAssignment records.
+- Required invariants: PrincipalName is unique; human principals may reference Party but Party remains an independent business identity; system and integration principals may exist without Party; must not duplicate Party profile or business data; must not own authentication credentials, Party lifecycle, policy evaluation, audit history, or business workflow state.
+- Lifecycle phase: IDENTITY-1.
+
+### SecurityPrincipalType
+- Purpose: define the technical principal type vocabulary.
+- Owning aggregate or boundary: Identity boundary.
+- Authoritative or derived: Authoritative vocabulary.
+- Required relationships: classifies SecurityPrincipal.
+- Required invariants: must distinguish human, system, and integration principal concepts without creating Party ownership.
+- Lifecycle phase: IDENTITY-1.
+
+### Role
+- Purpose: group permissions for authorization.
+- Owning aggregate or boundary: Authorization boundary.
+- Authoritative or derived: Authoritative.
+- Required relationships: may have RolePermission records; may have PrincipalRoleAssignment records.
+- Required invariants: RoleCode is unique within Organization; must not own authentication credentials, Party lifecycle, policy evaluation, audit history, or business workflow state.
+- Lifecycle phase: IDENTITY-1.
+
+### Permission
+- Purpose: define an authorization capability that can be assigned to roles.
+- Owning aggregate or boundary: Authorization boundary.
+- Authoritative or derived: Authoritative.
+- Required relationships: may have RolePermission records.
+- Required invariants: PermissionCode is globally unique; must not own authentication credentials, Party lifecycle, policy evaluation, audit history, or business workflow state.
+- Lifecycle phase: IDENTITY-1.
+
+### RolePermission
+- Purpose: authorize a role through a permission association.
+- Owning aggregate or boundary: Authorization boundary.
+- Authoritative or derived: Authoritative.
+- Required relationships: relates one Role to one Permission.
+- Required invariants: cannot contain duplicate Role/Permission pairs; must not own authentication credentials, Party lifecycle, policy evaluation, audit history, or business workflow state.
+- Lifecycle phase: IDENTITY-1.
+
+### PrincipalRoleAssignment
+- Purpose: assign a role to a technical principal for an authorization scope and effective period.
+- Owning aggregate or boundary: Authorization boundary.
+- Authoritative or derived: Authoritative.
+- Required relationships: relates SecurityPrincipal, Role, and AuthorizationScopeType.
+- Required invariants: cannot contain duplicate active Principal/Role/Scope assignments; EffectiveToUtc must be later than EffectiveFromUtc when present; must not own authentication credentials, Party lifecycle, policy evaluation, audit history, or business workflow state.
+- Lifecycle phase: IDENTITY-1.
+
+### AuthorizationScopeType
+- Purpose: define the authorization scope vocabulary used by role assignments.
+- Owning aggregate or boundary: Authorization boundary.
+- Authoritative or derived: Authoritative vocabulary.
+- Required relationships: classifies PrincipalRoleAssignment scope.
+- Required invariants: must not own authentication credentials, Party lifecycle, policy evaluation, audit history, or business workflow state.
+- Lifecycle phase: IDENTITY-1.
 
 ## Custody Logical Contract
 - CustodyEvent is append-only custody authority.

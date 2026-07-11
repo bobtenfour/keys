@@ -21,6 +21,15 @@ Prevent duplicated authority.
 | ERD evolution | project-erd-governance.md |
 | Product capabilities | key-inventory-capability-map.md |
 | Security capabilities | security-capability-contract.md |
+| Technical principal identity | security-capability-contract.md |
+| Authentication | security-capability-contract.md |
+| Authorization | security-capability-contract.md |
+| Roles | security-capability-contract.md |
+| Permissions | security-capability-contract.md |
+| Role assignments | security-capability-contract.md |
+| Party identity | key-inventory-domain-contract.md |
+| Policy evaluation | security-capability-contract.md |
+| Audit evidence | key-inventory-domain-contract.md |
 | Product experience | product-experience-contract.md |
 | Testing requirements | testing-strategy.md |
 | Cross-system integrity | system-integrity-contract.md |
