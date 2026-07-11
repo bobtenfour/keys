@@ -1,0 +1,15 @@
+C:\projects\keys\src\KeyInventory.Application\bin\Debug\net8.0\KeyInventory.Application.deps.json
+C:\projects\keys\src\KeyInventory.Application\bin\Debug\net8.0\KeyInventory.Application.dll
+C:\projects\keys\src\KeyInventory.Application\bin\Debug\net8.0\KeyInventory.Application.pdb
+C:\projects\keys\src\KeyInventory.Application\bin\Debug\net8.0\KeyInventory.Domain.dll
+C:\projects\keys\src\KeyInventory.Application\bin\Debug\net8.0\KeyInventory.Domain.pdb
+C:\projects\keys\src\KeyInventory.Application\obj\Debug\net8.0\KeyInventory.Application.csproj.AssemblyReference.cache
+C:\projects\keys\src\KeyInventory.Application\obj\Debug\net8.0\KeyInventory.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\projects\keys\src\KeyInventory.Application\obj\Debug\net8.0\KeyInventory.Application.AssemblyInfoInputs.cache
+C:\projects\keys\src\KeyInventory.Application\obj\Debug\net8.0\KeyInventory.Application.AssemblyInfo.cs
+C:\projects\keys\src\KeyInventory.Application\obj\Debug\net8.0\KeyInventory.Application.csproj.CoreCompileInputs.cache
+C:\projects\keys\src\KeyInventory.Application\obj\Debug\net8.0\KeyInven.51A392B3.Up2Date
+C:\projects\keys\src\KeyInventory.Application\obj\Debug\net8.0\KeyInventory.Application.dll
+C:\projects\keys\src\KeyInventory.Application\obj\Debug\net8.0\refint\KeyInventory.Application.dll
+C:\projects\keys\src\KeyInventory.Application\obj\Debug\net8.0\KeyInventory.Application.pdb
+C:\projects\keys\src\KeyInventory.Application\obj\Debug\net8.0\ref\KeyInventory.Application.dll

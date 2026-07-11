@@ -1,0 +1,11 @@
+C:\projects\keys\src\KeyInventory.Domain\bin\Debug\net8.0\KeyInventory.Domain.deps.json
+C:\projects\keys\src\KeyInventory.Domain\bin\Debug\net8.0\KeyInventory.Domain.dll
+C:\projects\keys\src\KeyInventory.Domain\bin\Debug\net8.0\KeyInventory.Domain.pdb
+C:\projects\keys\src\KeyInventory.Domain\obj\Debug\net8.0\KeyInventory.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\projects\keys\src\KeyInventory.Domain\obj\Debug\net8.0\KeyInventory.Domain.AssemblyInfoInputs.cache
+C:\projects\keys\src\KeyInventory.Domain\obj\Debug\net8.0\KeyInventory.Domain.AssemblyInfo.cs
+C:\projects\keys\src\KeyInventory.Domain\obj\Debug\net8.0\KeyInventory.Domain.csproj.CoreCompileInputs.cache
+C:\projects\keys\src\KeyInventory.Domain\obj\Debug\net8.0\KeyInventory.Domain.dll
+C:\projects\keys\src\KeyInventory.Domain\obj\Debug\net8.0\refint\KeyInventory.Domain.dll
+C:\projects\keys\src\KeyInventory.Domain\obj\Debug\net8.0\KeyInventory.Domain.pdb
+C:\projects\keys\src\KeyInventory.Domain\obj\Debug\net8.0\ref\KeyInventory.Domain.dll

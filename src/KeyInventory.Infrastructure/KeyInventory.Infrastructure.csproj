@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\KeyInventory.Application\KeyInventory.Application.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "UZHCpBSt4I7EeUl+jbcxBvBhPJ5ErWvUzOBxtsYsSL4=",
+  "Source": "KeyInventory.Web",
+  "BasePath": "_content/KeyInventory.Web",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
