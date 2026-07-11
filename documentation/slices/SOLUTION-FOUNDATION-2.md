@@ -1,7 +1,7 @@
 # SOLUTION-FOUNDATION-2 — Governance Baseline
 
 ## Status
-Approved
+Accepted
 
 ## Parent Phase
 Phase 1
@@ -102,6 +102,15 @@ implementation-contract.md
 - Build PASS.
 - Tests PASS.
 - Repository hygiene PASS.
+
+## Acceptance Record
+- Architecture Baseline v1.0 audit PASS.
+- Domain/ERD alignment PASS.
+- Custody Authority PASS.
+- Authority Matrix PASS.
+- Build PASS.
+- Tests PASS.
+- Repository Hygiene PASS.
 
 ## Closure Contract
 - Transversal Gate PASS.
