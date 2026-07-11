@@ -5,7 +5,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Configuration
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
-builder.Services.AddRazorPages();
+WebServiceComposition.Configure(builder.Services);
 
 WebApplication app = builder.Build();
 
