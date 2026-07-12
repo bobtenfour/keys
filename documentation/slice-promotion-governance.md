@@ -1,35 +1,53 @@
 # Slice Promotion Governance
 
 ## Authority
-This document is the sole authority for slice status transitions.
+This document is the sole authority for slice preparation and status transitions.
 
 ## Purpose
-Define deterministic promotion rules so implementation sequencing requires no inference.
+Define deterministic slice preparation and status rules so implementation sequencing requires no inference.
 
-## Promotion Decision Authority
+## Preparation Decision Authority
 Architectural governance means the human repository owner or an explicitly delegated human architectural reviewer.
 
-Only architectural governance may decide ACCEPT, REWORK, REJECT, CLOSE, REOPEN, SUPERSEDE, or Planned to Approved.
+Only architectural governance may decide ACCEPT, REWORK, REJECT, CLOSE, REOPEN, SUPERSEDE, or Prepare Next Slice.
 
-Cursor, Codex, automation, CI, build results, test results, or completion of another slice cannot authorize promotion.
+Cursor, Codex, automation, CI, build results, test results, or completion of another slice cannot authorize slice preparation.
 
-## Promotion Execution Authority
-Cursor/Codex may materially update roadmap and slice status only after receiving an explicit promotion instruction from architectural governance.
+## Preparation Execution Authority
+Prepare Next Slice is the only governance action between two implementation cycles.
 
-The instruction must identify the exact slice and exact transition.
+Cursor/Codex may materially update governing documents, roadmap, and slice status only after receiving an explicit Prepare Next Slice instruction from architectural governance.
 
-Cursor/Codex must verify all transition preconditions before modifying files.
+The instruction must identify the exact next slice to prepare.
+
+Cursor/Codex must verify all preparation preconditions before modifying files.
 
 If any precondition fails, Cursor/Codex must stop without changing status.
 
 Implementation execution may update a slice to Implementation Complete only when the approved slice specification explicitly requires closure documentation and all implementation evidence is present.
 
-## Promotion Record
-A valid promotion updates implementation-roadmap.md and the slice specification in the same execution when both documents exist.
+## Prepare Next Slice
+Prepare Next Slice may:
+- Complete existing governing contracts.
+- Complete existing ERD authority.
+- Complete existing authority mappings.
+- Create the slice specification.
+- Define acceptance criteria.
+- Define required tests.
+- Mark the slice Approved.
+
+Prepare Next Slice must not:
+- Change roadmap order.
+- Promote any slice other than the prepared next slice.
+- Create new slice states.
+- Begin implementation.
+
+## Preparation Record
+A valid preparation updates implementation-roadmap.md and the slice specification in the same execution.
 
 The slice specification must record the decision, date, evidence, and deciding authority role.
 
-Planned to Approved may create the slice specification during the same authorized execution.
+Planned to Approved occurs only as the outcome of Prepare Next Slice.
 
 No separate approval document or meeting record is required unless another governing contract explicitly requires one.
 
@@ -38,9 +56,9 @@ Git workflow, staging, commits, cleanliness, and repository-state verification a
 
 Cursor/Codex must not run Git commands unless the human explicitly requests a specific Git operation.
 
-Git state is not a slice-promotion precondition under this contract.
+Git state is not a slice-preparation precondition under this contract.
 
-Promotion-only governance must not change runtime code, tests, or unrelated documentation.
+Preparation-only governance must not change runtime code, tests, or unrelated documentation.
 
 The roadmap must remain the source of implementation sequence.
 
@@ -50,13 +68,22 @@ The roadmap must remain the source of implementation sequence.
 Preconditions:
 - All dependency slices listed in the roadmap are Accepted or Closed.
 - The slice is next in the roadmap sequence among non-terminal slices.
-- Governing contracts needed by the slice exist and are not contradictory, incomplete, or ambiguous.
-- A slice specification exists or is created as part of the approval action.
+- Prepare Next Slice has completed existing governing contracts, existing ERD authority, existing authority mappings, slice acceptance criteria, and required tests to the level needed for implementation without inference.
+- A slice specification exists or is created as part of Prepare Next Slice.
+- If any required governing document is missing any item above, the slice remains Planned.
 
 Required evidence:
-- Explicit human architectural governance instruction naming the slice and transition.
+- Explicit human architectural governance instruction naming Prepare Next Slice and the exact slice.
 - Preconditions verified.
-- Slice specification with scope, out-of-scope items, required contracts, dependencies, allowed files, forbidden files, acceptance criteria, and closure contract.
+- Required governing documents provide complete domain ownership.
+- Required governing documents provide complete domain invariants.
+- Required governing documents provide complete logical ERD representation.
+- Required governing documents provide complete authority ownership.
+- Required governing documents provide complete acceptance criteria for the slice.
+- Slice specification defines required tests.
+- Required governing documents have no dependency on undefined future contracts.
+- Required governing documents contain no ambiguity requiring architectural interpretation.
+- Slice specification with scope, out-of-scope items, Required Governing Documents, dependencies, allowed files, forbidden files, acceptance criteria, required tests, and closure contract.
 - Roadmap and slice specification updated atomically.
 
 ### Approved to In Progress
@@ -69,8 +96,8 @@ Preconditions:
 Required evidence:
 - Approved roadmap row.
 - Existing slice specification.
-- Required governing contracts read and validated.
-- No contract contradiction, missing authority, incomplete scope, or ambiguous acceptance criteria.
+- Only the governing documents declared by the slice specification read and validated.
+- No internal inconsistency, declared governing-document contradiction, or prior-slice dependency blocker.
 
 ### In Progress to Implementation Complete
 Preconditions:
@@ -105,9 +132,9 @@ Required evidence:
 - Architectural governance closure decision.
 
 ## Automatic Promotion
-No slice is promoted automatically.
+No slice is prepared or approved automatically.
 
-The next slice may move from Planned to Approved only by explicit architectural governance action under this contract.
+The next slice may move from Planned to Approved only through explicit Prepare Next Slice governance action under this contract.
 
 ## Forbidden Transitions
 - Planned to In Progress.
@@ -126,14 +153,14 @@ The next slice may move from Planned to Approved only by explicit architectural 
 - Any transition inferred from completion of another slice.
 
 ## Acceptance Criteria
-- Slice promotion authority is explicit.
+- Slice preparation authority is explicit.
 - Each allowed transition has preconditions.
 - Each allowed transition has required evidence.
-- Automatic next-slice promotion is forbidden.
+- Automatic next-slice preparation or approval is forbidden.
 - Repository ownership boundary is explicit.
 - Forbidden transitions are explicit.
 - Roadmap sequence remains unchanged.
-- Existing slice statuses remain unchanged unless a valid promotion action is explicitly approved.
+- Existing slice statuses remain unchanged unless a valid preparation or transition action is explicitly approved.
 
 ## Depends On
 - project-governance.md

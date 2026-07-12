@@ -18,7 +18,7 @@ Planned | Approved | In Progress | Accepted | Closed
 ## Out of Scope
 - <Forbidden work>
 
-## Required Governing Contracts
+## Required Governing Documents
 - <document.md>
 
 ## Required Previous Slices
@@ -38,6 +38,9 @@ Planned | Approved | In Progress | Accepted | Closed
 
 ## Acceptance Criteria
 - <Verifiable condition>
+
+## Required Tests
+- <Required test or verification>
 
 ## Closure Contract
 - Transversal Gate PASS

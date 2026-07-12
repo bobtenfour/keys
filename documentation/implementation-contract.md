@@ -9,7 +9,8 @@ Prevent improvisation, scope drift, patches, duplicate authority, and incomplete
 ## Permanent Rules
 - Implement exactly one approved slice.
 - Do not start the next slice automatically.
-- Read every governing contract required by the slice before implementation.
+- Read the active slice specification and only the governing documents declared by that slice before implementation.
+- Execution prompts must not define or duplicate their own governing document list.
 - Stop if a required contract is missing, contradictory, or too vague.
 - Do not make assumptions to fill architectural gaps.
 - Do not modify unrelated files.
@@ -21,8 +22,8 @@ Prevent improvisation, scope drift, patches, duplicate authority, and incomplete
 
 ## Mandatory Slice Workflow
 1. Open the approved slice specification.
-2. Read required governing contracts.
-3. Validate contract consistency.
+2. Read only the governing documents declared by the slice specification.
+3. Validate internal consistency, consistency of declared governing documents, and absence of contradictions.
 4. Validate prior slice dependencies.
 5. Stop if any blocker exists.
 6. Implement only the approved scope.
@@ -33,6 +34,21 @@ Prevent improvisation, scope drift, patches, duplicate authority, and incomplete
 11. Update documentation only if required by the slice.
 12. Produce closure report.
 13. Stop.
+
+## Implementation Readiness
+Implementation Readiness is verification only.
+
+It verifies only:
+- Internal consistency.
+- Consistency of the governing documents declared by the slice.
+- Absence of contradictions.
+
+It must never:
+- Discover missing contracts.
+- Expand architecture.
+- Expand scope.
+- Propose new contracts.
+- Infer behavior.
 
 ## Required Closure Report
 The report must contain only:
