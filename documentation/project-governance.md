@@ -29,5 +29,6 @@ None.
 
 ## Depended On By
 - implementation-contract.md
+- slice-promotion-governance.md
 - project-architecture-index.md
 - system-integrity-contract.md

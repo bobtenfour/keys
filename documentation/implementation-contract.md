@@ -70,6 +70,7 @@ Every slice must close with:
 
 ## Depends On
 - project-governance.md
+- slice-promotion-governance.md
 
 ## Depended On By
 - implementation-roadmap.md

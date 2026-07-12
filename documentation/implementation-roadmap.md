@@ -45,6 +45,7 @@ Later phase slices must be created only when their architectural contracts are m
 ## Depends On
 - roadmap.md
 - implementation-contract.md
+- slice-promotion-governance.md
 
 ## Depended On By
 - documentation/slices/*.md
