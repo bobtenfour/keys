@@ -30,7 +30,7 @@ Define the approved execution order without expanding into detailed slice specif
 |---|---|---|---|
 | SOLUTION-FOUNDATION-1 | Accepted | - | slices/SOLUTION-FOUNDATION-1.md |
 | SOLUTION-FOUNDATION-2 | Accepted | SOLUTION-FOUNDATION-1 | slices/SOLUTION-FOUNDATION-2.md |
-| IDENTITY-1 | Approved | SOLUTION-FOUNDATION-2 | Created when opened |
+| IDENTITY-1 | Accepted | SOLUTION-FOUNDATION-2 | Created when opened |
 | CATALOG-1 | Planned | IDENTITY-1 | Created when approved |
 | LOAN-RETURN-1 | Planned | CATALOG-1 | Created when approved |
 | AUDIT-1 | Planned | LOAN-RETURN-1 | Created when approved |

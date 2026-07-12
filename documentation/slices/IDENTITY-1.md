@@ -1,7 +1,7 @@
 # IDENTITY-1 - Identity & Security Foundation
 
 ## Status
-In Progress
+Accepted
 
 ## Parent Phase
 Phase 1
@@ -134,6 +134,17 @@ PASS, 0 warnings, 0 errors.
 
 ## Expected Test Result
 PASS.
+
+## Acceptance Record
+- Identity/RBAC foundation implemented.
+- Party remains independent.
+- No authentication runtime.
+- No authorization runtime.
+- Resolvable composition PASS.
+- Infrastructure boundary PASS.
+- Build PASS.
+- Tests PASS.
+- Repository hygiene PASS.
 
 ## Next Allowed Slice
 STOP
