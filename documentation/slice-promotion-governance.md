@@ -6,16 +6,43 @@ This document is the sole authority for slice status transitions.
 ## Purpose
 Define deterministic promotion rules so implementation sequencing requires no inference.
 
-## Promotion Authority
-Only architectural governance may promote, close, reject, supersede, or reopen a slice.
+## Promotion Decision Authority
+Architectural governance means the human repository owner or an explicitly delegated human architectural reviewer.
+
+Only architectural governance may decide ACCEPT, REWORK, REJECT, CLOSE, REOPEN, SUPERSEDE, or Planned to Approved.
+
+Cursor, Codex, automation, CI, build results, test results, or completion of another slice cannot authorize promotion.
+
+## Promotion Execution Authority
+Cursor/Codex may materially update roadmap and slice status only after receiving an explicit promotion instruction from architectural governance.
+
+The instruction must identify the exact slice and exact transition.
+
+Cursor/Codex must verify all transition preconditions before modifying files.
+
+If any precondition fails, Cursor/Codex must stop without changing status.
 
 Implementation execution may update a slice to Implementation Complete only when the approved slice specification explicitly requires closure documentation and all implementation evidence is present.
 
-## Repository State Requirements
-- Promotion reviews must start from a clean Git working tree unless the only pending changes are the promotion record being reviewed.
-- Runtime code, tests, and unrelated documentation must not change during promotion-only governance.
-- Generated build outputs must not remain modified after promotion review.
-- The roadmap must remain the source of implementation sequence.
+## Promotion Record
+A valid promotion updates implementation-roadmap.md and the slice specification in the same execution when both documents exist.
+
+The slice specification must record the decision, date, evidence, and deciding authority role.
+
+Planned to Approved may create the slice specification during the same authorized execution.
+
+No separate approval document or meeting record is required unless another governing contract explicitly requires one.
+
+## Repository Ownership Boundary
+Git workflow, staging, commits, cleanliness, and repository-state verification are controlled exclusively by the human repository owner.
+
+Cursor/Codex must not run Git commands unless the human explicitly requests a specific Git operation.
+
+Git state is not a slice-promotion precondition under this contract.
+
+Promotion-only governance must not change runtime code, tests, or unrelated documentation.
+
+The roadmap must remain the source of implementation sequence.
 
 ## Transition Rules
 
@@ -27,9 +54,10 @@ Preconditions:
 - A slice specification exists or is created as part of the approval action.
 
 Required evidence:
-- Architectural governance approval.
+- Explicit human architectural governance instruction naming the slice and transition.
+- Preconditions verified.
 - Slice specification with scope, out-of-scope items, required contracts, dependencies, allowed files, forbidden files, acceptance criteria, and closure contract.
-- Repository hygiene PASS.
+- Roadmap and slice specification updated atomically.
 
 ### Approved to In Progress
 Preconditions:
@@ -37,7 +65,6 @@ Preconditions:
 - No slice has status In Progress.
 - Required previous slices are Accepted or Closed.
 - Implementation Readiness Gate PASS.
-- Git working tree is clean.
 
 Required evidence:
 - Approved roadmap row.
@@ -49,26 +76,24 @@ Required evidence:
 Preconditions:
 - The implementation changed only files allowed by the slice.
 - The implementation satisfies the slice scope and does not include out-of-scope work.
-- Required architecture, authority, capability, ERD, product, build, test, and repository hygiene gates applicable to the slice pass.
+- Required architecture, authority, capability, ERD, product, build, and test gates applicable to the slice pass.
 
 Required evidence:
 - Closure report.
 - Build PASS with zero warnings and zero errors.
 - Tests PASS.
-- Repository hygiene PASS.
 - Acceptance evidence mapped to each slice acceptance criterion.
 
 ### Implementation Complete to Accepted
 Preconditions:
 - Architectural review confirms all closure evidence.
-- No required gate is missing, failed, ambiguous, or contradicted by repository state.
+- No required gate is missing, failed, ambiguous, or contradicted by promotion evidence.
 - Acceptance evidence matches the implemented scope.
 
 Required evidence:
 - Architectural governance acceptance.
 - Slice status update to Accepted in the roadmap and slice specification.
 - Acceptance Record in the slice specification.
-- Repository hygiene PASS.
 
 ### Accepted to Closed
 Preconditions:
@@ -78,7 +103,6 @@ Preconditions:
 
 Required evidence:
 - Architectural governance closure decision.
-- Repository hygiene PASS.
 
 ## Automatic Promotion
 No slice is promoted automatically.
@@ -106,7 +130,7 @@ The next slice may move from Planned to Approved only by explicit architectural 
 - Each allowed transition has preconditions.
 - Each allowed transition has required evidence.
 - Automatic next-slice promotion is forbidden.
-- Repository state requirements are explicit.
+- Repository ownership boundary is explicit.
 - Forbidden transitions are explicit.
 - Roadmap sequence remains unchanged.
 - Existing slice statuses remain unchanged unless a valid promotion action is explicitly approved.

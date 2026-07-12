@@ -26,6 +26,135 @@ Define the business model without implementation details.
 - Audit history must not be rewritten.
 - Current state must be derivable from authoritative records when the relevant phase introduces that model.
 
+## Catalog Contract
+### Aggregate Roots
+- KeyAsset is the Key Catalog aggregate root for one controlled physical key asset.
+- Lock is the Key Catalog aggregate root for one controlled physical lock.
+- Location is the Location boundary aggregate root for one physical organizational place.
+
+### Entities and Classifications
+- KeySeries is a catalog classification for grouping KeyAsset records that share an organizational keying system, pattern, or managed series.
+- KeyType is a catalog classification for the physical or operational type of a KeyAsset.
+
+### KeyAsset
+Purpose: define the authoritative catalog identity of one controlled physical key asset.
+
+Identity: KeyAsset is identified by one catalog key code that is unique across all KeyAsset records.
+
+Ownership: Key Catalog owns creation, catalog detail updates, activation, and retirement rules for KeyAsset.
+
+Invariants:
+- A KeyAsset must have a non-empty catalog key code.
+- A KeyAsset must reference exactly one KeyType.
+- A KeyAsset may reference one KeySeries.
+- A KeyAsset may reference one Lock that it is intended to operate.
+- A KeyAsset must not reference an inactive KeyType, inactive KeySeries, inactive Lock, or inactive Location for new catalog assignment.
+- A retired KeyAsset remains catalog-identifiable and must not be reused as a different physical key.
+
+Allowed lifecycle-neutral behavior:
+- Create catalog identity.
+- Update catalog descriptive attributes.
+- Assign or change KeyType, KeySeries, and intended Lock references.
+- Activate or retire catalog availability for future use.
+
+Prohibited authority:
+- KeyAsset must not store authoritative possession, current custodian, loan state, return state, lifecycle state, audit history, maintenance workflow state, policy decision state, authentication data, authorization data, or UI state.
+
+### KeySeries
+Purpose: group catalog keys that share an organizational keying system, pattern, or managed series.
+
+Ownership: Key Catalog owns creation, update, activation, and retirement rules for KeySeries.
+
+Relationships: KeySeries may classify zero or more KeyAsset records.
+
+Uniqueness rules:
+- KeySeries code is unique across all KeySeries records.
+
+Invariants:
+- A KeySeries must have a non-empty series code.
+- A KeySeries must not be retired while active KeyAsset records reference it for new catalog assignment.
+- Retiring a KeySeries does not retire existing KeyAsset records.
+
+### KeyType
+Purpose: classify the physical or operational kind of a KeyAsset.
+
+Ownership: Key Catalog owns creation, update, activation, and retirement rules for KeyType.
+
+Classification rules:
+- KeyType is catalog reference data.
+- KeyType classifies zero or more KeyAsset records.
+- KeyType must not encode custody, loan, return, lifecycle, maintenance, authorization, or policy state.
+
+Uniqueness rules:
+- KeyType code is unique across all KeyType records.
+
+Invariants:
+- A KeyType must have a non-empty type code.
+- A KeyType must not be retired while active KeyAsset records require it for new catalog assignment.
+- Retiring a KeyType does not retire existing KeyAsset records.
+
+### Lock
+Purpose: define a controlled physical lock that may be operated by cataloged keys.
+
+Ownership: Key Catalog owns creation, catalog detail updates, activation, and retirement rules for Lock.
+
+Relationships:
+- A Lock must reference one Location.
+- A Lock may be referenced by zero or more KeyAsset records.
+
+Uniqueness rules:
+- Lock code is unique across all Lock records.
+
+Invariants:
+- A Lock must have a non-empty lock code.
+- A Lock must not reference an inactive Location for new catalog assignment.
+- Retiring a Lock does not retire related KeyAsset records.
+- Lock must not own possession, custody, loan, return, lifecycle, maintenance, audit, authorization, or UI authority.
+
+### Location
+Purpose: define a physical organizational place where a key, lock, or custody action is relevant.
+
+Ownership: The Location boundary owns creation, update, activation, retirement, and hierarchy rules for Location.
+
+Hierarchy rules:
+- A Location may have no parent or exactly one parent Location.
+- A Location may have zero or more child Locations.
+- A Location must not be its own parent.
+- A Location hierarchy must not contain cycles.
+- A Location may be retired only when no active child Location requires it for hierarchy assignment.
+
+Uniqueness rules:
+- Location code is unique across all Location records.
+
+Activation rules:
+- A Location must have a non-empty location code.
+- New Lock assignment must reference an active Location.
+- Retiring a Location does not retire existing Lock or KeyAsset records.
+
+### Catalog Authority Exclusions
+Catalog authority may never store:
+- Current possession.
+- Current custodian.
+- Loan or return workflow state.
+- Lifecycle state or lifecycle transition authority.
+- Custody events.
+- Audit events.
+- Maintenance workflow state.
+- Inventory count or discrepancy state.
+- Authentication credentials.
+- Authorization decisions, roles, permissions, or assignments.
+- Policy evaluation results.
+- Persistence-provider configuration.
+- UI behavior or presentation state.
+
+### Future Slice Ownership
+- Custody possession and custody transfer authority belong to future custody slices.
+- Lifecycle state, lifecycle transitions, and lifecycle event authority belong to future lifecycle slices.
+- Loan and return workflow authority belongs to loan/return slices.
+- Maintenance workflow authority belongs to future maintenance slices.
+- Persistence implementation belongs to future persistence or migration slices.
+- UI behavior belongs to future product experience or UI slices.
+
 ## Forbidden
 This document must not define:
 - Database schema.

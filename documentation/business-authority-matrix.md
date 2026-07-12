@@ -17,6 +17,9 @@ Prevent duplicated authority.
 | Repository hygiene | project-governance.md |
 | Technical boundaries | architecture-contracts.md |
 | Business concepts and aggregate boundaries | key-inventory-domain-contract.md |
+| Key catalog identity | key-inventory-domain-contract.md |
+| Key catalog classifications | key-inventory-domain-contract.md |
+| Location hierarchy | key-inventory-domain-contract.md |
 | Logical data model | key-inventory-erd.md |
 | ERD evolution | project-erd-governance.md |
 | Product capabilities | key-inventory-capability-map.md |

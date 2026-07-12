@@ -42,8 +42,8 @@ Define the logical entities and relationships required by the domain. It is not 
 | Entity | Owning aggregate or boundary | Authority document | Authoritative or derived | Lifecycle phase |
 |---|---|---|---|---|
 | KeyAsset | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative for catalog identity only | Current baseline |
-| KeySeries | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative | Current baseline |
-| KeyType | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative | Current baseline |
+| KeySeries | Key Catalog classification | key-inventory-domain-contract.md | Authoritative classification | Current baseline |
+| KeyType | Key Catalog classification | key-inventory-domain-contract.md | Authoritative classification | Current baseline |
 | Lock | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative | Current baseline |
 | Location | Location boundary | key-inventory-domain-contract.md | Authoritative | Current baseline |
 | Party | Party boundary | key-inventory-domain-contract.md | Authoritative | Current baseline |
@@ -79,6 +79,55 @@ Define the logical entities and relationships required by the domain. It is not 
 - LifecycleTransition is the authority for valid lifecycle transition rules.
 - KeyLifecycleProjection is derived from authoritative lifecycle events, rebuildable, and non-authoritative.
 - KeyAsset must not contain an authoritative mutable lifecycle status.
+
+## Catalog Logical Contract
+### KeyAsset
+- Purpose: authoritative catalog identity for one controlled physical key asset.
+- Owning aggregate or boundary: Key Catalog aggregate.
+- Authoritative or derived: Authoritative for catalog identity only.
+- Required relationships: references exactly one KeyType; may reference one KeySeries; may reference one Lock.
+- Cardinalities: one KeyType to zero or more KeyAsset records; zero or one KeySeries to zero or more KeyAsset records; zero or one Lock to zero or more KeyAsset records.
+- Required uniqueness: CatalogKeyCode is unique across KeyAsset records.
+- Required integrity constraints: CatalogKeyCode is required; KeyType reference is required; referenced KeyType, KeySeries, and Lock must be active for new catalog assignment.
+- Prohibited authority: must not store current possession, current custodian, loan state, return state, lifecycle state, audit history, maintenance workflow state, authorization state, authentication state, policy state, persistence-provider configuration, or UI state.
+
+### KeySeries
+- Purpose: authoritative catalog classification for an organizational keying system, pattern, or managed series.
+- Owning aggregate or boundary: Key Catalog classification.
+- Authoritative or derived: Authoritative classification.
+- Required relationships: may classify zero or more KeyAsset records.
+- Cardinalities: one KeySeries to zero or more KeyAsset records; a KeyAsset has zero or one KeySeries.
+- Required uniqueness: SeriesCode is unique across KeySeries records.
+- Required integrity constraints: SeriesCode is required; inactive KeySeries must not be used for new KeyAsset catalog assignment.
+
+### KeyType
+- Purpose: authoritative catalog classification for the physical or operational kind of key.
+- Owning aggregate or boundary: Key Catalog classification.
+- Authoritative or derived: Authoritative classification.
+- Required relationships: classifies zero or more KeyAsset records.
+- Cardinalities: one KeyType to zero or more KeyAsset records; a KeyAsset has exactly one KeyType.
+- Required uniqueness: TypeCode is unique across KeyType records.
+- Required integrity constraints: TypeCode is required; inactive KeyType must not be used for new KeyAsset catalog assignment.
+- Prohibited authority: must not encode custody, loan, return, lifecycle, maintenance, authorization, policy, authentication, persistence, or UI state.
+
+### Lock
+- Purpose: authoritative catalog identity for one controlled physical lock.
+- Owning aggregate or boundary: Key Catalog aggregate.
+- Authoritative or derived: Authoritative.
+- Required relationships: references exactly one Location; may be referenced by zero or more KeyAsset records.
+- Cardinalities: one Location to zero or more Lock records; one Lock to zero or more KeyAsset records; a KeyAsset has zero or one intended Lock.
+- Required uniqueness: LockCode is unique across Lock records.
+- Required integrity constraints: LockCode is required; Location reference is required; referenced Location must be active for new Lock assignment.
+- Prohibited authority: must not store possession, custody, loan, return, lifecycle, maintenance, audit, authorization, authentication, policy, persistence-provider configuration, or UI state.
+
+### Location
+- Purpose: authoritative physical organizational place where a key, lock, or custody action is relevant.
+- Owning aggregate or boundary: Location boundary.
+- Authoritative or derived: Authoritative.
+- Required relationships: may have zero or one parent Location; may have zero or more child Locations; may be referenced by zero or more Lock records.
+- Cardinalities: one parent Location to zero or more child Locations; one Location to zero or more Lock records.
+- Required uniqueness: LocationCode is unique across Location records.
+- Required integrity constraints: LocationCode is required; a Location cannot be its own parent; Location hierarchy must not contain cycles; inactive Location must not be used for new Lock assignment.
 
 ## Identity and RBAC Logical Contract
 ### SecurityPrincipal
