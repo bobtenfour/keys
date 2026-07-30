@@ -155,6 +155,97 @@ Catalog authority may never store:
 - Persistence implementation belongs to future persistence or migration slices.
 - UI behavior belongs to future product experience or UI slices.
 
+## Loan and Return Contract
+### Aggregate Roots
+- Loan is the Loan aggregate root for one controlled issuance of one cataloged key to one Party.
+- Return is the Return aggregate root for completion of one Loan back into organizational control.
+
+### Loan
+Purpose: record controlled issuance intent and workflow state for a cataloged key loaned to a Party.
+
+Identity: Loan is identified by one loan code that is unique across all Loan records.
+
+Ownership: The Loan aggregate owns loan creation, issuance workflow state, due date, borrower reference, key reference, and cancellation rules.
+
+Relationships:
+- A Loan must reference exactly one KeyAsset catalog identity.
+- A Loan must reference exactly one borrowing Party.
+- A Loan may have zero or one Return.
+
+Invariants:
+- A Loan must have a non-empty loan code.
+- A Loan must reference a cataloged KeyAsset.
+- A Loan must reference a Party borrower without owning Party profile or lifecycle.
+- A Loan issue timestamp is required.
+- A Loan due timestamp is required and must be later than the issue timestamp.
+- A Loan may be Open, Returned, or Cancelled.
+- A Loan starts Open.
+- An Open Loan may be completed by exactly one Return.
+- A Returned Loan must not be returned again.
+- A Cancelled Loan must not be returned.
+- Cancelling a Loan does not create custody authority.
+
+Allowed behavior:
+- Create loan issuance intent.
+- Mark an Open Loan as Returned when a valid Return completes it.
+- Cancel an Open Loan before return.
+- Expose whether the Loan is open for return.
+
+Prohibited authority:
+- Loan must not own current possession, current custodian, custody transfer history, catalog identity, Party identity, lifecycle state, lifecycle transition authority, audit history, authentication, authorization, policy, persistence-provider configuration, or UI state.
+
+### Return
+Purpose: record controlled completion of a Loan back into organizational control.
+
+Identity: Return is identified by one return code that is unique across all Return records.
+
+Ownership: The Return aggregate owns return completion data for one Loan.
+
+Relationships:
+- A Return must reference exactly one Loan.
+- A Return must reference the returned KeyAsset through the Loan.
+- A Return must reference the returning Party through the Loan.
+
+Invariants:
+- A Return must have a non-empty return code.
+- A Return must reference an Open Loan.
+- A Return timestamp is required and must not be earlier than the Loan issue timestamp.
+- Exactly one Return may complete a Loan.
+- Creating a Return marks the referenced Loan as Returned.
+- Return completion must not create orphan loan state.
+
+Allowed behavior:
+- Complete an Open Loan.
+- Record return timestamp for the completed Loan.
+
+Prohibited authority:
+- Return must not own current possession, current custodian, custody transfer history, catalog identity, Party identity, lifecycle state, lifecycle transition authority, audit history, authentication, authorization, policy, persistence-provider configuration, or UI state.
+
+### Loan and Return Authority Exclusions
+Loan and Return authority may never store:
+- Current possession.
+- Current custodian.
+- Custody Event authority.
+- Key Catalog authority.
+- Party profile or Party lifecycle.
+- Lifecycle State or Lifecycle Event authority.
+- Audit Event authority.
+- Maintenance workflow state.
+- Inventory count or discrepancy state.
+- Authentication credentials.
+- Authorization decisions, roles, permissions, or assignments.
+- Policy evaluation results.
+- Persistence-provider configuration.
+- UI behavior or presentation state.
+
+### Loan and Return Future Slice Ownership
+- Custody transfer authority remains future custody slice scope.
+- Lifecycle event and state derivation remain future lifecycle slice scope.
+- Audit event creation remains future audit slice scope.
+- Authorization enforcement remains future authorization slice scope.
+- Persistence implementation remains future persistence or migration slice scope.
+- UI behavior remains future product experience or UI slice scope.
+
 ## Forbidden
 This document must not define:
 - Database schema.

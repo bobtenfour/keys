@@ -196,6 +196,27 @@ Define the logical entities and relationships required by the domain. It is not 
 - Loan, Return, KeyAsset, StorageDevice, reports, and UI must not own current-custodian authority.
 - This ERD defines no second possession model.
 
+## Loan and Return Logical Contract
+### Loan
+- Purpose: authoritative controlled issuance intent and workflow state for one cataloged key loaned to one Party.
+- Owning aggregate or boundary: Loan aggregate.
+- Authoritative or derived: Authoritative for loan issuance intent and completion workflow, not possession.
+- Required relationships: references exactly one KeyAsset; references exactly one borrowing Party; may be referenced by zero or one Return.
+- Cardinalities: one KeyAsset to zero or more Loan records; one Party to zero or more Loan records; one Loan to zero or one Return.
+- Required uniqueness: LoanCode is unique across Loan records.
+- Required integrity constraints: LoanCode is required; KeyAsset reference is required; Party borrower reference is required; IssuedAtUtc is required; DueAtUtc is required; DueAtUtc must be later than IssuedAtUtc; LoanStatus must be Open, Returned, or Cancelled; an Open Loan may have zero Returns; a Returned Loan must have exactly one Return; a Cancelled Loan must have zero Returns.
+- Prohibited authority: must not store current possession, current custodian, custody transfer history, catalog identity authority, Party profile data, lifecycle state, lifecycle transition authority, audit history, authorization state, authentication state, policy state, persistence-provider configuration, or UI state.
+
+### Return
+- Purpose: authoritative completion record for one Loan back into organizational control.
+- Owning aggregate or boundary: Return aggregate.
+- Authoritative or derived: Authoritative for return workflow, not possession.
+- Required relationships: references exactly one Loan.
+- Cardinalities: one Loan to zero or one Return; one Return to exactly one Loan.
+- Required uniqueness: ReturnCode is unique across Return records; Loan reference is unique across Return records.
+- Required integrity constraints: ReturnCode is required; Loan reference is required; ReturnedAtUtc is required; ReturnedAtUtc must not be earlier than the Loan IssuedAtUtc; referenced Loan must be Open when Return is created; Return completion marks the Loan as Returned.
+- Prohibited authority: must not store current possession, current custodian, custody transfer history, catalog identity authority, Party profile data, lifecycle state, lifecycle transition authority, audit history, authorization state, authentication state, policy state, persistence-provider configuration, or UI state.
+
 ## Projection Contract
 All projection entities are derived, rebuildable, and non-authoritative. They may never be manually edited or become fallback business authority.
 

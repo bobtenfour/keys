@@ -20,6 +20,8 @@ Prevent duplicated authority.
 | Key catalog identity | key-inventory-domain-contract.md |
 | Key catalog classifications | key-inventory-domain-contract.md |
 | Location hierarchy | key-inventory-domain-contract.md |
+| Loan issuance workflow | key-inventory-domain-contract.md |
+| Return completion workflow | key-inventory-domain-contract.md |
 | Logical data model | key-inventory-erd.md |
 | ERD evolution | project-erd-governance.md |
 | Product capabilities | key-inventory-capability-map.md |
