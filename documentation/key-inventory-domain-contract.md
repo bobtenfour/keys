@@ -241,8 +241,69 @@ Loan and Return authority may never store:
 ### Loan and Return Future Slice Ownership
 - Custody transfer authority remains future custody slice scope.
 - Lifecycle event and state derivation remain future lifecycle slice scope.
-- Audit event creation remains future audit slice scope.
+- Audit Event foundation is owned by the Audit boundary under AUDIT-1; automatic audit emission from loan or return workflow handlers remains future slice scope.
 - Authorization enforcement remains future authorization slice scope.
+- Persistence implementation remains future persistence or migration slice scope.
+- UI behavior remains future product experience or UI slice scope.
+
+## Audit Contract
+### Aggregate Roots
+- AuditEvent is the Audit boundary aggregate root for one immutable evidence record of a business or security-relevant action.
+
+### AuditEvent
+Purpose: record immutable evidence that a business or security-relevant action occurred.
+
+Identity: AuditEvent is identified by one audit event code that is unique across all AuditEvent records.
+
+Ownership: The Audit boundary owns creation of immutable AuditEvent evidence and the append-only audit history for those records.
+
+Relationships:
+- An AuditEvent must reference exactly one acting SecurityPrincipal without owning Identity, Authentication, or Authorization authority.
+- An AuditEvent may reference one Party without owning Party profile or Party lifecycle.
+- An AuditEvent may reference one subject KeyAsset without owning Key Catalog authority.
+- An AuditEvent may reference one subject Loan without owning Loan workflow authority.
+- An AuditEvent may reference one subject Return without owning Return workflow authority.
+
+Invariants:
+- An AuditEvent must have a non-empty audit event code.
+- An AuditEvent must have a non-empty action type describing the evidenced action.
+- An AuditEvent occurred timestamp is required.
+- An AuditEvent must reference an acting SecurityPrincipal without owning principal lifecycle, credentials, roles, permissions, or authorization decisions.
+- An AuditEvent is immutable after creation.
+- Audit history must not be rewritten, replaced, or deleted through AuditEvent authority.
+- An AuditEvent must not mutate Loan, Return, Key Catalog, Party, Identity, Authorization, Custody, or Lifecycle state.
+
+Allowed behavior:
+- Create immutable audit evidence.
+- Expose audit evidence for lookup.
+
+Prohibited authority:
+- AuditEvent must not own current possession, current custodian, custody transfer history, catalog identity, Party identity, loan workflow state, return workflow state, lifecycle state, lifecycle transition authority, authentication credentials, authorization decisions, roles, permissions, role assignments, policy evaluation, Digital Trust integrity mechanisms, persistence-provider configuration, or UI state.
+
+### Audit Authority Exclusions
+Audit authority may never store:
+- Current possession.
+- Current custodian.
+- Custody Event authority.
+- Key Catalog authority.
+- Party profile or Party lifecycle.
+- Loan issuance or return completion workflow authority.
+- Lifecycle State or Lifecycle Event authority.
+- Maintenance workflow state.
+- Inventory count or discrepancy state.
+- Authentication credentials.
+- Authorization decisions, roles, permissions, or assignments.
+- Policy evaluation results.
+- Digital Trust hash chains, signatures, or acceptance methods.
+- Persistence-provider configuration.
+- UI behavior or presentation state.
+
+### Audit Future Slice Ownership
+- Automatic audit emission from command handlers or workflows remains future slice scope.
+- Custody transfer authority remains future custody slice scope.
+- Lifecycle event and state derivation remain future lifecycle slice scope.
+- Authorization enforcement remains future authorization slice scope.
+- Digital Trust integrity and non-repudiation mechanisms remain future Digital Trust slice scope.
 - Persistence implementation remains future persistence or migration slice scope.
 - UI behavior remains future product experience or UI slice scope.
 

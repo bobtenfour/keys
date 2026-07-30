@@ -28,6 +28,7 @@ Define what the product must be able to do, independent of implementation order.
 - Enterprise Operations
 
 ## Capability Details
+- Immutable Audit includes append-only AuditEvent evidence for business and security-relevant actions, immutable after creation, without rewriting audit history and without owning authentication, authorization, policy, custody, lifecycle, loan workflow, or return workflow authority.
 - Reporting and Dashboards includes KPI families for active loans, overdue loans, lost keys, SLA compliance, request frequency, department utilization, risk trends, custody duration, incident rate, maintenance cost, and replacement frequency.
 - Enterprise Operations includes future high availability, administrator guidance, and user guidance.
 

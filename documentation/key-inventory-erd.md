@@ -66,7 +66,7 @@ Define the logical entities and relationships required by the domain. It is not 
 | CustodyEndpointType | Custody boundary | key-inventory-domain-contract.md | Authoritative vocabulary | Current baseline |
 | StorageLocation | Custody boundary | key-inventory-domain-contract.md | Authoritative custody endpoint | Current baseline |
 | KeyCustodyProjection | Custody projection boundary | key-inventory-erd.md | Derived, rebuildable, non-authoritative | Current baseline |
-| AuditEvent | Audit boundary | key-inventory-domain-contract.md | Authoritative append-only audit evidence | Current baseline |
+| AuditEvent | Audit boundary | key-inventory-domain-contract.md | Authoritative append-only audit evidence | AUDIT-1 |
 | InventorySession | Inventory boundary | key-inventory-domain-contract.md | Authoritative | Future roadmap slice |
 | InventoryCount | Inventory boundary | key-inventory-domain-contract.md | Authoritative | Future roadmap slice |
 | InventoryDiscrepancy | Inventory boundary | key-inventory-domain-contract.md | Authoritative | Future roadmap slice |
@@ -216,6 +216,17 @@ Define the logical entities and relationships required by the domain. It is not 
 - Required uniqueness: ReturnCode is unique across Return records; Loan reference is unique across Return records.
 - Required integrity constraints: ReturnCode is required; Loan reference is required; ReturnedAtUtc is required; ReturnedAtUtc must not be earlier than the Loan IssuedAtUtc; referenced Loan must be Open when Return is created; Return completion marks the Loan as Returned.
 - Prohibited authority: must not store current possession, current custodian, custody transfer history, catalog identity authority, Party profile data, lifecycle state, lifecycle transition authority, audit history, authorization state, authentication state, policy state, persistence-provider configuration, or UI state.
+
+## Audit Logical Contract
+### AuditEvent
+- Purpose: authoritative immutable evidence that one business or security-relevant action occurred.
+- Owning aggregate or boundary: Audit boundary.
+- Authoritative or derived: Authoritative append-only audit evidence.
+- Required relationships: references exactly one acting SecurityPrincipal; may reference one Party; may reference one subject KeyAsset; may reference one subject Loan; may reference one subject Return.
+- Cardinalities: one SecurityPrincipal to zero or more AuditEvent records; zero or one Party to zero or more AuditEvent records; zero or one KeyAsset to zero or more AuditEvent records; zero or one Loan to zero or more AuditEvent records; zero or one Return to zero or more AuditEvent records.
+- Required uniqueness: AuditEventCode is unique across AuditEvent records.
+- Required integrity constraints: AuditEventCode is required; ActionType is required; OccurredAtUtc is required; acting SecurityPrincipal reference is required; AuditEvent records are immutable after creation; audit history must not be rewritten, replaced, or deleted through AuditEvent authority.
+- Prohibited authority: must not store current possession, current custodian, custody transfer history, catalog identity authority, Party profile data, loan workflow authority, return workflow authority, lifecycle state, lifecycle transition authority, authentication credentials, authorization decisions, roles, permissions, assignments, policy evaluation results, Digital Trust integrity mechanisms, persistence-provider configuration, or UI state.
 
 ## Projection Contract
 All projection entities are derived, rebuildable, and non-authoritative. They may never be manually edited or become fallback business authority.

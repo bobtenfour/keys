@@ -35,6 +35,8 @@ Prevent duplicated authority.
 | Party identity | key-inventory-domain-contract.md |
 | Policy evaluation | security-capability-contract.md |
 | Audit evidence | key-inventory-domain-contract.md |
+| Audit Event aggregate | key-inventory-domain-contract.md |
+| Immutable audit history | key-inventory-domain-contract.md |
 | Product experience | product-experience-contract.md |
 | Testing requirements | testing-strategy.md |
 | Cross-system integrity | system-integrity-contract.md |

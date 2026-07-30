@@ -12,7 +12,7 @@ Separate authentication, authorization, policy, audit, and digital trust respons
 - Authorization: determine allowed action.
 - RBAC: role-based authorization authority for roles, permissions, role-permission links, and principal-role assignments.
 - Policy: configurable decision authority for advanced rules.
-- Audit: immutable evidence of relevant actions.
+- Audit: immutable evidence of relevant actions; AuditEvent aggregate authority is owned by key-inventory-domain-contract.md.
 - Digital Trust: integrity, acceptance, and non-repudiation concepts.
 
 ## Boundary Ownership
@@ -21,7 +21,7 @@ Separate authentication, authorization, policy, audit, and digital trust respons
 - Authorization determines whether an authenticated principal may perform an action.
 - RBAC owns Role, Permission, RolePermission, and PrincipalRoleAssignment.
 - Policy may refine authorization decisions in a future phase but does not own basic RBAC.
-- Audit owns immutable security evidence.
+- Audit capability covers immutable evidence of relevant actions; AuditEvent aggregate ownership and invariants are defined by key-inventory-domain-contract.md.
 - Digital Trust owns integrity, acceptance, and non-repudiation concepts.
 - Party is business identity and is not owned by Identity, Authentication, Authorization, RBAC, Policy, Audit, or Digital Trust.
 - SecurityPrincipal may reference Party for human principals but must not duplicate Party profile or business data.
