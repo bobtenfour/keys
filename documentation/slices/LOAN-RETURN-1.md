@@ -1,7 +1,7 @@
 # LOAN-RETURN-1 - Loan and Return Foundation
 
 ## Status
-Implementation Complete
+Accepted
 
 ## Parent Phase
 Phase 1

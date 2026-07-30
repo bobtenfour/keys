@@ -32,7 +32,7 @@ Define the approved execution order without expanding into detailed slice specif
 | SOLUTION-FOUNDATION-2 | Accepted | SOLUTION-FOUNDATION-1 | slices/SOLUTION-FOUNDATION-2.md |
 | IDENTITY-1 | Accepted | SOLUTION-FOUNDATION-2 | Created when opened |
 | CATALOG-1 | Accepted | IDENTITY-1 | slices/CATALOG-1.md |
-| LOAN-RETURN-1 | Approved | CATALOG-1 | slices/LOAN-RETURN-1.md |
+| LOAN-RETURN-1 | Accepted | CATALOG-1 | slices/LOAN-RETURN-1.md |
 | AUDIT-1 | Planned | LOAN-RETURN-1 | Created when approved |
 | UTC-1 | Planned | AUDIT-1 | Created when approved |
 | MIGRATION-1 | Planned | UTC-1 | Created when approved |
