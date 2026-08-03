@@ -16,6 +16,8 @@ Prevent duplicated authority.
 | Architecture document inventory | project-architecture-index.md |
 | Repository hygiene | project-governance.md |
 | Technical boundaries | architecture-contracts.md |
+| UTC business timestamp representation | architecture-contracts.md |
+| Physical persistence mapping and EF migrations | architecture-contracts.md |
 | Business concepts and aggregate boundaries | key-inventory-domain-contract.md |
 | Key catalog identity | key-inventory-domain-contract.md |
 | Key catalog classifications | key-inventory-domain-contract.md |

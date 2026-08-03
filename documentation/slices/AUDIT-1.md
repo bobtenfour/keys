@@ -1,7 +1,7 @@
 # AUDIT-1 - Immutable Audit Foundation
 
 ## Status
-Implementation Complete
+Accepted
 
 ## Parent Phase
 Phase 1
@@ -159,6 +159,12 @@ PASS.
 - Decision: Prepare Next Slice, Planned to Approved.
 - Date: 2026-07-30.
 - Evidence: LOAN-RETURN-1 is Accepted; AUDIT-1 is the next Planned roadmap slice; existing domain, ERD, capability, security boundary, and authority mappings were completed for AuditEvent ownership, invariants, relationships, acceptance criteria, and required tests.
+- Deciding authority role: Human Architectural Governance.
+
+## Acceptance Record
+- Decision: ACCEPT.
+- Date: 2026-07-30.
+- Evidence: AUDIT-1 was Implementation Complete; immutable AuditEvent foundation and lookup port remained within approved scope; no automatic emission, Digital Trust, persistence, DI, UI, custody, lifecycle, or future-slice functionality was introduced; build PASS; tests PASS.
 - Deciding authority role: Human Architectural Governance.
 
 ## Next Allowed Slice

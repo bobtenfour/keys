@@ -18,14 +18,14 @@ public sealed class Loan
         LoanCode = LoanText.Require(loanCode, nameof(loanCode));
         KeyAsset = keyAsset ?? throw new ArgumentNullException(nameof(keyAsset));
         BorrowerPartyReference = LoanText.Require(borrowerPartyReference, nameof(borrowerPartyReference));
+        IssuedAtUtc = UtcTimestamp.Require(issuedAtUtc, nameof(issuedAtUtc));
+        DueAtUtc = UtcTimestamp.Require(dueAtUtc, nameof(dueAtUtc));
 
-        if (dueAtUtc <= issuedAtUtc)
+        if (DueAtUtc <= IssuedAtUtc)
         {
             throw new ArgumentException("Due timestamp must be later than issue timestamp.", nameof(dueAtUtc));
         }
 
-        IssuedAtUtc = issuedAtUtc;
-        DueAtUtc = dueAtUtc;
         Status = LoanStatus.Open;
     }
 

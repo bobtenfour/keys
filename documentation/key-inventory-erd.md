@@ -228,6 +228,13 @@ Define the logical entities and relationships required by the domain. It is not 
 - Required integrity constraints: AuditEventCode is required; ActionType is required; OccurredAtUtc is required; acting SecurityPrincipal reference is required; AuditEvent records are immutable after creation; audit history must not be rewritten, replaced, or deleted through AuditEvent authority.
 - Prohibited authority: must not store current possession, current custodian, custody transfer history, catalog identity authority, Party profile data, loan workflow authority, return workflow authority, lifecycle state, lifecycle transition authority, authentication credentials, authorization decisions, roles, permissions, assignments, policy evaluation results, Digital Trust integrity mechanisms, persistence-provider configuration, or UI state.
 
+## Temporal Logical Contract
+- Authoritative logical temporal attributes are UTC instants.
+- Authoritative temporal attributes use UTC naming (`Utc` or `AtUtc`), including IssuedAtUtc, DueAtUtc, ReturnedAtUtc, OccurredAtUtc, EffectiveFromUtc, and EffectiveToUtc.
+- The logical model does not define authoritative local-time attributes.
+- Local display time and client time-zone conversion are not logical ERD authority.
+- Persistence-provider date/time types remain outside this logical contract.
+
 ## Projection Contract
 All projection entities are derived, rebuildable, and non-authoritative. They may never be manually edited or become fallback business authority.
 

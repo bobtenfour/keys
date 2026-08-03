@@ -30,7 +30,7 @@ public sealed class AuditEvent
             PartyReference = partyReference.Trim();
         }
 
-        OccurredAtUtc = occurredAtUtc;
+        OccurredAtUtc = UtcTimestamp.Require(occurredAtUtc, nameof(occurredAtUtc));
         SubjectKeyAsset = subjectKeyAsset;
         SubjectLoan = subjectLoan;
         SubjectReturn = subjectReturn;

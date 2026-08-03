@@ -14,15 +14,17 @@ public sealed class PrincipalRoleAssignment
         Role = role ?? throw new ArgumentNullException(nameof(role));
         ScopeType = scopeType;
         ScopeCode = IdentityText.Require(scopeCode, nameof(scopeCode));
-        EffectiveFromUtc = effectiveFromUtc;
-        EffectiveToUtc = effectiveToUtc;
+        EffectiveFromUtc = UtcTimestamp.Require(effectiveFromUtc, nameof(effectiveFromUtc));
+        EffectiveToUtc = effectiveToUtc is null
+            ? null
+            : UtcTimestamp.Require(effectiveToUtc.Value, nameof(effectiveToUtc));
 
         if (scopeType == AuthorizationScopeType.None)
         {
             throw new ArgumentException("AuthorizationScopeType is required.", nameof(scopeType));
         }
 
-        if (effectiveToUtc is not null && effectiveToUtc <= effectiveFromUtc)
+        if (EffectiveToUtc is not null && EffectiveToUtc <= EffectiveFromUtc)
         {
             throw new ArgumentException("EffectiveToUtc must be later than EffectiveFromUtc.", nameof(effectiveToUtc));
         }

@@ -22,7 +22,9 @@ public sealed class Return
             throw new InvalidOperationException("Return requires an Open Loan.");
         }
 
-        if (returnedAtUtc < loan.IssuedAtUtc)
+        ReturnedAtUtc = UtcTimestamp.Require(returnedAtUtc, nameof(returnedAtUtc));
+
+        if (ReturnedAtUtc < loan.IssuedAtUtc)
         {
             throw new ArgumentException(
                 "Return timestamp must not be earlier than the Loan issue timestamp.",
@@ -30,7 +32,6 @@ public sealed class Return
         }
 
         Loan = loan;
-        ReturnedAtUtc = returnedAtUtc;
         loan.MarkReturned();
     }
 

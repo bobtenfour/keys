@@ -30,6 +30,44 @@ Owns presentation, request/response binding, navigation, and product experience.
 ## Composition Root
 Runtime composition belongs to the application host. Service registration must not become business authority.
 
+## Persistence Foundation Contract
+- Infrastructure owns physical persistence mapping and EF Core migrations.
+- Logical entity ownership remains in `key-inventory-domain-contract.md` and `key-inventory-erd.md`.
+- Persistence must not own business rules, workflow decisions, or UI behavior.
+- MIGRATION-1 establishes the minimum persistence foundation required for LOAN-VERTICAL-1.
+- MIGRATION-1 includes one EF Core `DbContext` in Infrastructure.
+- MIGRATION-1 includes the initial migration for only these entities: KeyType, KeyAsset, Loan, and Return.
+- KeyAsset persistence may omit optional KeySeries and Lock references until a later authorized slice.
+- Authoritative UTC timestamps persist as `DateTimeOffset` values without conversion or normalization.
+- Local development persistence uses SQLite.
+- A design-time `DbContext` factory may exist in Infrastructure solely to create and apply migrations.
+- MIGRATION-1 does not implement Application port adapters, command handlers, repository facades beyond the `DbContext`, business DI registrations, UI, seed data, or demo pages.
+- Port adapter implementation and runtime workflow DI belong to LOAN-VERTICAL-1.
+- Identity, AuditEvent, Lock, Location, and KeySeries physical tables are out of scope for MIGRATION-1.
+
+## UTC Timestamp Contract
+- Authoritative business timestamps are UTC instants.
+- Authoritative Domain timestamps are represented as `DateTimeOffset` values with `Offset` equal to `TimeSpan.Zero`.
+- Required authoritative timestamps must reject `default(DateTimeOffset)`.
+- Domain entry points that accept authoritative timestamps must reject non-UTC offsets.
+- Authoritative temporal attributes use UTC naming (`Utc` or `AtUtc`).
+- Local civil time, display time zones, and user-facing time conversion are not Domain authority and must not become authoritative business time.
+- Persistence-provider date/time types, database time-zone configuration, and UI formatting remain outside this contract's runtime ownership and belong to later authorized slices.
+- A system clock abstraction, time provider port, or NodaTime dependency is not required by this contract and must not be introduced unless a later slice explicitly authorizes it.
+
+### Shared UTC Validation Helper
+- The Domain provides one shared UTC validation helper for authoritative timestamps.
+- The helper accepts a `DateTimeOffset`.
+- The helper requires `Offset == TimeSpan.Zero`.
+- The helper rejects `default(DateTimeOffset)`.
+- The helper never converts or normalizes values.
+- On success, the helper returns the validated value unchanged.
+
+### UTC Validation Failure Semantics
+- Invalid timestamps are contract violations.
+- Validation fails immediately.
+- The concrete exception type is intentionally left unspecified by UTC-1.
+
 ## Forbidden
 - Duplicate business rules.
 - Cross-layer shortcuts.
@@ -37,6 +75,9 @@ Runtime composition belongs to the application host. Service registration must n
 - Persistence-owned business rules.
 - Domain depending on framework infrastructure.
 - Runtime features without owning contracts.
+- Authoritative Domain timestamps with non-UTC offsets.
+- Required authoritative timestamps equal to `default(DateTimeOffset)`.
+- Converting or normalizing non-UTC timestamps into UTC inside Domain validation.
 
 ## Depends On
 - project-governance.md

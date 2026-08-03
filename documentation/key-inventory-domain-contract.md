@@ -25,6 +25,9 @@ Define the business model without implementation details.
 - Custody transfers must support Party and storage endpoints, including employees, contractors, security personnel, storage locations, and other authorized Party types.
 - Audit history must not be rewritten.
 - Current state must be derivable from authoritative records when the relevant phase introduces that model.
+- Authoritative business timestamps are UTC instants.
+- Domain entry points that accept authoritative timestamps require UTC offset zero and must not accept local-time offsets as authoritative business time.
+- Required authoritative timestamps must reject `default(DateTimeOffset)`.
 
 ## Catalog Contract
 ### Aggregate Roots
@@ -152,7 +155,7 @@ Catalog authority may never store:
 - Lifecycle state, lifecycle transitions, and lifecycle event authority belong to future lifecycle slices.
 - Loan and return workflow authority belongs to loan/return slices.
 - Maintenance workflow authority belongs to future maintenance slices.
-- Persistence implementation belongs to future persistence or migration slices.
+- Persistence foundation for KeyType, KeyAsset, Loan, and Return belongs to MIGRATION-1; Application port adapters and workflow DI belong to LOAN-VERTICAL-1.
 - UI behavior belongs to future product experience or UI slices.
 
 ## Loan and Return Contract
@@ -243,7 +246,7 @@ Loan and Return authority may never store:
 - Lifecycle event and state derivation remain future lifecycle slice scope.
 - Audit Event foundation is owned by the Audit boundary under AUDIT-1; automatic audit emission from loan or return workflow handlers remains future slice scope.
 - Authorization enforcement remains future authorization slice scope.
-- Persistence implementation remains future persistence or migration slice scope.
+- Persistence foundation for Loan and Return belongs to MIGRATION-1; Application port adapters and workflow DI belong to LOAN-VERTICAL-1.
 - UI behavior remains future product experience or UI slice scope.
 
 ## Audit Contract
@@ -304,7 +307,7 @@ Audit authority may never store:
 - Lifecycle event and state derivation remain future lifecycle slice scope.
 - Authorization enforcement remains future authorization slice scope.
 - Digital Trust integrity and non-repudiation mechanisms remain future Digital Trust slice scope.
-- Persistence implementation remains future persistence or migration slice scope.
+- AuditEvent physical persistence remains future authorized persistence scope beyond MIGRATION-1.
 - UI behavior remains future product experience or UI slice scope.
 
 ## Forbidden
