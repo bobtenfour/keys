@@ -33,10 +33,11 @@ Define the approved execution order without expanding into detailed slice specif
 | IDENTITY-1 | Accepted | SOLUTION-FOUNDATION-2 | Created when opened |
 | CATALOG-1 | Accepted | IDENTITY-1 | slices/CATALOG-1.md |
 | LOAN-RETURN-1 | Accepted | CATALOG-1 | slices/LOAN-RETURN-1.md |
-| AUDIT-1 | Implementation Complete | LOAN-RETURN-1 | slices/AUDIT-1.md |
-| UTC-1 | Planned | AUDIT-1 | Created when approved |
-| MIGRATION-1 | Planned | UTC-1 | Created when approved |
-| CI-1 | Planned | MIGRATION-1 | Created when approved |
+| AUDIT-1 | Accepted | LOAN-RETURN-1 | slices/AUDIT-1.md |
+| UTC-1 | Accepted | AUDIT-1 | slices/UTC-1.md |
+| MIGRATION-1 | Implementation Complete | UTC-1 | slices/MIGRATION-1.md |
+| LOAN-VERTICAL-1 | Planned | MIGRATION-1 | Created when approved |
+| CI-1 | Planned | LOAN-VERTICAL-1 | Created when approved |
 | PHASE-1-CLOSE | Planned | CI-1 | Created when approved |
 
 ## Later Phases

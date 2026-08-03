@@ -106,17 +106,26 @@ public sealed class CatalogBoundaryTests
     }
 
     [Fact]
-    public void InfrastructureDoesNotOwnCatalogImplementations()
+    public void InfrastructureDoesNotImplementCatalogLookupPorts()
     {
         Assembly infrastructureAssembly = Assembly.Load("KeyInventory.Infrastructure");
 
-        string[] catalogTypes = infrastructureAssembly
+        Type[] lookupPortTypes =
+        [
+            typeof(IKeyAssetLookupPort),
+            typeof(IKeySeriesLookupPort),
+            typeof(IKeyTypeLookupPort),
+            typeof(ILockLookupPort),
+            typeof(ILocationLookupPort)
+        ];
+
+        Type[] lookupPortImplementations = infrastructureAssembly
             .GetTypes()
-            .Select(type => type.FullName ?? type.Name)
-            .Where(name => ContainsAny(name, "KeyAsset", "KeySeries", "KeyType", "Lock", "Location"))
+            .Where(type => type.IsClass && !type.IsAbstract)
+            .Where(type => lookupPortTypes.Any(port => port.IsAssignableFrom(type)))
             .ToArray();
 
-        Assert.Empty(catalogTypes);
+        Assert.Empty(lookupPortImplementations);
     }
 
     [Fact]

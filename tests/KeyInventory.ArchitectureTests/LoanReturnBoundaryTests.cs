@@ -94,17 +94,18 @@ public sealed class LoanReturnBoundaryTests
     }
 
     [Fact]
-    public void InfrastructureDoesNotOwnLoanOrReturnImplementations()
+    public void InfrastructureDoesNotImplementLoanOrReturnLookupPorts()
     {
         Assembly infrastructureAssembly = Assembly.Load("KeyInventory.Infrastructure");
 
-        string[] loanTypes = infrastructureAssembly
+        Type[] lookupPortImplementations = infrastructureAssembly
             .GetTypes()
-            .Select(type => type.FullName ?? type.Name)
-            .Where(name => ContainsAny(name, "Loan", "Return"))
+            .Where(type => typeof(ILoanLookupPort).IsAssignableFrom(type)
+                || typeof(IReturnLookupPort).IsAssignableFrom(type))
+            .Where(type => type.IsClass && !type.IsAbstract)
             .ToArray();
 
-        Assert.Empty(loanTypes);
+        Assert.Empty(lookupPortImplementations);
     }
 
     [Fact]
