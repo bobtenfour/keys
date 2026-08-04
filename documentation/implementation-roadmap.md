@@ -40,8 +40,15 @@ Define the approved execution order without expanding into detailed slice specif
 | CI-1 | Planned | LOAN-VERTICAL-1 | Created when approved |
 | PHASE-1-CLOSE | Planned | CI-1 | Created when approved |
 
+## Phase 2 — Operational Security
+
+| Slice | Status | Depends On | Slice Spec |
+|---|---|---|---|
+| WORKFORCE-ELIGIBILITY-1 | Approved | PHASE-1-CLOSE | slices/WORKFORCE-ELIGIBILITY-1.md |
+
 ## Later Phases
 Later phase slices must be created only when their architectural contracts are mature enough to support implementation without assumptions.
+WORKFORCE-ELIGIBILITY-1 is Approved for governing preparation and must not start implementation until PHASE-1-CLOSE is Accepted and the slice is moved to In Progress under slice-promotion governance.
 
 ## Depends On
 - roadmap.md
