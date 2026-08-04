@@ -1,7 +1,7 @@
 # LOAN-VERTICAL-1 - First Runnable Workflow
 
 ## Status
-Implementation Complete
+Accepted
 
 ## Parent Phase
 Phase 1
@@ -143,6 +143,12 @@ PASS.
 - Decision: Prepare Next Slice, Planned to Approved.
 - Date: 2026-08-03.
 - Evidence: MIGRATION-1 is Accepted; LOAN-VERTICAL-1 is the next Planned roadmap slice; architecture, domain ownership, product experience, capability, and authority mappings were completed for the first runnable create-key / issue-loan / complete-return / list-loans workflow.
+- Deciding authority role: Human Architectural Governance.
+
+## Acceptance Record
+- Decision: ACCEPT.
+- Date: 2026-08-04.
+- Evidence: LOAN-VERTICAL-1 was Implementation Complete; Application create Key Asset, issue Loan, complete Return, list Open Loans, and list Returned Loans use cases with Infrastructure persistence adapters and Web Razor Pages remained within approved scope; Domain project unchanged; no authentication, authorization runtime, automatic audit emission, Party aggregate, seed data, demo pages, or second persistence model was introduced; architectural review complete; build PASS; tests PASS.
 - Deciding authority role: Human Architectural Governance.
 
 ## Next Allowed Slice
