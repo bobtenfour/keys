@@ -29,10 +29,11 @@ Acceptance:
 - Business rules enforced by the owning authority.
 
 ## Phase 2 — Operational Security
-Business objective: add identity and RBAC foundations, authorization workflows, time restrictions, alerts, notifications, dashboards, reports, and inventory verification.
+Business objective: add identity and RBAC foundations, authorization workflows, workforce key eligibility for Employee and Contractor recipients, time restrictions, alerts, notifications, dashboards, reports, and inventory verification.
 
 Acceptance:
 - Identity and RBAC responsibilities are established.
+- WorkforceMember eligibility authority is defined for Organization, Department, Building, Room, ResponsibleManager, WorkAssignment, and key-issue eligibility without duplicating Party identity.
 - High-risk keys require approval.
 - Overdue alerts are generated.
 - Operational dashboard is available.
@@ -71,10 +72,10 @@ Acceptance:
 - Maintenance history is complete and auditable.
 
 ## Phase 8 — Unified Parties
-Business objective: replace employee-only assumptions with a unified party model.
+Business objective: extend the Party model beyond WorkforceMember Employee and Contractor recipients to additional party kinds without redesigning identity authority.
 
 Acceptance:
-- Employees, contractors, visitors, vendors, and external companies can be modeled without redesign.
+- Visitors, vendors, and external companies can be modeled without redesigning Party or Workforce Eligibility authority.
 
 ## Phase 9 — Smart Cabinet Integration
 Business objective: prepare architecture for electronic cabinets and storage devices.

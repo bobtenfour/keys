@@ -38,7 +38,21 @@ Prevent duplicated authority.
 | Roles | security-capability-contract.md |
 | Permissions | security-capability-contract.md |
 | Role assignments | security-capability-contract.md |
-| Party identity | key-inventory-domain-contract.md |
+| Party persistent person identity | key-inventory-domain-contract.md |
+| Person FirstName LastName and UIN | key-inventory-domain-contract.md |
+| Building place authority | key-inventory-domain-contract.md |
+| Room place authority and RoomNumber uniqueness within Building | key-inventory-domain-contract.md |
+| Workforce eligibility boundary | key-inventory-domain-contract.md |
+| Organization | key-inventory-domain-contract.md |
+| Department membership for workforce | key-inventory-domain-contract.md |
+| WorkforceMember workforce relationship and eligibility | key-inventory-domain-contract.md |
+| WorkforceType Employee and Contractor | key-inventory-domain-contract.md |
+| ResponsibleManager relationship | key-inventory-domain-contract.md |
+| WorkAssignment to Room | key-inventory-domain-contract.md |
+| Key issue eligibility for WorkforceMember | key-inventory-domain-contract.md |
+| WorkforceMember termination return obligation | key-inventory-domain-contract.md |
+| Employment as separate aggregate | Forbidden; authority belongs to WorkforceMember in key-inventory-domain-contract.md |
+| Borrower workflow role definition | key-inventory-domain-contract.md |
 | Policy evaluation | security-capability-contract.md |
 | Audit evidence | key-inventory-domain-contract.md |
 | Audit Event aggregate | key-inventory-domain-contract.md |

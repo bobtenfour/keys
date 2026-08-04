@@ -81,6 +81,20 @@ Runtime composition belongs to the application host. Service registration must n
 - Validation fails immediately.
 - The concrete exception type is intentionally left unspecified by UTC-1.
 
+## Workforce Eligibility Boundary Contract
+- Party boundary owns persistent person and organization business identity, including person FirstName, LastName, and UIN.
+- Workforce Eligibility boundary owns Organization, Department, WorkforceMember as the workforce relationship and eligibility authority, ResponsibleManager relationship rules, WorkAssignment, key-issue eligibility evaluation, and termination return-obligation signaling.
+- WorkforceMember is the workforce relationship, not person identity.
+- Employment is not a separate aggregate; relationship authority must not be duplicated under an Employment entity.
+- Location boundary owns Building and Room place authority, including required RoomNumber uniqueness within one Building.
+- WorkforceMember references Party and must not own or duplicate Party person-identity attributes.
+- Borrower remains a workflow role only; a Borrower aggregate, temporary borrower fields, and duplicate identity authority are forbidden.
+- Workforce Eligibility must not own Loan workflow mutation, Return workflow mutation, custody, lifecycle, audit emission, authentication, authorization runtime, HR integration, persistence implementation, or UI.
+- WorkforceMember termination, rehire, Department change, Organization change, and Employee or Contractor WorkforceType transition are relationship changes and must not rewrite Party person identity.
+- WorkforceMember termination may forbid new key issues and signal a mandatory return obligation; it must not automatically mutate Loan, Return, custody, lifecycle, or audit authority.
+- Required key returns after termination complete only through the existing Return workflow.
+- WORKFORCE-ELIGIBILITY-1 is structural preparation and Approved slice specification only until Phase 1 close prerequisites are Accepted; implementation of this boundary is forbidden until the slice is authorized to start.
+
 ## Forbidden
 - Duplicate business rules.
 - Cross-layer shortcuts.
