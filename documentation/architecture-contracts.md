@@ -34,13 +34,16 @@ Runtime composition belongs to the application host. Service registration must n
 - Infrastructure owns physical persistence mapping and EF Core migrations.
 - Logical entity ownership remains in `key-inventory-domain-contract.md` and `key-inventory-erd.md`.
 - Persistence must not own business rules, workflow decisions, or UI behavior.
+- SQL Server is the sole authorized persistence provider.
+- SQLite, in-memory EF providers, and any second persistence provider are forbidden.
+- The canonical runtime connection string name is `KeyInventory` under configuration path `ConnectionStrings:KeyInventory`.
+- Runtime and design-time persistence use EF Core SQL Server (`UseSqlServer`) with that connection string only.
 - MIGRATION-1 establishes the minimum persistence foundation required for LOAN-VERTICAL-1.
 - MIGRATION-1 includes one EF Core `DbContext` in Infrastructure.
 - MIGRATION-1 includes the initial migration for only these entities: KeyType, KeyAsset, Loan, and Return.
 - KeyAsset persistence may omit optional KeySeries and Lock references until a later authorized slice.
 - Authoritative UTC timestamps persist as `DateTimeOffset` values without conversion or normalization.
-- Local development persistence uses SQLite.
-- A design-time `DbContext` factory may exist in Infrastructure solely to create and apply migrations.
+- A design-time `DbContext` factory may exist in Infrastructure solely to create and apply migrations against SQL Server using `ConnectionStrings:KeyInventory`.
 - MIGRATION-1 does not implement Application port adapters, command handlers, repository facades beyond the `DbContext`, business DI registrations, UI, seed data, or demo pages.
 - Port adapter implementation and runtime workflow DI belong to LOAN-VERTICAL-1.
 - Identity, AuditEvent, Lock, Location, and KeySeries physical tables are out of scope for MIGRATION-1.
@@ -51,9 +54,9 @@ Runtime composition belongs to the application host. Service registration must n
 - Issue Loan and Complete Return use existing Domain Loan and Return aggregates and `UtcTimestamp` validation.
 - Borrower Party is an opaque required string reference; no Party aggregate is introduced.
 - Infrastructure implements persistence adapters against the existing `KeyInventoryDbContext` and MIGRATION-1 entity mappings; adapters translate between Domain aggregates and persistence entities without owning business rules.
-- The Web composition root registers SQLite `DbContext`, persistence adapters, and Application use cases required by this slice.
+- The Web composition root registers the SQL Server `DbContext` using `ConnectionStrings:KeyInventory`, persistence adapters, and Application use cases required by this slice.
 - Web owns Razor Pages for the LOAN-VERTICAL-1 workflow only.
-- LOAN-VERTICAL-1 must not introduce authentication, authorization runtime, automatic audit emission, a second persistence model, in-memory fake stores, mock workflows, seed/demo data, or speculative abstractions.
+- LOAN-VERTICAL-1 must not introduce authentication, authorization runtime, automatic audit emission, a second persistence model, SQLite, in-memory fake stores, mock workflows, seed/demo data, or speculative abstractions.
 
 ## UTC Timestamp Contract
 - Authoritative business timestamps are UTC instants.

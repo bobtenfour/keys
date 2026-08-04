@@ -57,13 +57,17 @@ public sealed class IdentityBoundaryTests
             EnvironmentName = Environments.Development
         });
 
+        builder.Configuration["ConnectionStrings:KeyInventory"] = KeyInventorySqlServerTestConnection.Require();
         builder.Host.UseDefaultServiceProvider(options =>
         {
             options.ValidateOnBuild = true;
             options.ValidateScopes = true;
         });
 
-        KeyInventory.Web.WebServiceComposition.Configure(builder.Services, builder.Configuration);
+        KeyInventory.Web.WebServiceComposition.Configure(
+            builder.Services,
+            builder.Configuration,
+            builder.Environment);
 
         using WebApplication app = builder.Build();
 

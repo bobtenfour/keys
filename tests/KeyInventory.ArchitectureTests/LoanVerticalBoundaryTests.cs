@@ -45,7 +45,7 @@ public sealed class LoanVerticalBoundaryTests
     }
 
     [Fact]
-    public void SliceDoesNotIntroduceAuthenticationAuthorizationOrAuditEmissionTypes()
+    public void SliceDoesNotIntroduceAlternateAuthProvidersOrAuditEmissionTypes()
     {
         Assembly[] assemblies =
         [
@@ -59,16 +59,15 @@ public sealed class LoanVerticalBoundaryTests
             .Select(type => type.FullName ?? type.Name)
             .Where(name => ContainsAny(
                 name,
-                "Password",
                 "JwtBearer",
-                "CookieAuthentication",
                 "OpenIdConnect",
-                "AuthorizeAttribute",
                 "AuditEmission",
                 "AuditEmitter"))
             .ToArray();
 
         Assert.Empty(prohibited);
+        Assert.NotNull(typeof(KeyInventory.Web.Program).Assembly.GetType(
+            "KeyInventory.Web.Authorization.LocalBootstrapAdminSeeder"));
     }
 
     [Fact]
@@ -79,14 +78,17 @@ public sealed class LoanVerticalBoundaryTests
             EnvironmentName = Environments.Development
         });
 
-        builder.Configuration["ConnectionStrings:KeyInventory"] = "Data Source=:memory:";
+        builder.Configuration["ConnectionStrings:KeyInventory"] = KeyInventorySqlServerTestConnection.Require();
         builder.Host.UseDefaultServiceProvider(options =>
         {
             options.ValidateOnBuild = true;
             options.ValidateScopes = true;
         });
 
-        KeyInventory.Web.WebServiceComposition.Configure(builder.Services, builder.Configuration);
+        KeyInventory.Web.WebServiceComposition.Configure(
+            builder.Services,
+            builder.Configuration,
+            builder.Environment);
 
         using WebApplication app = builder.Build();
         using IServiceScope scope = app.Services.CreateScope();

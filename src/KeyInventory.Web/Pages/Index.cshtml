@@ -8,6 +8,13 @@
     <h1>Key loan workflow</h1>
     <p class="lede">Create a key, issue a loan, complete a return, and review open or returned loans.</p>
     <p>
-        <a class="button" asp-page="/Keys/Create">Create Key</a>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a class="button" asp-page="/Keys/Create">Create Key</a>
+        }
+        else
+        {
+            <a class="button" asp-page="/Account/Login">Log in</a>
+        }
     </p>
 </section>

@@ -11,12 +11,22 @@
         <div class="shell">
             <a class="brand" asp-page="/Index">KeyInventory</a>
             <nav class="site-nav" aria-label="Workflow">
-                <a asp-page="/Keys/Index">Keys</a>
-                <a asp-page="/Keys/Create">Create Key</a>
-                <a asp-page="/Loans/Issue">Issue Loan</a>
-                <a asp-page="/Loans/Open">Open Loans</a>
-                <a asp-page="/Loans/Return">Complete Return</a>
-                <a asp-page="/Loans/Returned">Returned Loans</a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-page="/Keys/Index">Keys</a>
+                    <a asp-page="/Keys/Create">Create Key</a>
+                    <a asp-page="/Loans/Issue">Issue Loan</a>
+                    <a asp-page="/Loans/Open">Open Loans</a>
+                    <a asp-page="/Loans/Return">Complete Return</a>
+                    <a asp-page="/Loans/Returned">Returned Loans</a>
+                    <form method="post" asp-page="/Account/Logout" class="inline-form">
+                        <button type="submit" class="link-button">Log out</button>
+                    </form>
+                }
+                else
+                {
+                    <a asp-page="/Account/Login">Log in</a>
+                }
             </nav>
         </div>
     </header>

@@ -10,7 +10,7 @@ Phase 1
 Establish the minimum EF Core persistence foundation required for LOAN-VERTICAL-1 without implementing workflow commands, port adapters, UI, or unrelated entity schemas.
 
 ## Objective
-Infrastructure contains one EF Core DbContext, entity mappings, and an initial migration for KeyType, KeyAsset, Loan, and Return using SQLite for local development, while Domain remains the sole business authority.
+Infrastructure contains one EF Core DbContext, entity mappings, and an initial migration for KeyType, KeyAsset, Loan, and Return using SQL Server as the sole persistence provider, while Domain remains the sole business authority.
 
 ## Scope
 - EF Core package references required by Infrastructure persistence.
@@ -43,7 +43,7 @@ Infrastructure contains one EF Core DbContext, entity mappings, and an initial m
 - Lifecycle.
 - Inventory.
 - CI pipeline changes.
-- SQL Server production hosting configuration.
+- SQLite.
 - Second persistence model or in-memory business store.
 - Placeholders.
 - TODO.
@@ -98,7 +98,7 @@ architecture-contracts.md
 - Infrastructure contains one EF Core DbContext.
 - Initial migration maps KeyType, KeyAsset, Loan, and Return only.
 - KeySeries, Lock, Location, Identity, and AuditEvent tables are not introduced.
-- Local development persistence uses SQLite.
+- Persistence uses SQL Server only through `ConnectionStrings:KeyInventory`.
 - Authoritative UTC timestamp properties map as DateTimeOffset without conversion.
 - No Application port adapters, command handlers, business DI registrations, UI, seed data, or demo pages are introduced.
 - Domain and Application projects are unchanged.

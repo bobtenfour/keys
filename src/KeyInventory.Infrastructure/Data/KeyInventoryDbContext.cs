@@ -1,8 +1,10 @@
+using KeyInventory.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace KeyInventory.Infrastructure.Data;
 
-public sealed class KeyInventoryDbContext : DbContext
+public sealed class KeyInventoryDbContext : IdentityDbContext<ApplicationUser>
 {
     public KeyInventoryDbContext(DbContextOptions<KeyInventoryDbContext> options)
         : base(options)
@@ -17,9 +19,10 @@ public sealed class KeyInventoryDbContext : DbContext
 
     public DbSet<ReturnEntity> Returns => Set<ReturnEntity>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        ArgumentNullException.ThrowIfNull(modelBuilder);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(KeyInventoryDbContext).Assembly);
+        ArgumentNullException.ThrowIfNull(builder);
+        base.OnModelCreating(builder);
+        builder.ApplyConfigurationsFromAssembly(typeof(KeyInventoryDbContext).Assembly);
     }
 }

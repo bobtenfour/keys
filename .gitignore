@@ -21,3 +21,5 @@ TestResults/
 *.db-shm
 *.db-wal
 keyinventory-local.db
+**/appsettings.Local.json
+

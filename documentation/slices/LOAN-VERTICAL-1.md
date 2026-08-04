@@ -10,7 +10,7 @@ Phase 1
 Deliver the first complete end-to-end user workflow using existing Domain and Persistence foundations so a user can create a key asset, issue a loan, complete a return, and list open and returned loans.
 
 ## Objective
-The application runs locally with SQLite persistence and Razor Pages that exercise real Domain Loan/Return and KeyAsset behavior through Application use cases and Infrastructure adapters, without authentication, audit emission, or future-phase capabilities.
+The application runs with SQL Server persistence and Razor Pages that exercise real Domain Loan/Return and KeyAsset behavior through Application use cases and Infrastructure adapters, without authentication, audit emission, or future-phase capabilities.
 
 ## Scope
 - Application commands for create Key Asset, issue Loan, and complete Return.
@@ -102,7 +102,7 @@ key-inventory-domain-contract.md
 - A user can issue a Loan against an existing Key Asset with borrower Party reference and UTC issue/due timestamps.
 - A user can complete a Return for an Open Loan with UTC return timestamp.
 - A user can list Open Loans and list Returned Loans through the UI.
-- Persistence adapters use the existing EF Core SQLite DbContext and MIGRATION-1 entity set only.
+- Persistence adapters use the existing EF Core SQL Server DbContext via `ConnectionStrings:KeyInventory` and the MIGRATION-1 entity set only.
 - Dependency injection registers DbContext, adapters, and Application use cases required by this slice.
 - UI uses product language and contains no business logic beyond presentation and invocation of Application use cases.
 - No authentication, authorization runtime, automatic audit emission, Party aggregate, seed data, demo pages, or second persistence model is introduced.

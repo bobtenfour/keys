@@ -18,6 +18,9 @@ Prevent duplicated authority.
 | Technical boundaries | architecture-contracts.md |
 | UTC business timestamp representation | architecture-contracts.md |
 | Physical persistence mapping and EF migrations | architecture-contracts.md |
+| Persistence provider | architecture-contracts.md |
+| Runtime connection string name | architecture-contracts.md |
+| SQL Server persistence testing | testing-strategy.md |
 | Business concepts and aggregate boundaries | key-inventory-domain-contract.md |
 | Key catalog identity | key-inventory-domain-contract.md |
 | Key catalog classifications | key-inventory-domain-contract.md |

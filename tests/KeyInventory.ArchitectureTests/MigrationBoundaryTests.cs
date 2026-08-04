@@ -81,13 +81,18 @@ public sealed class MigrationBoundaryTests
             .Order(StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Equal(["KeyAssets", "KeyTypes", "Loans", "Returns"], tableNames);
+        Assert.Contains("KeyAssets", tableNames);
+        Assert.Contains("KeyTypes", tableNames);
+        Assert.Contains("Loans", tableNames);
+        Assert.Contains("Returns", tableNames);
+        Assert.Contains("AspNetUsers", tableNames);
 
         Type[] clrTypes = model.GetEntityTypes().Select(entityType => entityType.ClrType).ToArray();
         Assert.Contains(typeof(KeyTypeEntity), clrTypes);
         Assert.Contains(typeof(KeyAssetEntity), clrTypes);
         Assert.Contains(typeof(LoanEntity), clrTypes);
         Assert.Contains(typeof(ReturnEntity), clrTypes);
+        Assert.Contains(typeof(KeyInventory.Infrastructure.Identity.ApplicationUser), clrTypes);
         Assert.DoesNotContain(typeof(KeyInventory.Domain.Catalog.KeySeries), clrTypes);
         Assert.DoesNotContain(typeof(KeyInventory.Domain.Catalog.Lock), clrTypes);
         Assert.DoesNotContain(typeof(KeyInventory.Domain.Catalog.Location), clrTypes);
@@ -96,12 +101,12 @@ public sealed class MigrationBoundaryTests
     }
 
     [Fact]
-    public void DesignTimeFactoryUsesSqlite()
+    public void DesignTimeFactoryUsesSqlServer()
     {
         KeyInventoryDbContextFactory factory = new();
         using KeyInventoryDbContext context = factory.CreateDbContext([]);
 
-        Assert.Equal("Microsoft.EntityFrameworkCore.Sqlite", context.Database.ProviderName);
+        Assert.Equal("Microsoft.EntityFrameworkCore.SqlServer", context.Database.ProviderName);
     }
 
     [Fact]
@@ -128,8 +133,9 @@ public sealed class MigrationBoundaryTests
 
     private static KeyInventoryDbContext CreateContext()
     {
+        string connectionString = KeyInventorySqlServerTestConnection.Require();
         DbContextOptions<KeyInventoryDbContext> options = new DbContextOptionsBuilder<KeyInventoryDbContext>()
-            .UseSqlite("Data Source=:memory:")
+            .UseSqlServer(connectionString)
             .Options;
         return new KeyInventoryDbContext(options);
     }

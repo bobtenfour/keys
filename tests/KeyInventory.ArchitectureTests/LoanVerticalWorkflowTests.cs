@@ -1,62 +1,45 @@
 using KeyInventory.Application.Workflow;
+using KeyInventory.Infrastructure;
 using KeyInventory.Infrastructure.Data;
-using KeyInventory.Infrastructure.Workflow;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace KeyInventory.ArchitectureTests;
 
-public sealed class LoanVerticalWorkflowTests : IAsyncLifetime, IDisposable
+public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
 {
-    private readonly SqliteConnection _connection = new("Data Source=:memory:");
     private ServiceProvider? _services;
-    private bool _disposed;
+    private string? _connectionString;
 
     public async Task InitializeAsync()
     {
-        await _connection.OpenAsync().ConfigureAwait(true);
+        _connectionString = KeyInventorySqlServerTestConnection.RequireIsolatedDatabase();
 
         ServiceCollection services = new();
-        services.AddDbContext<KeyInventoryDbContext>(options => options.UseSqlite(_connection));
-        services.AddScoped<IKeyCatalogPersistencePort, KeyCatalogPersistenceAdapter>();
-        services.AddScoped<ILoanPersistencePort, LoanPersistenceAdapter>();
-        services.AddScoped<ICreateKeyAssetUseCase, CreateKeyAssetUseCase>();
-        services.AddScoped<IListKeyAssetsUseCase, ListKeyAssetsUseCase>();
-        services.AddScoped<IIssueLoanUseCase, IssueLoanUseCase>();
-        services.AddScoped<ICompleteReturnUseCase, CompleteReturnUseCase>();
-        services.AddScoped<IListOpenLoansUseCase, ListOpenLoansUseCase>();
-        services.AddScoped<IListReturnedLoansUseCase, ListReturnedLoansUseCase>();
+        LoanVerticalComposition.AddLoanVertical(services, _connectionString);
         _services = services.BuildServiceProvider();
 
         using IServiceScope scope = _services.CreateScope();
         KeyInventoryDbContext db = scope.ServiceProvider.GetRequiredService<KeyInventoryDbContext>();
-        await db.Database.EnsureCreatedAsync().ConfigureAwait(true);
+        await db.Database.MigrateAsync().ConfigureAwait(true);
     }
 
     public async Task DisposeAsync()
     {
-        if (_services is not null)
-        {
-            await _services.DisposeAsync().ConfigureAwait(true);
-            _services = null;
-        }
-
-        await _connection.DisposeAsync().ConfigureAwait(true);
-        _disposed = true;
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
+        if (_services is null)
         {
             return;
         }
 
-        _services?.Dispose();
-        _connection.Dispose();
-        _disposed = true;
+        using (IServiceScope scope = _services.CreateScope())
+        {
+            KeyInventoryDbContext db = scope.ServiceProvider.GetRequiredService<KeyInventoryDbContext>();
+            await db.Database.EnsureDeletedAsync().ConfigureAwait(true);
+        }
+
+        await _services.DisposeAsync().ConfigureAwait(true);
+        _services = null;
     }
 
     [Fact]

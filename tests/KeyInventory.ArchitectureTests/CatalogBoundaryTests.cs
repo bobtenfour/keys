@@ -156,7 +156,11 @@ public sealed class CatalogBoundaryTests
             options.ValidateScopes = true;
         });
 
-        KeyInventory.Web.WebServiceComposition.Configure(builder.Services, builder.Configuration);
+        builder.Configuration["ConnectionStrings:KeyInventory"] = KeyInventorySqlServerTestConnection.Require();
+        KeyInventory.Web.WebServiceComposition.Configure(
+            builder.Services,
+            builder.Configuration,
+            builder.Environment);
 
         using WebApplication app = builder.Build();
 

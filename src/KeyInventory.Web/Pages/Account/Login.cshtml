@@ -1,0 +1,24 @@
+@page
+@model KeyInventory.Web.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Log in";
+}
+
+<section class="panel">
+    <h1>Log in</h1>
+    <p class="lede">Sign in to use the key loan workflow.</p>
+
+    <form method="post" class="form-grid">
+        <div asp-validation-summary="ModelOnly" class="message message-error"></div>
+        <label>
+            Username
+            <input asp-for="Input.UserName" autocomplete="username" required />
+        </label>
+        <label>
+            Password
+            <input asp-for="Input.Password" autocomplete="current-password" required />
+        </label>
+        <input type="hidden" name="returnPath" value="@Model.ReturnPath" />
+        <button type="submit">Log in</button>
+    </form>
+</section>

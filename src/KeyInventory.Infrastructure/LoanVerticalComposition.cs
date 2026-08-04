@@ -8,12 +8,12 @@ namespace KeyInventory.Infrastructure;
 
 public static class LoanVerticalComposition
 {
-    public static void AddLoanVertical(IServiceCollection services, string sqliteConnectionString)
+    public static void AddLoanVertical(IServiceCollection services, string connectionString)
     {
         ArgumentNullException.ThrowIfNull(services);
-        ArgumentException.ThrowIfNullOrWhiteSpace(sqliteConnectionString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        services.AddDbContext<KeyInventoryDbContext>(options => options.UseSqlite(sqliteConnectionString));
+        services.AddDbContext<KeyInventoryDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<IKeyCatalogPersistencePort, KeyCatalogPersistenceAdapter>();
         services.AddScoped<ILoanPersistencePort, LoanPersistenceAdapter>();
         services.AddScoped<ICreateKeyAssetUseCase, CreateKeyAssetUseCase>();
