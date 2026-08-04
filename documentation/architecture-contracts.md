@@ -45,6 +45,16 @@ Runtime composition belongs to the application host. Service registration must n
 - Port adapter implementation and runtime workflow DI belong to LOAN-VERTICAL-1.
 - Identity, AuditEvent, Lock, Location, and KeySeries physical tables are out of scope for MIGRATION-1.
 
+## LOAN-VERTICAL-1 Runtime Workflow Contract
+- Application owns the LOAN-VERTICAL-1 use cases: create Key Asset, issue Loan, complete Return, list Open Loans, and list Returned Loans.
+- Create Key Asset accepts catalog key code and key type code; when the KeyType does not exist, Application creates that KeyType before creating the KeyAsset.
+- Issue Loan and Complete Return use existing Domain Loan and Return aggregates and `UtcTimestamp` validation.
+- Borrower Party is an opaque required string reference; no Party aggregate is introduced.
+- Infrastructure implements persistence adapters against the existing `KeyInventoryDbContext` and MIGRATION-1 entity mappings; adapters translate between Domain aggregates and persistence entities without owning business rules.
+- The Web composition root registers SQLite `DbContext`, persistence adapters, and Application use cases required by this slice.
+- Web owns Razor Pages for the LOAN-VERTICAL-1 workflow only.
+- LOAN-VERTICAL-1 must not introduce authentication, authorization runtime, automatic audit emission, a second persistence model, in-memory fake stores, mock workflows, seed/demo data, or speculative abstractions.
+
 ## UTC Timestamp Contract
 - Authoritative business timestamps are UTC instants.
 - Authoritative Domain timestamps are represented as `DateTimeOffset` values with `Offset` equal to `TimeSpan.Zero`.

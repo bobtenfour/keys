@@ -24,6 +24,7 @@ Prevent duplicated authority.
 | Location hierarchy | key-inventory-domain-contract.md |
 | Loan issuance workflow | key-inventory-domain-contract.md |
 | Return completion workflow | key-inventory-domain-contract.md |
+| LOAN-VERTICAL-1 runnable workflow orchestration | architecture-contracts.md |
 | Logical data model | key-inventory-erd.md |
 | ERD evolution | project-erd-governance.md |
 | Product capabilities | key-inventory-capability-map.md |

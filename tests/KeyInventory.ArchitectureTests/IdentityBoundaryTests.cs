@@ -63,7 +63,7 @@ public sealed class IdentityBoundaryTests
             options.ValidateScopes = true;
         });
 
-        KeyInventory.Web.WebServiceComposition.Configure(builder.Services);
+        KeyInventory.Web.WebServiceComposition.Configure(builder.Services, builder.Configuration);
 
         using WebApplication app = builder.Build();
 
@@ -97,13 +97,14 @@ public sealed class IdentityBoundaryTests
     {
         Assembly infrastructureAssembly = Assembly.Load("KeyInventory.Infrastructure");
 
-        string[] repositoryTypes = infrastructureAssembly
+        string[] identityPersistenceTypes = infrastructureAssembly
             .GetTypes()
             .Select(type => type.FullName ?? type.Name)
-            .Where(name => ContainsAny(name, "Repository", "Store", "Persistence"))
+            .Where(name => ContainsAny(name, "SecurityPrincipal", "RolePermission", "PrincipalRoleAssignment")
+                && ContainsAny(name, "Repository", "Store", "Adapter", "DbContext"))
             .ToArray();
 
-        Assert.Empty(repositoryTypes);
+        Assert.Empty(identityPersistenceTypes);
     }
 
     [Fact]

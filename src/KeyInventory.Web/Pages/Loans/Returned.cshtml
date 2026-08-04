@@ -1,0 +1,43 @@
+@page
+@model KeyInventory.Web.Pages.Loans.ReturnedModel
+@{
+    ViewData["Title"] = "Returned Loans";
+}
+
+<section class="panel">
+    <h1>Returned Loans</h1>
+    <p class="lede">Loans completed by a return.</p>
+
+    @if (Model.Loans.Count == 0)
+    {
+        <p class="empty">There are no returned loans yet.</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Loan</th>
+                        <th>Key</th>
+                        <th>Borrower</th>
+                        <th>Issued (UTC)</th>
+                        <th>Returned (UTC)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (LoanListItem loan in Model.Loans)
+                {
+                    <tr>
+                        <td>@loan.LoanCode</td>
+                        <td>@loan.CatalogKeyCode</td>
+                        <td>@loan.BorrowerPartyReference</td>
+                        <td>@loan.IssuedAtUtc.ToString("u")</td>
+                        <td>@(loan.ReturnedAtUtc?.ToString("u") ?? "—")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

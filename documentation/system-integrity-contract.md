@@ -17,7 +17,7 @@ Prevent hidden coupling, documentation drift, authority duplication, and operati
 - No untracked architectural decisions.
 - Build and tests remain valid after every slice.
 - Authoritative business timestamps remain UTC across Domain boundaries; UI and local civil time must not become a second authoritative time model.
-- Physical persistence has one authorized model for mapped entities; MIGRATION-1 must not introduce a second business store beside the EF Core foundation.
+- Physical persistence has one authorized model for mapped entities; MIGRATION-1 and LOAN-VERTICAL-1 must not introduce a second business store beside the EF Core foundation.
 
 ## Required Checks
 - UI / service / domain / infrastructure consistency.

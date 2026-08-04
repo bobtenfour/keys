@@ -155,8 +155,8 @@ Catalog authority may never store:
 - Lifecycle state, lifecycle transitions, and lifecycle event authority belong to future lifecycle slices.
 - Loan and return workflow authority belongs to loan/return slices.
 - Maintenance workflow authority belongs to future maintenance slices.
-- Persistence foundation for KeyType, KeyAsset, Loan, and Return belongs to MIGRATION-1; Application port adapters and workflow DI belong to LOAN-VERTICAL-1.
-- UI behavior belongs to future product experience or UI slices.
+- Persistence foundation for KeyType, KeyAsset, Loan, and Return belongs to MIGRATION-1; Application port adapters, workflow DI, and LOAN-VERTICAL-1 UI belong to LOAN-VERTICAL-1.
+- UI behavior outside LOAN-VERTICAL-1 belongs to future product experience or UI slices.
 
 ## Loan and Return Contract
 ### Aggregate Roots
@@ -246,8 +246,8 @@ Loan and Return authority may never store:
 - Lifecycle event and state derivation remain future lifecycle slice scope.
 - Audit Event foundation is owned by the Audit boundary under AUDIT-1; automatic audit emission from loan or return workflow handlers remains future slice scope.
 - Authorization enforcement remains future authorization slice scope.
-- Persistence foundation for Loan and Return belongs to MIGRATION-1; Application port adapters and workflow DI belong to LOAN-VERTICAL-1.
-- UI behavior remains future product experience or UI slice scope.
+- Persistence foundation for Loan and Return belongs to MIGRATION-1; Application port adapters, workflow DI, and LOAN-VERTICAL-1 UI belong to LOAN-VERTICAL-1.
+- UI behavior outside LOAN-VERTICAL-1 remains future product experience or UI slice scope.
 
 ## Audit Contract
 ### Aggregate Roots

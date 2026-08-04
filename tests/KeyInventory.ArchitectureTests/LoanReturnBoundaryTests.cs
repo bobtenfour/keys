@@ -109,17 +109,17 @@ public sealed class LoanReturnBoundaryTests
     }
 
     [Fact]
-    public void WebContainsNoLoanOrReturnBusinessTypes()
+    public void WebLoanPagesDoNotOwnDomainLoanAggregates()
     {
         Assembly webAssembly = typeof(KeyInventory.Web.Program).Assembly;
 
-        string[] loanTypes = webAssembly
+        string[] domainLoanTypes = webAssembly
             .GetTypes()
             .Select(type => type.FullName ?? type.Name)
-            .Where(name => ContainsAny(name, "Loan", "Return"))
+            .Where(name => name.Contains("KeyInventory.Domain.Loans", StringComparison.Ordinal))
             .ToArray();
 
-        Assert.Empty(loanTypes);
+        Assert.Empty(domainLoanTypes);
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public sealed class LoanReturnBoundaryTests
             options.ValidateScopes = true;
         });
 
-        KeyInventory.Web.WebServiceComposition.Configure(builder.Services);
+        KeyInventory.Web.WebServiceComposition.Configure(builder.Services, builder.Configuration);
 
         using WebApplication app = builder.Build();
 

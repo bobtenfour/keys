@@ -156,7 +156,7 @@ public sealed class CatalogBoundaryTests
             options.ValidateScopes = true;
         });
 
-        KeyInventory.Web.WebServiceComposition.Configure(builder.Services);
+        KeyInventory.Web.WebServiceComposition.Configure(builder.Services, builder.Configuration);
 
         using WebApplication app = builder.Build();
 

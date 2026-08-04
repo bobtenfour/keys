@@ -1,13 +1,21 @@
+using KeyInventory.Infrastructure.Data;
 using KeyInventory.Web;
+using Microsoft.EntityFrameworkCore;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
-WebServiceComposition.Configure(builder.Services);
+WebServiceComposition.Configure(builder.Services, builder.Configuration);
 
 WebApplication app = builder.Build();
+
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    KeyInventoryDbContext dbContext = scope.ServiceProvider.GetRequiredService<KeyInventoryDbContext>();
+    dbContext.Database.Migrate();
+}
 
 if (!app.Environment.IsDevelopment())
 {
