@@ -5,7 +5,7 @@
     ViewData["NavSection"] = "catalog";
 }
 
-<header class="page-header">
+<header class="page-header page-header-compact">
     <h1>Keys</h1>
     <p class="lede">Controlled keys in the catalog.</p>
 </header>
@@ -20,7 +20,7 @@
     {
         <div class="empty-state">
             <strong>No keys registered</strong>
-            Register a key to begin issuing.
+            Register your first key using the button above.
         </div>
     }
     else
@@ -43,15 +43,15 @@
                         <td>
                             @if (!key.IsActive)
                             {
-                                <span class="badge badge-inactive">Inactive</span>
+                                <span class="badge badge-warning">Inactive</span>
                             }
                             else if (Model.IssuedKeyCodes.Contains(key.CatalogKeyCode))
                             {
-                                <span class="badge badge-active">Issued</span>
+                                <span class="badge badge-attention">Issued</span>
                             }
                             else
                             {
-                                <span class="badge badge-received">Available</span>
+                                <span class="badge badge-success">Available</span>
                             }
                         </td>
                     </tr>

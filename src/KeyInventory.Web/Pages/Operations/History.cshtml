@@ -5,7 +5,7 @@
     ViewData["NavSection"] = "operations";
 }
 
-<header class="page-header">
+<header class="page-header page-header-compact">
     <h1>History</h1>
     <p class="lede">Completed issue and receive activity.</p>
 </header>
@@ -15,7 +15,10 @@
     {
         <div class="empty-state">
             <strong>No history yet</strong>
-            Completed receives will appear here.
+            Completed receives will appear here after you issue and receive a key.
+            <div class="form-actions">
+                <a class="btn btn-primary" asp-page="/Operations/Issue">Issue Key</a>
+            </div>
         </div>
     }
     else
@@ -37,9 +40,9 @@
                     <tr>
                         <td>@item.CatalogKeyCode</td>
                         <td>@item.BorrowerPartyReference</td>
-                        <td>@item.IssuedAtUtc.ToString("u")</td>
-                        <td>@(item.ReturnedAtUtc?.ToString("u") ?? "—")</td>
-                        <td><span class="badge badge-received">Received</span></td>
+                        <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.IssuedAtUtc)</td>
+                        <td>@(item.ReturnedAtUtc is null ? "—" : OperatorTimestampFormatter.ToFriendlyDisplay(item.ReturnedAtUtc.Value))</td>
+                        <td><span class="badge badge-success">Received</span></td>
                     </tr>
                 }
                 </tbody>

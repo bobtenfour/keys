@@ -5,7 +5,7 @@
     ViewData["NavSection"] = "operations";
 }
 
-<header class="page-header">
+<header class="page-header page-header-compact">
     <h1>Active Loans</h1>
     <p class="lede">Keys currently issued and awaiting receive.</p>
 </header>
@@ -19,8 +19,8 @@
     @if (Model.ActiveIssues.Count == 0)
     {
         <div class="empty-state">
-            <strong>No active issues</strong>
-            When a key is issued, it appears here until it is received.
+            <strong>No active loans</strong>
+            Issue your first key using the button above.
         </div>
     }
     else
@@ -44,8 +44,8 @@
                     <tr>
                         <td>@item.CatalogKeyCode</td>
                         <td>@item.BorrowerPartyReference</td>
-                        <td>@item.IssuedAtUtc.ToString("u")</td>
-                        <td>@item.DueAtUtc.ToString("u")</td>
+                        <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.IssuedAtUtc)</td>
+                        <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.DueAtUtc)</td>
                         <td>
                             @if (overdue)
                             {
@@ -53,7 +53,7 @@
                             }
                             else
                             {
-                                <span class="badge badge-active">Active</span>
+                                <span class="badge badge-attention">Active</span>
                             }
                         </td>
                         <td><a asp-page="/Operations/Receive">Receive</a></td>

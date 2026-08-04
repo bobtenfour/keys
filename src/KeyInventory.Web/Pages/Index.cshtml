@@ -5,73 +5,105 @@
     ViewData["NavSection"] = "home";
 }
 
-<header class="page-header">
-    <h1>Operations</h1>
-    <p class="lede">What requires your attention now?</p>
-</header>
+<div class="ops-home">
+    <header class="page-header page-header-compact">
+        <h1>Operations</h1>
+        <p class="lede">What requires your attention now?</p>
+    </header>
 
-<section class="card stack" aria-labelledby="quick-actions-title">
-    <h2 id="quick-actions-title" class="section-title">Quick Actions</h2>
-    <div class="quick-actions">
-        <a class="action-card" asp-page="/Operations/Issue">
-            <strong>Issue Key</strong>
-            <span>Hand a key to a borrower</span>
-        </a>
-        <a class="action-card" asp-page="/Operations/Receive">
-            <strong>Receive Key</strong>
-            <span>Complete an active issue</span>
-        </a>
-        <a class="action-card" asp-page="/Catalog/Register">
-            <strong>Register Key</strong>
-            <span>Add a key to the catalog</span>
-        </a>
-        <a class="action-card" asp-page="/Operations/Find">
-            <strong>Find Key</strong>
-            <span>Locate a key by search</span>
-        </a>
-    </div>
-</section>
-
-<section class="stack" aria-labelledby="summary-title" style="margin-top: 1.5rem;">
-    <h2 id="summary-title" class="section-title">Operational summary</h2>
-    <div class="summary-grid">
-        <article class="stat-card">
-            <span class="label">Active Loans</span>
-            <span class="value">@Model.ActiveLoanCount</span>
-        </article>
-        <article class="stat-card @(Model.OverdueCount > 0 ? "is-danger" : null)">
-            <span class="label">Overdue</span>
-            <span class="value">@Model.OverdueCount</span>
-        </article>
-        <article class="stat-card">
-            <span class="label">Keys Available</span>
-            <span class="value">@Model.KeysAvailableCount</span>
-        </article>
-    </div>
-</section>
-
-<section class="card stack" aria-labelledby="activity-title" style="margin-top: 1.5rem;">
-    <h2 id="activity-title" class="section-title">Recent Activity</h2>
-    @if (Model.RecentActivity.Count == 0)
-    {
-        <div class="empty-state">
-            <strong>No recent activity</strong>
-            Issue or receive a key to see operational history here.
+    <section class="summary-band" aria-labelledby="summary-title">
+        <h2 id="summary-title" class="visually-hidden">Operational summary</h2>
+        <div class="summary-grid summary-grid-emphasis">
+            <article class="stat-card @(Model.ActiveLoanCount > 0 ? "is-attention" : null)">
+                <span class="value">@Model.ActiveLoanCount</span>
+                <span class="label">Active Loans</span>
+            </article>
+            <article class="stat-card @(Model.OverdueCount > 0 ? "is-overdue" : null)">
+                <span class="value">@Model.OverdueCount</span>
+                <span class="label">Overdue</span>
+            </article>
+            <article class="stat-card is-success">
+                <span class="value">@Model.KeysAvailableCount</span>
+                <span class="label">Keys Available</span>
+            </article>
         </div>
-    }
-    else
-    {
-        <ul class="activity-list">
-            @foreach (var item in Model.RecentActivity)
-            {
-                <li>
-                    <span>
-                        <span class="badge @(item.Kind == "Received" ? "badge-received" : "badge-active")">@item.Kind</span>
-                        @item.Description
-                    </span>
-                    <span class="activity-meta">@item.OccurredAtUtc.ToString("u")</span>
-                </li>
-            }
-        </ul>
-    }
-</section>
+    </section>
+
+    <section class="card card-compact" aria-labelledby="quick-actions-title">
+        <h2 id="quick-actions-title" class="section-title">Quick Actions</h2>
+        <div class="quick-actions">
+            <a class="action-card" asp-page="/Operations/Issue">
+                <span class="action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7h9a3 3 0 0 1 0 6h-3"/><path d="M14 13H7a3 3 0 0 1 0-6h2"/><circle cx="16.5" cy="10" r="1.2" fill="currentColor" stroke="none"/></svg>
+                </span>
+                <span class="action-copy">
+                    <strong>Issue Key</strong>
+                    <span>Hand a key to a borrower</span>
+                </span>
+            </a>
+            <a class="action-card" asp-page="/Operations/Receive">
+                <span class="action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v10"/><path d="m8 10 4 4 4-4"/><path d="M5 18h14"/></svg>
+                </span>
+                <span class="action-copy">
+                    <strong>Receive Key</strong>
+                    <span>Complete an active issue</span>
+                </span>
+            </a>
+            <a class="action-card" asp-page="/Catalog/Register">
+                <span class="action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                </span>
+                <span class="action-copy">
+                    <strong>Register Key</strong>
+                    <span>Add a key to the catalog</span>
+                </span>
+            </a>
+            <a class="action-card" asp-page="/Operations/Find">
+                <span class="action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+                </span>
+                <span class="action-copy">
+                    <strong>Find Key</strong>
+                    <span>Locate a key quickly</span>
+                </span>
+            </a>
+        </div>
+    </section>
+
+    <section class="card card-compact" aria-labelledby="activity-title">
+        <h2 id="activity-title" class="section-title">Recent Activity</h2>
+        @if (Model.RecentActivity.Count == 0)
+        {
+            <div class="empty-state">
+                <strong>No recent activity</strong>
+                Issue your first key to start the operational timeline.
+                <div class="form-actions">
+                    <a class="btn btn-primary" asp-page="/Operations/Issue">Issue Key</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <ul class="activity-list">
+                @foreach (var item in Model.RecentActivity)
+                {
+                    string badgeClass = item.BadgeKind switch
+                    {
+                        "Success" => "badge-success",
+                        "Warning" => "badge-warning",
+                        "Overdue" => "badge-overdue",
+                        _ => "badge-attention"
+                    };
+                    <li>
+                        <div class="activity-main">
+                            <span class="badge @badgeClass">@item.BadgeKind</span>
+                            <span class="activity-primary">@item.Description</span>
+                        </div>
+                        <span class="activity-secondary">@OperatorTimestampFormatter.ToFriendlyDisplay(item.OccurredAtUtc)</span>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+</div>

@@ -13,7 +13,9 @@
 <body>
     <header class="site-header">
         <div class="shell site-header-primary">
-            <a class="brand" asp-page="/Index">KeyInventory</a>
+            <a class="brand" asp-page="/Index" aria-label="KeyInventory home">
+                <span class="brand-mark">Key</span><span class="brand-rest">Inventory</span>
+            </a>
             @if (User.Identity?.IsAuthenticated == true)
             {
                 <nav class="primary-nav" aria-label="Primary">
@@ -23,11 +25,11 @@
                     <a asp-page="/Administration/Index" class="@(section == "administration" ? "is-active" : null)">Administration</a>
                 </nav>
                 <div class="header-tools">
-                    <form class="global-search" method="get" asp-page="/Operations/Find" role="search" aria-label="Find key">
+                    <form class="global-search" method="get" asp-page="/Operations/Find" role="search" aria-label="Search keys">
                         <input type="search"
                                name="q"
-                               placeholder="Find a key…"
-                               aria-label="Find a key"
+                               placeholder="Search by key code, building, room or description..."
+                               aria-label="Search by key code, building, room or description"
                                value="@Context.Request.Query["q"]" />
                         <button type="submit">Search</button>
                     </form>
@@ -37,7 +39,6 @@
                             <button type="submit" class="btn-link">Log out</button>
                         </form>
                     </div>
-                    <p class="search-hint">Search will become the primary way to navigate keys.</p>
                 </div>
             }
             else

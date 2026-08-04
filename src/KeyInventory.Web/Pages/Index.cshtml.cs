@@ -41,17 +41,23 @@ public sealed class IndexModel : PageModel
 
         RecentActivity = openLoans
             .Select(loan => new OperationsActivityItem(
-                $"Key {loan.CatalogKeyCode} issued to {loan.BorrowerPartyReference}",
+                $"Issued Key {loan.CatalogKeyCode} to {loan.BorrowerPartyReference}",
                 loan.IssuedAtUtc,
+                loan.DueAtUtc < now ? "Overdue" : "Attention",
                 "Issued"))
             .Concat(returnedLoans.Select(loan => new OperationsActivityItem(
-                $"Key {loan.CatalogKeyCode} received from {loan.BorrowerPartyReference}",
+                $"Received Key {loan.CatalogKeyCode} from {loan.BorrowerPartyReference}",
                 loan.ReturnedAtUtc ?? loan.IssuedAtUtc,
+                "Success",
                 "Received")))
             .OrderByDescending(item => item.OccurredAtUtc)
-            .Take(8)
+            .Take(6)
             .ToArray();
     }
 }
 
-public sealed record OperationsActivityItem(string Description, DateTimeOffset OccurredAtUtc, string Kind);
+public sealed record OperationsActivityItem(
+    string Description,
+    DateTimeOffset OccurredAtUtc,
+    string BadgeKind,
+    string Kind);

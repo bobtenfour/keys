@@ -5,20 +5,20 @@
     ViewData["NavSection"] = "operations";
 }
 
-<header class="page-header">
+<header class="page-header page-header-compact">
     <h1>Find Key</h1>
-    <p class="lede">Search will become the primary way to locate and navigate keys.</p>
+    <p class="lede">Search the catalog and active issues from one place.</p>
 </header>
 
 <section class="card form-card">
-    <div class="alert alert-info" role="status">
-        Key search is not connected yet. Use Catalog and Operations lists until search is available.
-    </div>
-
     <form method="get" class="form-grid" role="search">
         <label>
             Search
-            <input type="search" name="q" value="@Model.Query" placeholder="Key code, borrower, or reference…" aria-label="Search keys" />
+            <input type="search"
+                   name="q"
+                   value="@Model.Query"
+                   placeholder="Search by key code, building, room or description..."
+                   aria-label="Search by key code, building, room or description" />
         </label>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Search</button>
@@ -29,9 +29,12 @@
 
     @if (!string.IsNullOrWhiteSpace(Model.Query))
     {
-        <div class="empty-state" style="margin-top: 1.5rem;">
-            <strong>No search results yet</strong>
-            “@Model.Query” was captured, but backend search is not enabled in this phase.
+        <div class="empty-state" style="margin-top: 1rem;">
+            <strong>No matching keys</strong>
+            Try another search, or browse the catalog.
+            <div class="form-actions">
+                <a class="btn btn-primary" asp-page="/Catalog/Keys">Browse Keys</a>
+            </div>
         </div>
     }
 </section>
