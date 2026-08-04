@@ -1,7 +1,7 @@
 # MIGRATION-1 - Persistence Foundation
 
 ## Status
-Implementation Complete
+Accepted
 
 ## Parent Phase
 Phase 1
@@ -135,6 +135,12 @@ PASS.
 - Decision: Prepare Next Slice, Planned to Approved.
 - Date: 2026-08-03.
 - Evidence: UTC-1 is Accepted; MIGRATION-1 is the next Planned roadmap slice; existing architecture, domain, capability, integrity, and authority mappings were completed for the minimum KeyType, KeyAsset, Loan, and Return persistence foundation required before LOAN-VERTICAL-1.
+- Deciding authority role: Human Architectural Governance.
+
+## Acceptance Record
+- Decision: ACCEPT.
+- Date: 2026-08-03.
+- Evidence: MIGRATION-1 was Implementation Complete; EF Core SQLite foundation with one DbContext, KeyType/KeyAsset/Loan/Return mappings, InitialCreate migration, and design-time factory remained within approved scope; no Application port adapters, workflow DI, UI, seed data, Identity/AuditEvent schema, or second persistence model was introduced; build PASS; tests PASS.
 - Deciding authority role: Human Architectural Governance.
 
 ## Next Allowed Slice

@@ -35,8 +35,8 @@ Define the approved execution order without expanding into detailed slice specif
 | LOAN-RETURN-1 | Accepted | CATALOG-1 | slices/LOAN-RETURN-1.md |
 | AUDIT-1 | Accepted | LOAN-RETURN-1 | slices/AUDIT-1.md |
 | UTC-1 | Accepted | AUDIT-1 | slices/UTC-1.md |
-| MIGRATION-1 | Implementation Complete | UTC-1 | slices/MIGRATION-1.md |
-| LOAN-VERTICAL-1 | Planned | MIGRATION-1 | Created when approved |
+| MIGRATION-1 | Accepted | UTC-1 | slices/MIGRATION-1.md |
+| LOAN-VERTICAL-1 | Implementation Complete | MIGRATION-1 | slices/LOAN-VERTICAL-1.md |
 | CI-1 | Planned | LOAN-VERTICAL-1 | Created when approved |
 | PHASE-1-CLOSE | Planned | CI-1 | Created when approved |
 

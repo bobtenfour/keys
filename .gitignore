@@ -1,0 +1,23 @@
+# Build outputs
+**/bin/
+**/obj/
+
+# Test results
+TestResults/
+**/TestResults/
+
+# IDE / user-specific
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# Caches
+*.cache
+
+# Local runtime / tooling artifacts
+*.db
+*.db-shm
+*.db-wal
+keyinventory-local.db
