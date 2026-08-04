@@ -1,0 +1,69 @@
+@page
+@model KeyInventory.Web.Pages.Operations.IssueModel
+@{
+    ViewData["Title"] = "Issue Key";
+    ViewData["NavSection"] = "operations";
+}
+
+<header class="page-header">
+    <h1>Issue Key</h1>
+    <p class="lede">Hand a controlled key to a borrower. Timestamps must be UTC with a zero offset.</p>
+</header>
+
+<section class="card form-card">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+        <div class="next-actions">
+            <a class="btn btn-primary" asp-page="/Operations/Issue">Issue another key</a>
+            <a class="btn btn-secondary" asp-page="/Operations/Receive">Receive key</a>
+            <a class="btn btn-secondary" asp-page="/Index">Return to Operations</a>
+        </div>
+    }
+
+    @if (Model.KeyOptions.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No keys available to issue</strong>
+            Register an active key that is not already issued, then return here.
+        </div>
+        <div class="form-actions">
+            <a class="btn btn-primary" asp-page="/Catalog/Register">Register Key</a>
+            <a class="btn btn-secondary" asp-page="/Operations/Active">View Active Loans</a>
+        </div>
+    }
+    else if (string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <form method="post" class="form-grid">
+            <label>
+                Issue reference
+                <input asp-for="IssueReference" autocomplete="off" required />
+            </label>
+            <label>
+                Key
+                <select asp-for="CatalogKeyCode" asp-items="Model.KeyOptions" required></select>
+            </label>
+            <label>
+                Borrower reference
+                <input asp-for="BorrowerPartyReference" autocomplete="off" required />
+            </label>
+            <label>
+                Issued at (UTC)
+                <input asp-for="IssuedAtUtcText" autocomplete="off" required />
+                <span class="hint">Example: 2026-08-03T12:00:00+00:00</span>
+            </label>
+            <label>
+                Due at (UTC)
+                <input asp-for="DueAtUtcText" autocomplete="off" required />
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Issue Key</button>
+                <a class="btn btn-secondary" asp-page="/Index">Cancel</a>
+            </div>
+        </form>
+    }
+</section>

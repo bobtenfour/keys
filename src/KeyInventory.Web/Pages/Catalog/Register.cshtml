@@ -1,0 +1,45 @@
+@page
+@model KeyInventory.Web.Pages.Catalog.RegisterModel
+@{
+    ViewData["Title"] = "Register Key";
+    ViewData["NavSection"] = "catalog";
+}
+
+<header class="page-header">
+    <h1>Register Key</h1>
+    <p class="lede">Add a controlled key to the catalog.</p>
+</header>
+
+<section class="card form-card">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+        <div class="next-actions">
+            <a class="btn btn-primary" asp-page="/Catalog/Register">Register another key</a>
+            <a class="btn btn-secondary" asp-page="/Operations/Issue">Issue key</a>
+            <a class="btn btn-secondary" asp-page="/Index">Return to Operations</a>
+        </div>
+    }
+    else
+    {
+        <form method="post" class="form-grid">
+            <label>
+                Key code
+                <input asp-for="CatalogKeyCode" autocomplete="off" required />
+            </label>
+            <label>
+                Key type
+                <input asp-for="TypeCode" autocomplete="off" required />
+                <span class="hint">If the type does not exist yet, it will be created.</span>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Register Key</button>
+                <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
+            </div>
+        </form>
+    }
+</section>

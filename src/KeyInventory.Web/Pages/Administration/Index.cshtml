@@ -1,0 +1,21 @@
+@page
+@model KeyInventory.Web.Pages.Administration.IndexModel
+@{
+    ViewData["Title"] = "Administration";
+    ViewData["NavSection"] = "administration";
+}
+
+<header class="page-header">
+    <h1>Administration</h1>
+    <p class="lede">Administrative tools for KeyInventory.</p>
+</header>
+
+<section class="card">
+    <div class="empty-state">
+        <strong>No administration tools in this phase</strong>
+        Operational work continues from Home, Operations, and Catalog.
+    </div>
+    <div class="form-actions">
+        <a class="btn btn-primary" asp-page="/Index">Return to Operations</a>
+    </div>
+</section>

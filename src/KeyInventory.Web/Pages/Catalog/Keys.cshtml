@@ -1,0 +1,63 @@
+@page
+@model KeyInventory.Web.Pages.Catalog.KeysModel
+@{
+    ViewData["Title"] = "Keys";
+    ViewData["NavSection"] = "catalog";
+}
+
+<header class="page-header">
+    <h1>Keys</h1>
+    <p class="lede">Controlled keys in the catalog.</p>
+</header>
+
+<section class="card">
+    <div class="toolbar">
+        <a class="btn btn-primary" asp-page="/Catalog/Register">Register Key</a>
+        <a class="btn btn-secondary" asp-page="/Operations/Issue">Issue Key</a>
+    </div>
+
+    @if (Model.Keys.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No keys registered</strong>
+            Register a key to begin issuing.
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var key in Model.Keys)
+                {
+                    <tr>
+                        <td>@key.CatalogKeyCode</td>
+                        <td>@key.TypeCode</td>
+                        <td>
+                            @if (!key.IsActive)
+                            {
+                                <span class="badge badge-inactive">Inactive</span>
+                            }
+                            else if (Model.IssuedKeyCodes.Contains(key.CatalogKeyCode))
+                            {
+                                <span class="badge badge-active">Issued</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-received">Available</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

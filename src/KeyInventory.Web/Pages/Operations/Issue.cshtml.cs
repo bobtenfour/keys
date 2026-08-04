@@ -4,21 +4,26 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace KeyInventory.Web.Pages.Loans;
+namespace KeyInventory.Web.Pages.Operations;
 
 public sealed class IssueModel : PageModel
 {
     private readonly IIssueLoanUseCase _issueLoan;
     private readonly IListKeyAssetsUseCase _listKeyAssets;
+    private readonly IListOpenLoansUseCase _listOpenLoans;
 
-    public IssueModel(IIssueLoanUseCase issueLoan, IListKeyAssetsUseCase listKeyAssets)
+    public IssueModel(
+        IIssueLoanUseCase issueLoan,
+        IListKeyAssetsUseCase listKeyAssets,
+        IListOpenLoansUseCase listOpenLoans)
     {
         _issueLoan = issueLoan ?? throw new ArgumentNullException(nameof(issueLoan));
         _listKeyAssets = listKeyAssets ?? throw new ArgumentNullException(nameof(listKeyAssets));
+        _listOpenLoans = listOpenLoans ?? throw new ArgumentNullException(nameof(listOpenLoans));
     }
 
     [BindProperty]
-    public string LoanCode { get; set; } = string.Empty;
+    public string IssueReference { get; set; } = string.Empty;
 
     [BindProperty]
     public string CatalogKeyCode { get; set; } = string.Empty;
@@ -62,7 +67,7 @@ public sealed class IssueModel : PageModel
             }
 
             await _issueLoan.ExecuteAsync(
-                    LoanCode,
+                    IssueReference,
                     CatalogKeyCode,
                     BorrowerPartyReference,
                     issuedAtUtc,
@@ -70,8 +75,8 @@ public sealed class IssueModel : PageModel
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            SuccessMessage = $"Loan {LoanCode} was issued.";
-            LoanCode = string.Empty;
+            SuccessMessage = $"Key {CatalogKeyCode} was issued.";
+            IssueReference = string.Empty;
             BorrowerPartyReference = string.Empty;
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
@@ -85,8 +90,11 @@ public sealed class IssueModel : PageModel
     private async Task LoadKeysAsync(CancellationToken cancellationToken)
     {
         IReadOnlyList<KeyAssetListItem> keys = await _listKeyAssets.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<LoanListItem> openItems = await _listOpenLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        HashSet<string> issued = openItems.Select(item => item.CatalogKeyCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         KeyOptions = keys
-            .Where(key => key.IsActive)
+            .Where(key => key.IsActive && !issued.Contains(key.CatalogKeyCode))
             .Select(key => new SelectListItem(key.CatalogKeyCode, key.CatalogKeyCode))
             .ToArray();
     }

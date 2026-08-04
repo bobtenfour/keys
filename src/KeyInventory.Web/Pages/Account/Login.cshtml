@@ -4,12 +4,14 @@
     ViewData["Title"] = "Log in";
 }
 
-<section class="panel">
+<header class="page-header">
     <h1>Log in</h1>
-    <p class="lede">Sign in to use the key loan workflow.</p>
+    <p class="lede">Sign in to the KeyInventory operations workstation.</p>
+</header>
 
+<section class="card form-card">
     <form method="post" class="form-grid">
-        <div asp-validation-summary="ModelOnly" class="message message-error"></div>
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
         <label>
             Username
             <input asp-for="Input.UserName" autocomplete="username" required />
@@ -19,6 +21,8 @@
             <input asp-for="Input.Password" autocomplete="current-password" required />
         </label>
         <input type="hidden" name="returnPath" value="@Model.ReturnPath" />
-        <button type="submit">Log in</button>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Log in</button>
+        </div>
     </form>
 </section>

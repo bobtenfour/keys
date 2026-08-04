@@ -1,3 +1,7 @@
+@{
+    string section = ViewData["NavSection"] as string ?? string.Empty;
+    string page = ViewContext.RouteData.Values["page"]?.ToString() ?? string.Empty;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,27 +12,62 @@
 </head>
 <body>
     <header class="site-header">
-        <div class="shell">
+        <div class="shell site-header-primary">
             <a class="brand" asp-page="/Index">KeyInventory</a>
-            <nav class="site-nav" aria-label="Workflow">
-                @if (User.Identity?.IsAuthenticated == true)
-                {
-                    <a asp-page="/Keys/Index">Keys</a>
-                    <a asp-page="/Keys/Create">Create Key</a>
-                    <a asp-page="/Loans/Issue">Issue Loan</a>
-                    <a asp-page="/Loans/Open">Open Loans</a>
-                    <a asp-page="/Loans/Return">Complete Return</a>
-                    <a asp-page="/Loans/Returned">Returned Loans</a>
-                    <form method="post" asp-page="/Account/Logout" class="inline-form">
-                        <button type="submit" class="link-button">Log out</button>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <nav class="primary-nav" aria-label="Primary">
+                    <a asp-page="/Index" class="@(section == "home" ? "is-active" : null)">Home</a>
+                    <a asp-page="/Operations/Issue" class="@(section == "operations" ? "is-active" : null)">Operations</a>
+                    <a asp-page="/Catalog/Keys" class="@(section == "catalog" ? "is-active" : null)">Catalog</a>
+                    <a asp-page="/Administration/Index" class="@(section == "administration" ? "is-active" : null)">Administration</a>
+                </nav>
+                <div class="header-tools">
+                    <form class="global-search" method="get" asp-page="/Operations/Find" role="search" aria-label="Find key">
+                        <input type="search"
+                               name="q"
+                               placeholder="Find a key…"
+                               aria-label="Find a key"
+                               value="@Context.Request.Query["q"]" />
+                        <button type="submit">Search</button>
                     </form>
-                }
-                else
-                {
+                    <div class="header-session">
+                        <span class="session-label">@User.Identity?.Name</span>
+                        <form method="post" asp-page="/Account/Logout" class="inline-form">
+                            <button type="submit" class="btn-link">Log out</button>
+                        </form>
+                    </div>
+                    <p class="search-hint">Search will become the primary way to navigate keys.</p>
+                </div>
+            }
+            else
+            {
+                <nav class="primary-nav" aria-label="Primary">
                     <a asp-page="/Account/Login">Log in</a>
-                }
-            </nav>
+                </nav>
+            }
         </div>
+        @if (User.Identity?.IsAuthenticated == true && section == "operations")
+        {
+            <div class="subnav">
+                <nav class="shell" aria-label="Operations">
+                    <a asp-page="/Operations/Issue" class="@(page.Contains("/Operations/Issue", StringComparison.Ordinal) ? "is-active" : null)">Issue Key</a>
+                    <a asp-page="/Operations/Receive" class="@(page.Contains("/Operations/Receive", StringComparison.Ordinal) ? "is-active" : null)">Receive Key</a>
+                    <a asp-page="/Operations/Active" class="@(page.Contains("/Operations/Active", StringComparison.Ordinal) ? "is-active" : null)">Active Loans</a>
+                    <a asp-page="/Operations/History" class="@(page.Contains("/Operations/History", StringComparison.Ordinal) ? "is-active" : null)">History</a>
+                </nav>
+            </div>
+        }
+        @if (User.Identity?.IsAuthenticated == true && section == "catalog")
+        {
+            <div class="subnav">
+                <nav class="shell" aria-label="Catalog">
+                    <a asp-page="/Catalog/Keys" class="@(page.Contains("/Catalog/Keys", StringComparison.Ordinal) ? "is-active" : null)">Keys</a>
+                    <a asp-page="/Catalog/KeyTypes" class="@(page.Contains("/Catalog/KeyTypes", StringComparison.Ordinal) ? "is-active" : null)">Key Types</a>
+                    <a asp-page="/Catalog/Register" class="@(page.Contains("/Catalog/Register", StringComparison.Ordinal) ? "is-active" : null)">Register Key</a>
+                </nav>
+            </div>
+        }
     </header>
     <main class="shell site-main">
         @RenderBody()

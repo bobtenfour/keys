@@ -1,0 +1,49 @@
+@page
+@model KeyInventory.Web.Pages.Catalog.KeyTypesModel
+@{
+    ViewData["Title"] = "Key Types";
+    ViewData["NavSection"] = "catalog";
+}
+
+<header class="page-header">
+    <h1>Key Types</h1>
+    <p class="lede">Types currently used by registered keys.</p>
+</header>
+
+<section class="card">
+    <div class="toolbar">
+        <a class="btn btn-primary" asp-page="/Catalog/Register">Register Key</a>
+    </div>
+
+    @if (Model.KeyTypes.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No key types yet</strong>
+            Types appear here when keys are registered.
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Keys</th>
+                        <th>Active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var type in Model.KeyTypes)
+                {
+                    <tr>
+                        <td>@type.TypeCode</td>
+                        <td>@type.KeyCount</td>
+                        <td>@type.ActiveKeyCount</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

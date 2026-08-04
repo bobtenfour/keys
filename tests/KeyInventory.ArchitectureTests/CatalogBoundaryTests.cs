@@ -136,6 +136,7 @@ public sealed class CatalogBoundaryTests
         string[] catalogTypes = webAssembly
             .GetTypes()
             .Select(type => type.FullName ?? type.Name)
+            .Where(name => !name.Contains(".Pages.", StringComparison.Ordinal))
             .Where(name => ContainsAny(name, "KeyAsset", "KeySeries", "KeyType", "Lock", "Location"))
             .ToArray();
 

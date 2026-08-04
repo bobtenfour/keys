@@ -2,13 +2,13 @@ using KeyInventory.Application.Workflow;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace KeyInventory.Web.Pages.Keys;
+namespace KeyInventory.Web.Pages.Catalog;
 
-public sealed class CreateModel : PageModel
+public sealed class RegisterModel : PageModel
 {
     private readonly ICreateKeyAssetUseCase _createKeyAsset;
 
-    public CreateModel(ICreateKeyAssetUseCase createKeyAsset)
+    public RegisterModel(ICreateKeyAssetUseCase createKeyAsset)
     {
         _createKeyAsset = createKeyAsset ?? throw new ArgumentNullException(nameof(createKeyAsset));
     }
@@ -20,7 +20,6 @@ public sealed class CreateModel : PageModel
     public string TypeCode { get; set; } = string.Empty;
 
     public string? SuccessMessage { get; private set; }
-
     public string? ErrorMessage { get; private set; }
 
     public void OnGet()
@@ -32,7 +31,7 @@ public sealed class CreateModel : PageModel
         try
         {
             await _createKeyAsset.ExecuteAsync(CatalogKeyCode, TypeCode, cancellationToken).ConfigureAwait(false);
-            SuccessMessage = $"Key {CatalogKeyCode} was created.";
+            SuccessMessage = $"Key {CatalogKeyCode} was registered.";
             CatalogKeyCode = string.Empty;
             TypeCode = string.Empty;
         }

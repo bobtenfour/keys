@@ -1,21 +1,21 @@
 using KeyInventory.Application.Workflow;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace KeyInventory.Web.Pages.Loans;
+namespace KeyInventory.Web.Pages.Operations;
 
-public sealed class ReturnedModel : PageModel
+public sealed class HistoryModel : PageModel
 {
     private readonly IListReturnedLoansUseCase _listReturnedLoans;
 
-    public ReturnedModel(IListReturnedLoansUseCase listReturnedLoans)
+    public HistoryModel(IListReturnedLoansUseCase listReturnedLoans)
     {
         _listReturnedLoans = listReturnedLoans ?? throw new ArgumentNullException(nameof(listReturnedLoans));
     }
 
-    public IReadOnlyList<LoanListItem> Loans { get; private set; } = [];
+    public IReadOnlyList<LoanListItem> HistoryItems { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        Loans = await _listReturnedLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        HistoryItems = await _listReturnedLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
     }
 }

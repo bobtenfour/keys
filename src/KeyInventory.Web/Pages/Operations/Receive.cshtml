@@ -1,0 +1,61 @@
+@page
+@model KeyInventory.Web.Pages.Operations.ReceiveModel
+@{
+    ViewData["Title"] = "Receive Key";
+    ViewData["NavSection"] = "operations";
+}
+
+<header class="page-header">
+    <h1>Receive Key</h1>
+    <p class="lede">Bring an issued key back under organizational control.</p>
+</header>
+
+<section class="card form-card">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+        <div class="next-actions">
+            <a class="btn btn-primary" asp-page="/Operations/Receive">Receive another key</a>
+            <a class="btn btn-secondary" asp-page="/Operations/Issue">Issue key</a>
+            <a class="btn btn-secondary" asp-page="/Index">Return to Operations</a>
+        </div>
+    }
+
+    @if (Model.ActiveIssueOptions.Count == 0 && string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="empty-state">
+            <strong>No active issues to receive</strong>
+            Issue a key first, then complete receive here.
+        </div>
+        <div class="form-actions">
+            <a class="btn btn-primary" asp-page="/Operations/Issue">Issue Key</a>
+            <a class="btn btn-secondary" asp-page="/Index">Return to Operations</a>
+        </div>
+    }
+    else if (string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <form method="post" class="form-grid">
+            <label>
+                Receive reference
+                <input asp-for="ReceiveReference" autocomplete="off" required />
+            </label>
+            <label>
+                Active issue
+                <select asp-for="IssueReference" asp-items="Model.ActiveIssueOptions" required></select>
+            </label>
+            <label>
+                Received at (UTC)
+                <input asp-for="ReceivedAtUtcText" autocomplete="off" required />
+                <span class="hint">Example: 2026-08-03T15:30:00+00:00</span>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Receive Key</button>
+                <a class="btn btn-secondary" asp-page="/Index">Cancel</a>
+            </div>
+        </form>
+    }
+</section>

@@ -1,0 +1,49 @@
+@page
+@model KeyInventory.Web.Pages.Operations.HistoryModel
+@{
+    ViewData["Title"] = "History";
+    ViewData["NavSection"] = "operations";
+}
+
+<header class="page-header">
+    <h1>History</h1>
+    <p class="lede">Completed issue and receive activity.</p>
+</header>
+
+<section class="card">
+    @if (Model.HistoryItems.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No history yet</strong>
+            Completed receives will appear here.
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Borrower</th>
+                        <th>Issued</th>
+                        <th>Received</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.HistoryItems)
+                {
+                    <tr>
+                        <td>@item.CatalogKeyCode</td>
+                        <td>@item.BorrowerPartyReference</td>
+                        <td>@item.IssuedAtUtc.ToString("u")</td>
+                        <td>@(item.ReturnedAtUtc?.ToString("u") ?? "—")</td>
+                        <td><span class="badge badge-received">Received</span></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

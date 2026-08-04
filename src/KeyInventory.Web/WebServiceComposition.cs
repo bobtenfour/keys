@@ -26,11 +26,12 @@ public static class WebServiceComposition
 
         services.AddRazorPages(options =>
         {
-            options.Conventions.AuthorizeFolder("/Keys");
-            options.Conventions.AuthorizeFolder("/Loans");
+            options.Conventions.AuthorizeFolder("/Operations");
+            options.Conventions.AuthorizeFolder("/Catalog");
+            options.Conventions.AuthorizeFolder("/Administration");
+            options.Conventions.AuthorizePage("/Index");
             options.Conventions.AllowAnonymousToPage("/Account/Login");
             options.Conventions.AllowAnonymousToPage("/Account/AccessDenied");
-            options.Conventions.AllowAnonymousToPage("/Index");
             options.Conventions.AllowAnonymousToPage("/Error");
         });
 
