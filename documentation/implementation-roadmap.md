@@ -37,7 +37,7 @@ Define the approved execution order without expanding into detailed slice specif
 | UTC-1 | Accepted | AUDIT-1 | slices/UTC-1.md |
 | MIGRATION-1 | Accepted | UTC-1 | slices/MIGRATION-1.md |
 | LOAN-VERTICAL-1 | Accepted | MIGRATION-1 | slices/LOAN-VERTICAL-1.md |
-| CI-1 | Planned | LOAN-VERTICAL-1 | Created when approved |
+| CI-1 | Accepted | LOAN-VERTICAL-1 | slices/CI-1.md |
 | PHASE-1-CLOSE | Planned | CI-1 | Created when approved |
 
 ## Phase 2 — Operational Security

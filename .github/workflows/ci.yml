@@ -1,0 +1,68 @@
+# CI-1 — Continuous Integration readiness for KeyInventory.
+# Operators must configure repository secret KEYINVENTORY_CONNECTION_STRING
+# with ConnectionStrings:KeyInventory targeting authorized SQL Server only.
+# Do not use SQLite, LocalDB, Docker, Testcontainers, or fallback providers.
+
+name: CI-1
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    env:
+      ConnectionStrings__KeyInventory: ${{ secrets.KEYINVENTORY_CONNECTION_STRING }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Require SQL Server ConnectionStrings:KeyInventory
+        shell: pwsh
+        run: |
+          $connectionString = $env:ConnectionStrings__KeyInventory
+          if ([string]::IsNullOrWhiteSpace($connectionString)) {
+            Write-Error "ConnectionStrings:KeyInventory is missing. Configure repository secret KEYINVENTORY_CONNECTION_STRING to an authorized SQL Server connection string."
+            exit 1
+          }
+
+          $looksLikeSqlite =
+            $connectionString -match '(?i):memory:' -or
+            $connectionString -match '(?i)Mode=Memory' -or
+            $connectionString -match '(?i)\.db' -or
+            $connectionString -match '(?i)Data Source=[^;]+\.sqlite'
+
+          $looksLikeLocalDb = $connectionString -match '(?i)\(localdb\)'
+
+          $looksLikeSqlServer =
+            $connectionString -match '(?i)Server=' -or
+            $connectionString -match '(?i)Data Source='
+
+          if ($looksLikeSqlite -or $looksLikeLocalDb -or -not $looksLikeSqlServer) {
+            Write-Error "ConnectionStrings:KeyInventory must target SQL Server. SQLite, LocalDB, and other providers are forbidden."
+            exit 1
+          }
+
+          Write-Host "ConnectionStrings:KeyInventory is present and targets SQL Server."
+
+      - name: Restore
+        run: dotnet restore KeyInventory.sln
+
+      - name: Build
+        run: dotnet build KeyInventory.sln --no-restore --configuration Release -warnaserror
+
+      - name: Test
+        run: dotnet test KeyInventory.sln --no-build --configuration Release --verbosity normal
