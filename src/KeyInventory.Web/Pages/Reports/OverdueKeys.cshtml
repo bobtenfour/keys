@@ -1,0 +1,71 @@
+@page
+@model KeyInventory.Web.Pages.Reports.OverdueKeysModel
+@{
+    ViewData["Title"] = "Overdue Keys";
+    ViewData["NavSection"] = "reports";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Overdue Keys</h1>
+    <p class="lede">Open loans past due, with holder and responsible manager when resolvable.</p>
+</header>
+
+<section class="card form-card">
+    <form method="get" class="form-grid" role="search">
+        <label>
+            Key filter
+            <input type="search" name="key" value="@Model.KeyFilter" placeholder="Partial key code..." />
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a class="btn btn-secondary" asp-page="/Reports/OverdueKeys" asp-page-handler="Export" asp-route-key="@Model.KeyFilter">Export CSV</a>
+            <a class="btn btn-secondary" asp-page="/Reports/Index">All Reports</a>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No overdue keys</strong>
+            There are no open loans past due for this filter.
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Holder</th>
+                        <th>Workforce Member</th>
+                        <th>Responsible Manager</th>
+                        <th>Department</th>
+                        <th>Issued</th>
+                        <th>Due</th>
+                        <th>Days Overdue</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.CatalogKeyCode</td>
+                        <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
+                        <td>@(row.WorkforceMemberCode ?? "—")</td>
+                        <td>@(row.ResponsibleManagerWorkforceMemberCode ?? "—")</td>
+                        <td>@(row.DepartmentCode ?? "—")</td>
+                        <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.IssuedAtUtc)</td>
+                        <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.DueAtUtc)</td>
+                        <td>@row.DaysOverdue</td>
+                        <td><span class="badge badge-overdue">@row.Status</span></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

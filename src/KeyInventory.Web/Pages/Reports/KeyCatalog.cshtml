@@ -1,0 +1,71 @@
+@page
+@using KeyInventory.Application.Lookup
+@model KeyInventory.Web.Pages.Reports.KeyCatalogModel
+@{
+    ViewData["Title"] = "Key Catalog Report";
+    ViewData["NavSection"] = "reports";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Key Catalog</h1>
+    <p class="lede">Registered keys with type, active flag, and Available or Issued state.</p>
+</header>
+
+<section class="card form-card">
+    <form method="get" class="form-grid" role="search">
+        <label>
+            Key filter
+            <input type="search" name="key" value="@Model.KeyFilter" placeholder="Partial key code..." />
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a class="btn btn-secondary" asp-page="/Reports/KeyCatalog" asp-page-handler="Export" asp-route-key="@Model.KeyFilter">Export CSV</a>
+            <a class="btn btn-secondary" asp-page="/Reports/Index">All Reports</a>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No keys in catalog</strong>
+            Register keys first, or adjust the filter.
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Type</th>
+                        <th>Active</th>
+                        <th>Availability</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.CatalogKeyCode</td>
+                        <td>@row.TypeCode</td>
+                        <td>@(row.IsActive ? "Yes" : "No")</td>
+                        <td>
+                            @if (string.Equals(row.AvailabilityStatus, OperationalKeyAvailability.Issued, StringComparison.Ordinal))
+                            {
+                                <span class="badge badge-attention">Issued</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-success">Available</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

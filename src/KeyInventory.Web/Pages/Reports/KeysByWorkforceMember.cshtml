@@ -1,0 +1,124 @@
+@page
+@model KeyInventory.Web.Pages.Reports.KeysByWorkforceMemberModel
+@{
+    ViewData["Title"] = "Keys by Workforce Member";
+    ViewData["NavSection"] = "reports";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Keys by Workforce Member</h1>
+    <p class="lede">Currently issued keys and returned history for one workforce member.</p>
+</header>
+
+<section class="card form-card">
+    <form method="get" class="form-grid" role="search">
+        <label>
+            Search members
+            <input type="search" name="q" value="@Model.MemberSearch" placeholder="Name, UIN, or member code..." />
+        </label>
+        <label>
+            Workforce member
+            <select name="member" asp-items="Model.MemberOptions">
+                <option value="">Select a workforce member</option>
+            </select>
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Show</button>
+            @if (!string.IsNullOrWhiteSpace(Model.SelectedMemberCode))
+            {
+                <a class="btn btn-secondary" asp-page="/Reports/KeysByWorkforceMember" asp-page-handler="Export" asp-route-member="@Model.SelectedMemberCode">Export CSV</a>
+            }
+            <a class="btn btn-secondary" asp-page="/Reports/Index">All Reports</a>
+        </div>
+    </form>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <section class="card">
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    </section>
+}
+else if (!string.IsNullOrWhiteSpace(Model.SelectedMemberCode) && Model.Report is not null)
+{
+    <section class="card">
+        <h2 class="section-title">Currently issued</h2>
+        @if (Model.Report.IssuedKeys.Count == 0)
+        {
+            <div class="empty-state"><strong>No currently issued keys</strong> This member has no open loans.</div>
+        }
+        else
+        {
+            <div class="table-shell">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Holder</th>
+                            <th>Issued</th>
+                            <th>Due</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var row in Model.Report.IssuedKeys)
+                    {
+                        <tr>
+                            <td>@row.CatalogKeyCode</td>
+                            <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
+                            <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.IssuedAtUtc)</td>
+                            <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.DueAtUtc)</td>
+                            <td>@row.Status</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="card">
+        <h2 class="section-title">Returned history</h2>
+        @if (Model.Report.ReturnedKeys.Count == 0)
+        {
+            <div class="empty-state"><strong>No returned history</strong> No completed returns for this member.</div>
+        }
+        else
+        {
+            <div class="table-shell">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Holder</th>
+                            <th>Issued</th>
+                            <th>Returned</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var row in Model.Report.ReturnedKeys)
+                    {
+                        <tr>
+                            <td>@row.CatalogKeyCode</td>
+                            <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
+                            <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.IssuedAtUtc)</td>
+                            <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.ReturnedAtUtc)</td>
+                            <td>@row.Status</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+}
+else
+{
+    <section class="card">
+        <div class="empty-state">
+            <strong>Select a workforce member</strong>
+            Search and choose a member to view issued keys and return history.
+        </div>
+    </section>
+}

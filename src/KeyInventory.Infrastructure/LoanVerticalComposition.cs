@@ -1,8 +1,10 @@
 using KeyInventory.Application.Lookup;
+using KeyInventory.Application.Reports;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Application.Workflow;
 using KeyInventory.Infrastructure.Data;
 using KeyInventory.Infrastructure.Lookup;
+using KeyInventory.Infrastructure.Reports;
 using KeyInventory.Infrastructure.Workforce;
 using KeyInventory.Infrastructure.Workflow;
 using Microsoft.EntityFrameworkCore;
@@ -45,5 +47,7 @@ public static class LoanVerticalComposition
         services.AddScoped<IListOutstandingReturnObligationsUseCase, ListOutstandingReturnObligationsUseCase>();
         services.AddScoped<IOperationalKeyLookupPort, OperationalKeyLookupAdapter>();
         services.AddScoped<IOperationalKeyLookupUseCase, OperationalKeyLookupUseCase>();
+        services.AddScoped<IOperationalReportsPort, OperationalReportsAdapter>();
+        services.AddScoped<IOperationalReportsUseCase, OperationalReportsUseCase>();
     }
 }

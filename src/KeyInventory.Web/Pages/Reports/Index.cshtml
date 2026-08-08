@@ -1,0 +1,37 @@
+@page
+@model KeyInventory.Web.Pages.Reports.IndexModel
+@{
+    ViewData["Title"] = "Reports";
+    ViewData["NavSection"] = "reports";
+}
+
+<header class="page-header">
+    <h1>Reports</h1>
+    <p class="lede">Practical read-only views of keys, holders, and history already owned by the system.</p>
+</header>
+
+<section class="card">
+    <div class="quick-actions">
+        <a class="action-card" asp-page="/Reports/CurrentKeyHolders">
+            <span class="action-copy"><strong>Current Key Holders</strong><span>Who holds each issued key now</span></span>
+        </a>
+        <a class="action-card" asp-page="/Reports/KeysByWorkforceMember">
+            <span class="action-copy"><strong>Keys by Workforce Member</strong><span>Issued keys and return history for one person</span></span>
+        </a>
+        <a class="action-card" asp-page="/Reports/ActiveLoans">
+            <span class="action-copy"><strong>Active Loans</strong><span>All currently issued keys</span></span>
+        </a>
+        <a class="action-card" asp-page="/Reports/OverdueKeys">
+            <span class="action-copy"><strong>Overdue Keys</strong><span>Open loans past due</span></span>
+        </a>
+        <a class="action-card" asp-page="/Reports/KeyHistory">
+            <span class="action-copy"><strong>Key History</strong><span>Issue and return history for one key</span></span>
+        </a>
+        <a class="action-card" asp-page="/Reports/OutstandingByWorkforceStatus">
+            <span class="action-copy"><strong>Outstanding by Status</strong><span>Members who still hold keys, including terminated</span></span>
+        </a>
+        <a class="action-card" asp-page="/Reports/KeyCatalog">
+            <span class="action-copy"><strong>Key Catalog</strong><span>Registered keys and Available/Issued state</span></span>
+        </a>
+    </div>
+</section>

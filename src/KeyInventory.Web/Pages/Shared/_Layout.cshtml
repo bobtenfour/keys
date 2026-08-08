@@ -22,6 +22,7 @@
                     <a asp-page="/Index" class="@(section == "home" ? "is-active" : null)">Home</a>
                     <a asp-page="/Operations/Issue" class="@(section == "operations" ? "is-active" : null)">Operations</a>
                     <a asp-page="/Catalog/Keys" class="@(section == "catalog" ? "is-active" : null)">Catalog</a>
+                    <a asp-page="/Reports/Index" class="@(section == "reports" ? "is-active" : null)">Reports</a>
                     <a asp-page="/Administration/Index" class="@(section == "administration" ? "is-active" : null)">Administration</a>
                 </nav>
                 <div class="header-tools">
@@ -66,6 +67,20 @@
                     <a asp-page="/Catalog/Keys" class="@(page.Contains("/Catalog/Keys", StringComparison.Ordinal) ? "is-active" : null)">Keys</a>
                     <a asp-page="/Catalog/KeyTypes" class="@(page.Contains("/Catalog/KeyTypes", StringComparison.Ordinal) ? "is-active" : null)">Key Types</a>
                     <a asp-page="/Catalog/Register" class="@(page.Contains("/Catalog/Register", StringComparison.Ordinal) ? "is-active" : null)">Register Key</a>
+                </nav>
+            </div>
+        }
+        @if (User.Identity?.IsAuthenticated == true && section == "reports")
+        {
+            <div class="subnav">
+                <nav class="shell" aria-label="Reports">
+                    <a asp-page="/Reports/CurrentKeyHolders" class="@(page.Contains("/Reports/CurrentKeyHolders", StringComparison.Ordinal) ? "is-active" : null)">Current Key Holders</a>
+                    <a asp-page="/Reports/KeysByWorkforceMember" class="@(page.Contains("/Reports/KeysByWorkforceMember", StringComparison.Ordinal) ? "is-active" : null)">Keys by Member</a>
+                    <a asp-page="/Reports/ActiveLoans" class="@(page.Contains("/Reports/ActiveLoans", StringComparison.Ordinal) ? "is-active" : null)">Active Loans</a>
+                    <a asp-page="/Reports/OverdueKeys" class="@(page.Contains("/Reports/OverdueKeys", StringComparison.Ordinal) ? "is-active" : null)">Overdue Keys</a>
+                    <a asp-page="/Reports/KeyHistory" class="@(page.Contains("/Reports/KeyHistory", StringComparison.Ordinal) ? "is-active" : null)">Key History</a>
+                    <a asp-page="/Reports/OutstandingByWorkforceStatus" class="@(page.Contains("/Reports/OutstandingByWorkforceStatus", StringComparison.Ordinal) ? "is-active" : null)">Outstanding by Status</a>
+                    <a asp-page="/Reports/KeyCatalog" class="@(page.Contains("/Reports/KeyCatalog", StringComparison.Ordinal) ? "is-active" : null)">Key Catalog</a>
                 </nav>
             </div>
         }

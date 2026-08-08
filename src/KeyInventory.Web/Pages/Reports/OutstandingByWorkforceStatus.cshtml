@@ -1,0 +1,69 @@
+@page
+@model KeyInventory.Web.Pages.Reports.OutstandingByWorkforceStatusModel
+@{
+    ViewData["Title"] = "Outstanding Keys by Workforce Status";
+    ViewData["NavSection"] = "reports";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Outstanding Keys by Workforce Status</h1>
+    <p class="lede">Workforce members who still hold keys, including terminated members with open loans.</p>
+</header>
+
+<section class="card form-card">
+    <form method="get" class="form-grid" role="search">
+        <label>
+            Workforce status
+            <select name="status" asp-items="Model.StatusOptions"></select>
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a class="btn btn-secondary" asp-page="/Reports/OutstandingByWorkforceStatus" asp-page-handler="Export" asp-route-status="@Model.StatusFilter">Export CSV</a>
+            <a class="btn btn-secondary" asp-page="/Reports/Index">All Reports</a>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No outstanding keys</strong>
+            No workforce members with open loans match this status filter.
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Workforce Member</th>
+                        <th>Status</th>
+                        <th>Holder</th>
+                        <th>Department</th>
+                        <th>Responsible Manager</th>
+                        <th>Key</th>
+                        <th>Loan</th>
+                        <th>Due</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.WorkforceMemberCode</td>
+                        <td>@row.WorkforceMemberStatus</td>
+                        <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
+                        <td>@row.DepartmentCode</td>
+                        <td>@row.ResponsibleManagerWorkforceMemberCode</td>
+                        <td>@row.CatalogKeyCode</td>
+                        <td>@row.LoanCode</td>
+                        <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.DueAtUtc)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

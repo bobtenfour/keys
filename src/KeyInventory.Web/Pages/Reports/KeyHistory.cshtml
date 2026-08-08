@@ -1,0 +1,83 @@
+@page
+@model KeyInventory.Web.Pages.Reports.KeyHistoryModel
+@{
+    ViewData["Title"] = "Key History";
+    ViewData["NavSection"] = "reports";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Key History</h1>
+    <p class="lede">Existing issue and return history for one registered key.</p>
+</header>
+
+<section class="card form-card">
+    <form method="get" class="form-grid" role="search">
+        <label>
+            Search keys
+            <input type="search" name="q" value="@Model.KeySearch" placeholder="Partial key code..." />
+        </label>
+        <label>
+            Key
+            <select name="key" asp-items="Model.KeyOptions">
+                <option value="">Select a key</option>
+            </select>
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Show</button>
+            @if (!string.IsNullOrWhiteSpace(Model.SelectedKeyCode))
+            {
+                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-key="@Model.SelectedKeyCode">Export CSV</a>
+            }
+            <a class="btn btn-secondary" asp-page="/Reports/Index">All Reports</a>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    @if (!Model.KeySelected)
+    {
+        <div class="empty-state">
+            <strong>Select a key</strong>
+            Search and choose a key to view issue and return history.
+        </div>
+    }
+    else if (Model.Rows.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No history for this key</strong>
+            The key exists, but it has no issue or return records yet.
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Loan</th>
+                        <th>Key</th>
+                        <th>Holder</th>
+                        <th>Issued</th>
+                        <th>Due</th>
+                        <th>Returned</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.LoanCode</td>
+                        <td>@row.CatalogKeyCode</td>
+                        <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
+                        <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.IssuedAtUtc)</td>
+                        <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.DueAtUtc)</td>
+                        <td>@(row.ReturnedAtUtc is null ? "—" : OperatorTimestampFormatter.ToFriendlyDisplay(row.ReturnedAtUtc.Value))</td>
+                        <td>@row.Status</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
