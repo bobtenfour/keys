@@ -12,6 +12,8 @@ Define the approved execution order without expanding into detailed slice specif
 - Detailed scope lives in documentation/slices/*.md.
 - This document does not replace slice specifications.
 - Future phase slice files must be created only when the slice is approved.
+- Future slices require a concrete operational need for this building and must not be justified solely by speculative scale or enterprise extensibility.
+- Next Allowed Slice remains STOP until human governance selects the next concrete operational capability after the current Approved or In Progress slice completes acceptance.
 
 ## Status Values
 - Planned
@@ -38,17 +40,21 @@ Define the approved execution order without expanding into detailed slice specif
 | MIGRATION-1 | Accepted | UTC-1 | slices/MIGRATION-1.md |
 | LOAN-VERTICAL-1 | Accepted | MIGRATION-1 | slices/LOAN-VERTICAL-1.md |
 | CI-1 | Accepted | LOAN-VERTICAL-1 | slices/CI-1.md |
-| PHASE-1-CLOSE | Planned | CI-1 | Created when approved |
+| PHASE-1-CLOSE | Accepted | CI-1 | slices/PHASE-1-CLOSE.md |
 
 ## Phase 2 — Operational Security
 
 | Slice | Status | Depends On | Slice Spec |
 |---|---|---|---|
-| WORKFORCE-ELIGIBILITY-1 | Approved | PHASE-1-CLOSE | slices/WORKFORCE-ELIGIBILITY-1.md |
+| WORKFORCE-ELIGIBILITY-1 | Accepted | PHASE-1-CLOSE | slices/WORKFORCE-ELIGIBILITY-1.md |
+| KEY-LOOKUP-1 | Implementation Complete | WORKFORCE-ELIGIBILITY-1 | slices/KEY-LOOKUP-1.md |
 
 ## Later Phases
-Later phase slices must be created only when their architectural contracts are mature enough to support implementation without assumptions.
-WORKFORCE-ELIGIBILITY-1 is Approved for governing preparation and must not start implementation until PHASE-1-CLOSE is Accepted and the slice is moved to In Progress under slice-promotion governance.
+Later phase slices must be created only when human governance selects a concrete operational capability for this building and architectural contracts are mature enough to support implementation without assumptions.
+KEY-LOOKUP-1 is Implementation Complete and awaits architectural governance ACCEPT.
+REPORTS-1 remains queued and must not be prepared or implemented until explicitly authorized after KEY-LOOKUP-1 acceptance.
+After KEY-LOOKUP-1 is Accepted, Next Allowed Slice remains STOP until human governance explicitly prepares the next concrete operational capability.
+Do not prepare or invent slices for speculative enterprise scale, multi-campus design, policy engines, workflow engines, event platforms, or extensibility frameworks.
 
 ## Depends On
 - roadmap.md

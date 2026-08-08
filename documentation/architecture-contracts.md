@@ -6,6 +6,13 @@ This document is the technical architecture boundary authority.
 ## Purpose
 Define layer responsibilities, dependency direction, ownership, and forbidden coupling.
 
+## Product Scope Boundary
+Architecture serves one building and a small operational workforce.
+Do not introduce abstractions solely for hypothetical multi-campus, multi-building-enterprise, multi-tenant, large-scale, cross-organization, distributed, or future-platform requirements.
+Do not introduce policy engines, generalized authorization engines, workflow engines, event platforms, or extensibility frameworks unless a concrete KeyInventory business requirement later proves they are necessary.
+Workforce Eligibility evaluates legitimate active-worker key issue eligibility; it is not a generalized access-control or key-authorization policy engine.
+Building and Room must not be expanded into Campus or enterprise location hierarchies without a future explicit business requirement.
+
 ## Layers
 ### Domain
 Owns business rules, domain invariants, and aggregate consistency.
@@ -105,6 +112,8 @@ Runtime composition belongs to the application host. Service registration must n
 - Authoritative Domain timestamps with non-UTC offsets.
 - Required authoritative timestamps equal to `default(DateTimeOffset)`.
 - Converting or normalizing non-UTC timestamps into UTC inside Domain validation.
+- Speculative enterprise-scale architecture introduced without a concrete operational need for this building.
+- Policy engines, generalized authorization engines, workflow engines, event platforms, or extensibility frameworks introduced without an explicit later business requirement.
 
 ## Depends On
 - project-governance.md

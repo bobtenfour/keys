@@ -1,5 +1,8 @@
+using KeyInventory.Application.Workforce;
 using KeyInventory.Domain.Catalog;
 using KeyInventory.Domain.Loans;
+using KeyInventory.Domain.Parties;
+using KeyInventory.Domain.Workforce;
 
 namespace KeyInventory.Application.Workflow;
 
@@ -7,21 +10,34 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
 {
     private readonly IKeyCatalogPersistencePort _catalog;
     private readonly ILoanPersistencePort _loans;
+    private readonly IWorkforcePersistencePort _workforce;
 
-    public IssueLoanUseCase(IKeyCatalogPersistencePort catalog, ILoanPersistencePort loans)
+    public IssueLoanUseCase(
+        IKeyCatalogPersistencePort catalog,
+        ILoanPersistencePort loans,
+        IWorkforcePersistencePort workforce)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _loans = loans ?? throw new ArgumentNullException(nameof(loans));
+        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
     }
 
     public async Task ExecuteAsync(
         string loanCode,
         string catalogKeyCode,
-        string borrowerPartyReference,
+        string workforceMemberCode,
+        string justificationKind,
+        string justificationCode,
         DateTimeOffset issuedAtUtc,
         DateTimeOffset dueAtUtc,
         CancellationToken cancellationToken)
     {
+        if (!Enum.TryParse(justificationKind, ignoreCase: true, out KeyIssueJustificationKind kind)
+            || kind == KeyIssueJustificationKind.None)
+        {
+            throw new InvalidOperationException("Justification must be Department or Room.");
+        }
+
         if (await _loans.LoanExistsAsync(loanCode, cancellationToken).ConfigureAwait(false))
         {
             throw new InvalidOperationException("A loan with this loan code already exists.");
@@ -38,7 +54,57 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
             throw new InvalidOperationException("An inactive key cannot be loaned.");
         }
 
-        Loan loan = new(loanCode, keyAsset, borrowerPartyReference, issuedAtUtc, dueAtUtc);
+        WorkforceMember? member = await _workforce.FindWorkforceMemberAsync(workforceMemberCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (member is null)
+        {
+            throw new InvalidOperationException("The workforce member was not found.");
+        }
+
+        Party? party = await _workforce.FindPartyAsync(member.PartyCode, cancellationToken).ConfigureAwait(false);
+        if (party is null)
+        {
+            throw new InvalidOperationException("The party for the workforce member was not found.");
+        }
+
+        Organization? organization = await _workforce.FindOrganizationAsync(member.OrganizationCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (organization is null)
+        {
+            throw new InvalidOperationException("The organization for the workforce member was not found.");
+        }
+
+        Department? department = await _workforce
+            .FindDepartmentAsync(member.OrganizationCode, member.DepartmentCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (department is null)
+        {
+            throw new InvalidOperationException("The department for the workforce member was not found.");
+        }
+
+        WorkforceMember? responsibleManager = await _workforce
+            .FindWorkforceMemberAsync(member.ResponsibleManagerWorkforceMemberCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (responsibleManager is null)
+        {
+            throw new InvalidOperationException("The responsible manager was not found.");
+        }
+
+        IReadOnlyList<WorkAssignment> activeAssignments = await _workforce
+            .ListActiveWorkAssignmentsAsync(member.WorkforceMemberCode, cancellationToken)
+            .ConfigureAwait(false);
+
+        KeyIssueEligibility.EnsureEligible(
+            member,
+            party,
+            organization,
+            department,
+            responsibleManager,
+            activeAssignments,
+            kind,
+            justificationCode);
+
+        Loan loan = new(loanCode, keyAsset, party.PartyCode, issuedAtUtc, dueAtUtc);
         await _loans.AddLoanAsync(loan, cancellationToken).ConfigureAwait(false);
     }
 }

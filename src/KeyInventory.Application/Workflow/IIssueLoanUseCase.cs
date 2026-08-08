@@ -5,7 +5,9 @@ public interface IIssueLoanUseCase
     Task ExecuteAsync(
         string loanCode,
         string catalogKeyCode,
-        string borrowerPartyReference,
+        string workforceMemberCode,
+        string justificationKind,
+        string justificationCode,
         DateTimeOffset issuedAtUtc,
         DateTimeOffset dueAtUtc,
         CancellationToken cancellationToken);

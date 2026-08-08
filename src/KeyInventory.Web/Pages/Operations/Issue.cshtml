@@ -7,7 +7,7 @@
 
 <header class="page-header">
     <h1>Issue Key</h1>
-    <p class="lede">Hand a controlled key to a borrower. Timestamps must be UTC with a zero offset.</p>
+    <p class="lede">Hand a controlled key to an eligible workforce member. Timestamps must be UTC with a zero offset.</p>
 </header>
 
 <section class="card form-card">
@@ -36,6 +36,16 @@
             <a class="btn btn-secondary" asp-page="/Operations/Active">View Active Loans</a>
         </div>
     }
+    else if (Model.WorkforceMemberOptions.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No active workforce members</strong>
+            Create workforce members and work assignments in Administration before issuing a key.
+        </div>
+        <div class="form-actions">
+            <a class="btn btn-primary" asp-page="/Administration/WorkforceMembers/Index">Workforce Members</a>
+        </div>
+    }
     else if (string.IsNullOrWhiteSpace(Model.SuccessMessage))
     {
         <form method="post" class="form-grid">
@@ -48,8 +58,20 @@
                 <select asp-for="CatalogKeyCode" asp-items="Model.KeyOptions" required></select>
             </label>
             <label>
-                Borrower reference
-                <input asp-for="BorrowerPartyReference" autocomplete="off" required />
+                Workforce member
+                <select asp-for="WorkforceMemberCode" asp-items="Model.WorkforceMemberOptions" required></select>
+            </label>
+            <label>
+                Justification
+                <select asp-for="JustificationKind" required>
+                    <option value="Department">Department</option>
+                    <option value="Room">Room</option>
+                </select>
+            </label>
+            <label>
+                Justification code
+                <input asp-for="JustificationCode" autocomplete="off" required />
+                <span class="hint">Authorized department code or assigned room code.</span>
             </label>
             <label>
                 Issued at (UTC)

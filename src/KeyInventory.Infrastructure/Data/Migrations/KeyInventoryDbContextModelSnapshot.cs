@@ -22,6 +22,38 @@ namespace KeyInventory.Infrastructure.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.BuildingEntity", b =>
+                {
+                    b.Property<string>("BuildingCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("BuildingCode");
+
+                    b.ToTable("Buildings", (string)null);
+                });
+
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.DepartmentEntity", b =>
+                {
+                    b.Property<string>("OrganizationCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("DepartmentCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("OrganizationCode", "DepartmentCode");
+
+                    b.ToTable("Departments", (string)null);
+                });
+
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAssetEntity", b =>
                 {
                     b.Property<string>("CatalogKeyCode")
@@ -91,6 +123,52 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                     b.ToTable("Loans", (string)null);
                 });
 
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.OrganizationEntity", b =>
+                {
+                    b.Property<string>("OrganizationCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("OrganizationCode");
+
+                    b.ToTable("Organizations", (string)null);
+                });
+
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.PartyEntity", b =>
+                {
+                    b.Property<string>("PartyCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("Uin")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
+                    b.HasKey("PartyCode");
+
+                    b.HasIndex("Uin")
+                        .IsUnique();
+
+                    b.ToTable("Parties", (string)null);
+                });
+
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.ReturnEntity", b =>
                 {
                     b.Property<string>("ReturnCode")
@@ -111,6 +189,114 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Returns", (string)null);
+                });
+
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.RoomEntity", b =>
+                {
+                    b.Property<string>("RoomCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("BuildingCode")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RoomNumber")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("RoomCode");
+
+                    b.HasIndex("BuildingCode", "RoomNumber")
+                        .IsUnique();
+
+                    b.ToTable("Rooms", (string)null);
+                });
+
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.WorkAssignmentEntity", b =>
+                {
+                    b.Property<string>("WorkAssignmentCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RoomCode")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("WorkforceMemberCode")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("WorkAssignmentCode");
+
+                    b.HasIndex("WorkforceMemberCode", "IsPrimary")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1 AND [IsPrimary] = 1");
+
+                    b.ToTable("WorkAssignments", (string)null);
+                });
+
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.WorkforceMemberEntity", b =>
+                {
+                    b.Property<string>("WorkforceMemberCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("DepartmentCode")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("OrganizationCode")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("PartyCode")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("ResponsibleManagerWorkforceMemberCode")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("WorkforceType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.HasKey("WorkforceMemberCode");
+
+                    b.HasIndex("PartyCode")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Active'");
+
+                    b.ToTable("WorkforceMembers", (string)null);
                 });
 
             modelBuilder.Entity("KeyInventory.Infrastructure.Identity.ApplicationUser", b =>
@@ -311,6 +497,17 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.DepartmentEntity", b =>
+                {
+                    b.HasOne("KeyInventory.Infrastructure.Data.OrganizationEntity", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
+                });
+
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAssetEntity", b =>
                 {
                     b.HasOne("KeyInventory.Infrastructure.Data.KeyTypeEntity", "KeyType")
@@ -342,6 +539,28 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Loan");
+                });
+
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.RoomEntity", b =>
+                {
+                    b.HasOne("KeyInventory.Infrastructure.Data.BuildingEntity", "Building")
+                        .WithMany()
+                        .HasForeignKey("BuildingCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Building");
+                });
+
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.WorkforceMemberEntity", b =>
+                {
+                    b.HasOne("KeyInventory.Infrastructure.Data.PartyEntity", "Party")
+                        .WithMany()
+                        .HasForeignKey("PartyCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Party");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

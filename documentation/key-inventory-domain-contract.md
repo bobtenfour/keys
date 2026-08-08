@@ -6,14 +6,20 @@ This document is the sole authority for business concepts and aggregate boundari
 ## Purpose
 Define the business model without implementation details.
 
+## Product Scope Alignment
+This domain model serves one building, a small workforce, employees and regular contractors, rooms and keys, day-to-day issue/return, accountability, and straightforward administration/audit.
+Organization exists only to support the real employee/contractor distinction and responsible organization where required.
+Building and Room are real operational place concepts; Campus and enterprise location hierarchies are out of scope unless a future explicit business requirement adds them.
+Workforce Eligibility ensures keys are issued to legitimate active workers and must not become a generalized access-control or key-authorization policy engine.
+
 ## Core Business Concepts
 - Key: controlled physical key asset.
 - Key Catalog: authoritative list of controlled keys.
-- Location: physical organizational place where a key, lock, or custody action is relevant.
+- Location: physical place where a key, lock, or custody action is relevant.
 - Building: physical building place owned by Location boundary.
 - Room: physical room within one Building; operator-facing identity uses RoomNumber unique within that Building.
 - Party: persistent person or organization business identity; sole person-identity authority.
-- Organization: institutional organization that owns Departments and workforce membership for key eligibility.
+- Organization: organization that owns Departments and workforce membership for key eligibility.
 - Department: organizational unit within one Organization.
 - WorkforceMember: workforce relationship and key-eligibility record for WorkforceType Employee or Contractor; not person identity.
 - WorkforceType: Employee or Contractor.
@@ -206,6 +212,7 @@ Catalog authority may never store:
 - Workforce Eligibility boundary owns Organization, Department, WorkforceMember as the workforce relationship and eligibility authority, ResponsibleManager relationship rules, WorkAssignment, key-issue eligibility evaluation, and termination return-obligation signaling.
 - Employment is not a separate aggregate and has no independent authority; relationship periods, eligibility status, Organization, Department, WorkforceType, ResponsibleManager, and WorkAssignment belong to WorkforceMember.
 - Workforce Eligibility must not own Party identity attributes, Location hierarchy, Loan workflow mutation, Return workflow mutation, custody, lifecycle, audit emission, authentication, authorization runtime, HR integration, or UI.
+- Workforce Eligibility must not expand into a generalized access-control engine, key-authorization policy engine, or Campus/enterprise location hierarchy.
 
 ### Party
 Purpose: persistent business identity for a person or organization participating in custody, authorization, or key workflows.
@@ -231,7 +238,7 @@ Prohibited authority:
 - Party must not own WorkforceMember Status, Organization, Department, WorkforceType, ResponsibleManager hierarchy, WorkAssignment, key-issue eligibility decisions, Loan/Return workflow, custody, lifecycle, audit, authentication, or UI.
 
 ### Organization
-Purpose: institutional organization that owns Departments and workforce membership for key eligibility.
+Purpose: organization that owns Departments and workforce membership for key eligibility; not an enterprise multi-organization hierarchy authority.
 
 Identity: Organization is identified by one organization code that is unique across all Organization records.
 

@@ -1,21 +1,21 @@
-using KeyInventory.Application.Workflow;
+using KeyInventory.Application.Lookup;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace KeyInventory.Web.Pages.Operations;
 
 public sealed class HistoryModel : PageModel
 {
-    private readonly IListReturnedLoansUseCase _listReturnedLoans;
+    private readonly IOperationalKeyLookupUseCase _lookup;
 
-    public HistoryModel(IListReturnedLoansUseCase listReturnedLoans)
+    public HistoryModel(IOperationalKeyLookupUseCase lookup)
     {
-        _listReturnedLoans = listReturnedLoans ?? throw new ArgumentNullException(nameof(listReturnedLoans));
+        _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
     }
 
-    public IReadOnlyList<LoanListItem> HistoryItems { get; private set; } = [];
+    public IReadOnlyList<OperationalLoanDisplay> HistoryItems { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        HistoryItems = await _listReturnedLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        HistoryItems = await _lookup.ListReturnedLoansWithHoldersAsync(cancellationToken).ConfigureAwait(false);
     }
 }

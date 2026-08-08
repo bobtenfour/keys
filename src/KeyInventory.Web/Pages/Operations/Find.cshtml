@@ -1,4 +1,5 @@
 @page
+@using KeyInventory.Application.Lookup
 @model KeyInventory.Web.Pages.Operations.FindModel
 @{
     ViewData["Title"] = "Find Key";
@@ -7,7 +8,7 @@
 
 <header class="page-header page-header-compact">
     <h1>Find Key</h1>
-    <p class="lede">Search the catalog and active issues from one place.</p>
+    <p class="lede">Search keys by catalog code or type and see who currently holds each issued key.</p>
 </header>
 
 <section class="card form-card">
@@ -17,8 +18,8 @@
             <input type="search"
                    name="q"
                    value="@Model.Query"
-                   placeholder="Search by key code, building, room or description..."
-                   aria-label="Search by key code, building, room or description" />
+                   placeholder="Search by key code or type..."
+                   aria-label="Search by key code or type" />
         </label>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Search</button>
@@ -27,14 +28,73 @@
         </div>
     </form>
 
-    @if (!string.IsNullOrWhiteSpace(Model.Query))
+    @if (Model.SearchSubmitted)
     {
-        <div class="empty-state" style="margin-top: 1rem;">
-            <strong>No matching keys</strong>
-            Try another search, or browse the catalog.
-            <div class="form-actions">
-                <a class="btn btn-primary" asp-page="/Catalog/Keys">Browse Keys</a>
+        @if (Model.Results.Count == 0)
+        {
+            <div class="empty-state" style="margin-top: 1rem;">
+                <strong>No matching keys</strong>
+                Try another search, or browse the catalog.
+                <div class="form-actions">
+                    <a class="btn btn-primary" asp-page="/Catalog/Keys">Browse Keys</a>
+                </div>
             </div>
-        </div>
+        }
+        else
+        {
+            <div class="table-shell" style="margin-top: 1rem;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Current holder</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.Results)
+                    {
+                        <tr>
+                            <td>@item.CatalogKeyCode</td>
+                            <td>@item.TypeCode</td>
+                            <td>
+                                @if (string.Equals(item.AvailabilityStatus, OperationalKeyAvailability.Issued, StringComparison.Ordinal))
+                                {
+                                    <span class="badge badge-attention">Issued</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-success">Available</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.CurrentHolder is not null)
+                                {
+                                    @PartyHolderDisplayFormatter.Format(item.CurrentHolder)
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </td>
+                            <td>
+                                @if (string.Equals(item.AvailabilityStatus, OperationalKeyAvailability.Issued, StringComparison.Ordinal)
+                                     && !string.IsNullOrWhiteSpace(item.OpenLoanCode))
+                                {
+                                    <a asp-page="/Operations/Receive" asp-route-issueReference="@item.OpenLoanCode">Receive</a>
+                                }
+                                else
+                                {
+                                    <a asp-page="/Operations/Issue" asp-route-catalogKeyCode="@item.CatalogKeyCode">Issue</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
 </section>

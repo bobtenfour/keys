@@ -1,4 +1,5 @@
 using System.Globalization;
+using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Workflow;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -11,15 +12,18 @@ public sealed class IssueModel : PageModel
     private readonly IIssueLoanUseCase _issueLoan;
     private readonly IListKeyAssetsUseCase _listKeyAssets;
     private readonly IListOpenLoansUseCase _listOpenLoans;
+    private readonly IOperationalKeyLookupUseCase _lookup;
 
     public IssueModel(
         IIssueLoanUseCase issueLoan,
         IListKeyAssetsUseCase listKeyAssets,
-        IListOpenLoansUseCase listOpenLoans)
+        IListOpenLoansUseCase listOpenLoans,
+        IOperationalKeyLookupUseCase lookup)
     {
         _issueLoan = issueLoan ?? throw new ArgumentNullException(nameof(issueLoan));
         _listKeyAssets = listKeyAssets ?? throw new ArgumentNullException(nameof(listKeyAssets));
         _listOpenLoans = listOpenLoans ?? throw new ArgumentNullException(nameof(listOpenLoans));
+        _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
     }
 
     [BindProperty]
@@ -29,7 +33,13 @@ public sealed class IssueModel : PageModel
     public string CatalogKeyCode { get; set; } = string.Empty;
 
     [BindProperty]
-    public string BorrowerPartyReference { get; set; } = string.Empty;
+    public string WorkforceMemberCode { get; set; } = string.Empty;
+
+    [BindProperty]
+    public string JustificationKind { get; set; } = "Department";
+
+    [BindProperty]
+    public string JustificationCode { get; set; } = string.Empty;
 
     [BindProperty]
     public string IssuedAtUtcText { get; set; } = string.Empty;
@@ -39,20 +49,27 @@ public sealed class IssueModel : PageModel
 
     public IReadOnlyList<SelectListItem> KeyOptions { get; private set; } = [];
 
+    public IReadOnlyList<SelectListItem> WorkforceMemberOptions { get; private set; } = [];
+
     public string? SuccessMessage { get; private set; }
 
     public string? ErrorMessage { get; private set; }
 
-    public async Task OnGetAsync(CancellationToken cancellationToken)
+    public async Task OnGetAsync(string? catalogKeyCode, CancellationToken cancellationToken)
     {
-        await LoadKeysAsync(cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(catalogKeyCode))
+        {
+            CatalogKeyCode = catalogKeyCode;
+        }
+
+        await LoadOptionsAsync(cancellationToken).ConfigureAwait(false);
         IssuedAtUtcText = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture);
         DueAtUtcText = DateTimeOffset.UtcNow.AddDays(1).ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture);
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        await LoadKeysAsync(cancellationToken).ConfigureAwait(false);
+        await LoadOptionsAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -69,7 +86,9 @@ public sealed class IssueModel : PageModel
             await _issueLoan.ExecuteAsync(
                     IssueReference,
                     CatalogKeyCode,
-                    BorrowerPartyReference,
+                    WorkforceMemberCode,
+                    JustificationKind,
+                    JustificationCode,
                     issuedAtUtc,
                     dueAtUtc,
                     cancellationToken)
@@ -77,7 +96,8 @@ public sealed class IssueModel : PageModel
 
             SuccessMessage = $"Key {CatalogKeyCode} was issued.";
             IssueReference = string.Empty;
-            BorrowerPartyReference = string.Empty;
+            WorkforceMemberCode = string.Empty;
+            JustificationCode = string.Empty;
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
@@ -87,7 +107,7 @@ public sealed class IssueModel : PageModel
         return Page();
     }
 
-    private async Task LoadKeysAsync(CancellationToken cancellationToken)
+    private async Task LoadOptionsAsync(CancellationToken cancellationToken)
     {
         IReadOnlyList<KeyAssetListItem> keys = await _listKeyAssets.ExecuteAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<LoanListItem> openItems = await _listOpenLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
@@ -95,7 +115,20 @@ public sealed class IssueModel : PageModel
 
         KeyOptions = keys
             .Where(key => key.IsActive && !issued.Contains(key.CatalogKeyCode))
-            .Select(key => new SelectListItem(key.CatalogKeyCode, key.CatalogKeyCode))
+            .Select(key => new SelectListItem(
+                key.CatalogKeyCode,
+                key.CatalogKeyCode,
+                string.Equals(key.CatalogKeyCode, CatalogKeyCode, StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
+
+        IReadOnlyList<WorkforceMemberIdentityDisplay> members = await _lookup
+            .ListActiveWorkforceMembersWithIdentityAsync(cancellationToken)
+            .ConfigureAwait(false);
+        WorkforceMemberOptions = members
+            .Select(member => new SelectListItem(
+                $"{PartyHolderDisplayFormatter.Format(member.FirstName, member.LastName, member.Uin)} · {member.WorkforceMemberCode}",
+                member.WorkforceMemberCode,
+                string.Equals(member.WorkforceMemberCode, WorkforceMemberCode, StringComparison.Ordinal)))
             .ToArray();
     }
 }

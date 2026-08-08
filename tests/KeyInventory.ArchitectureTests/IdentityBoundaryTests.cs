@@ -28,11 +28,21 @@ public sealed class IdentityBoundaryTests
     {
         Assembly domainAssembly = typeof(KeyInventory.Domain.Identity.SecurityPrincipal).Assembly;
 
+        Type? identityParty = domainAssembly
+            .GetTypes()
+            .SingleOrDefault(type =>
+                string.Equals(type.Namespace, "KeyInventory.Domain.Identity", StringComparison.Ordinal)
+                && string.Equals(type.Name, "Party", StringComparison.Ordinal));
+
+        Assert.Null(identityParty);
+
         Type? partyType = domainAssembly
             .GetTypes()
-            .SingleOrDefault(type => string.Equals(type.Name, "Party", StringComparison.Ordinal));
+            .SingleOrDefault(type =>
+                string.Equals(type.Namespace, "KeyInventory.Domain.Parties", StringComparison.Ordinal)
+                && string.Equals(type.Name, "Party", StringComparison.Ordinal));
 
-        Assert.Null(partyType);
+        Assert.NotNull(partyType);
     }
 
     [Fact]

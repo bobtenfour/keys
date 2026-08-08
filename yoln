@@ -1,0 +1,15 @@
+warning: in the working copy of 'documentation/slices/WORKFORCE-ELIGIBILITY-1.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Application/Workflow/IIssueLoanUseCase.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Application/Workflow/IssueLoanUseCase.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Infrastructure/Data/KeyInventoryDbContext.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Infrastructure/Data/Migrations/KeyInventoryDbContextModelSnapshot.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Infrastructure/LoanVerticalComposition.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Web/Pages/Operations/Active.cshtml.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Web/Pages/Operations/Find.cshtml.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Web/Pages/Operations/History.cshtml.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Web/Pages/Operations/Issue.cshtml', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Web/Pages/Operations/Issue.cshtml.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src/KeyInventory.Web/Pages/Operations/Receive.cshtml.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tests/KeyInventory.ArchitectureTests/LoanVerticalWorkflowTests.cs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tests/KeyInventory.ArchitectureTests/MigrationBoundaryTests.cs', CRLF will be replaced by LF the next time Git touches it
+src/KeyInventory.Infrastructure/LoanVerticalComposition.cs:50: new blank line at EOF.

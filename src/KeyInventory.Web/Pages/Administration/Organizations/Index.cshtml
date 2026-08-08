@@ -1,0 +1,65 @@
+@page
+@model KeyInventory.Web.Pages.Administration.Organizations.IndexModel
+@{
+    ViewData["Title"] = "Organizations";
+    ViewData["NavSection"] = "administration";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Organizations</h1>
+    <p class="lede">Institutional organizations for workforce membership.</p>
+</header>
+
+<section class="card form-card">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+    }
+
+    <form method="post" class="form-grid">
+        <label>
+            Organization code
+            <input asp-for="OrganizationCode" autocomplete="off" required />
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Organization</button>
+            <a class="btn btn-secondary" asp-page="/Administration/Index">Back</a>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    @if (Model.Organizations.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No organizations</strong>
+            Create an organization to continue workforce setup.
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Organization</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.Organizations)
+                {
+                    <tr>
+                        <td>@item.OrganizationCode</td>
+                        <td>@(item.IsActive ? "Active" : "Inactive")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

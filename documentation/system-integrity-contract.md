@@ -16,6 +16,8 @@ Prevent hidden coupling, documentation drift, authority duplication, and operati
 - No dead code.
 - No untracked architectural decisions.
 - Build and tests remain valid after every slice.
+- Product scope remains one building and a small operational workforce; future work requires a concrete operational need and must not be justified solely by speculative scale or enterprise extensibility.
+- Speculative policy engines, generalized authorization engines, workflow engines, event platforms, Campus hierarchies, and multi-tenant/large-scale platform abstractions must not enter the system without an explicit later business requirement.
 - Authoritative business timestamps remain UTC across Domain boundaries; UI and local civil time must not become a second authoritative time model.
 - Physical persistence has one authorized model for mapped entities; MIGRATION-1 and LOAN-VERTICAL-1 must not introduce a second business store beside the EF Core foundation.
 - Party is the sole persistent person-identity authority and owns FirstName, LastName, and UIN for human workforce recipients; UIN is exactly nine numeric digits and unique on Party.

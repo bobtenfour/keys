@@ -1,4 +1,5 @@
 @page
+@using KeyInventory.Application.Lookup
 @model KeyInventory.Web.Pages.Operations.HistoryModel
 @{
     ViewData["Title"] = "History";
@@ -28,7 +29,7 @@
                 <thead>
                     <tr>
                         <th>Key</th>
-                        <th>Borrower</th>
+                        <th>Holder</th>
                         <th>Issued</th>
                         <th>Received</th>
                         <th>Status</th>
@@ -39,7 +40,7 @@
                 {
                     <tr>
                         <td>@item.CatalogKeyCode</td>
-                        <td>@item.BorrowerPartyReference</td>
+                        <td>@PartyHolderDisplayFormatter.Format(item.HolderFirstName, item.HolderLastName, item.HolderUin)</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.IssuedAtUtc)</td>
                         <td>@(item.ReturnedAtUtc is null ? "—" : OperatorTimestampFormatter.ToFriendlyDisplay(item.ReturnedAtUtc.Value))</td>
                         <td><span class="badge badge-success">Received</span></td>

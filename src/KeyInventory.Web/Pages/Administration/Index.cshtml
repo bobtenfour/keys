@@ -7,15 +7,16 @@
 
 <header class="page-header">
     <h1>Administration</h1>
-    <p class="lede">Administrative tools for KeyInventory.</p>
+    <p class="lede">Manage organizations, places, workforce members, and work assignments.</p>
 </header>
 
 <section class="card">
-    <div class="empty-state">
-        <strong>No administration tools in this phase</strong>
-        Operational work continues from Home, Operations, and Catalog.
-    </div>
-    <div class="form-actions">
-        <a class="btn btn-primary" asp-page="/Index">Return to Operations</a>
+    <div class="toolbar">
+        <a class="btn btn-primary" asp-page="/Administration/Organizations/Index">Organizations</a>
+        <a class="btn btn-secondary" asp-page="/Administration/Departments/Index">Departments</a>
+        <a class="btn btn-secondary" asp-page="/Administration/Buildings/Index">Buildings</a>
+        <a class="btn btn-secondary" asp-page="/Administration/Rooms/Index">Rooms</a>
+        <a class="btn btn-secondary" asp-page="/Administration/WorkforceMembers/Index">Workforce Members</a>
+        <a class="btn btn-secondary" asp-page="/Administration/WorkAssignments/Index">Work Assignments</a>
     </div>
 </section>

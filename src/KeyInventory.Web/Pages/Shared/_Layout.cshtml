@@ -28,8 +28,8 @@
                     <form class="global-search" method="get" asp-page="/Operations/Find" role="search" aria-label="Search keys">
                         <input type="search"
                                name="q"
-                               placeholder="Search by key code, building, room or description..."
-                               aria-label="Search by key code, building, room or description"
+                               placeholder="Search by key code or type..."
+                               aria-label="Search by key code or type"
                                value="@Context.Request.Query["q"]" />
                         <button type="submit">Search</button>
                     </form>
@@ -66,6 +66,19 @@
                     <a asp-page="/Catalog/Keys" class="@(page.Contains("/Catalog/Keys", StringComparison.Ordinal) ? "is-active" : null)">Keys</a>
                     <a asp-page="/Catalog/KeyTypes" class="@(page.Contains("/Catalog/KeyTypes", StringComparison.Ordinal) ? "is-active" : null)">Key Types</a>
                     <a asp-page="/Catalog/Register" class="@(page.Contains("/Catalog/Register", StringComparison.Ordinal) ? "is-active" : null)">Register Key</a>
+                </nav>
+            </div>
+        }
+        @if (User.Identity?.IsAuthenticated == true && section == "administration")
+        {
+            <div class="subnav">
+                <nav class="shell" aria-label="Administration">
+                    <a asp-page="/Administration/Organizations/Index" class="@(page.Contains("/Administration/Organizations", StringComparison.Ordinal) ? "is-active" : null)">Organizations</a>
+                    <a asp-page="/Administration/Departments/Index" class="@(page.Contains("/Administration/Departments", StringComparison.Ordinal) ? "is-active" : null)">Departments</a>
+                    <a asp-page="/Administration/Buildings/Index" class="@(page.Contains("/Administration/Buildings", StringComparison.Ordinal) ? "is-active" : null)">Buildings</a>
+                    <a asp-page="/Administration/Rooms/Index" class="@(page.Contains("/Administration/Rooms", StringComparison.Ordinal) ? "is-active" : null)">Rooms</a>
+                    <a asp-page="/Administration/WorkforceMembers/Index" class="@(page.Contains("/Administration/WorkforceMembers", StringComparison.Ordinal) ? "is-active" : null)">Workforce Members</a>
+                    <a asp-page="/Administration/WorkAssignments/Index" class="@(page.Contains("/Administration/WorkAssignments", StringComparison.Ordinal) ? "is-active" : null)">Work Assignments</a>
                 </nav>
             </div>
         }

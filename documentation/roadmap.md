@@ -19,99 +19,36 @@ This document must not define:
 - Prompts.
 - Technical tasks.
 
-## Phase 1 — Core Foundation
-Business objective: establish the enterprise foundation for institutional structure, key catalog, loan/return workflow, immutable auditability, UTC timestamps, migration strategy, and CI readiness.
+## Product Scope Alignment
+KeyInventory targets one building, a small workforce, employees and regular contractors, rooms and keys, day-to-day issue/return, accountability, and straightforward administration/audit.
+Capability progression must follow concrete operational need for this building.
+Strategic phases must not invent speculative enterprise architecture such as policy engines, event platforms, multi-campus hierarchies, smart-cabinet platforms, or enterprise readiness programs unless a later explicit business requirement proves they are necessary.
+
+## Completed — Core Operational Foundation
+Business objective achieved: establish the foundation for key catalog, loan/return workflow, immutable auditability, UTC timestamps, SQL Server persistence, CI readiness, authentication foundation, and workforce key eligibility for Employee and Contractor recipients in this building.
 
 Acceptance:
 - Complete loan/return cycle.
 - Full audit trail.
 - Zero orphan records.
 - Business rules enforced by the owning authority.
-
-## Phase 2 — Operational Security
-Business objective: add identity and RBAC foundations, authorization workflows, workforce key eligibility for Employee and Contractor recipients, time restrictions, alerts, notifications, dashboards, reports, and inventory verification.
-
-Acceptance:
-- Identity and RBAC responsibilities are established.
 - WorkforceMember eligibility authority is defined for Organization, Department, Building, Room, ResponsibleManager, WorkAssignment, and key-issue eligibility without duplicating Party identity.
-- High-risk keys require approval.
-- Overdue alerts are generated.
-- Operational dashboard is available.
+- Organization exists only to support the real employee/contractor distinction and responsible organization where required.
+- Building and Room exist as real operational place concepts for this building, not as a Campus or enterprise location hierarchy.
 
-## Phase 3 — Custody Chain
-Business objective: every possession transfer becomes a permanent event.
-
-Acceptance:
-- Full chain of custody can be reconstructed.
-- Current custodian is always derivable.
-
-## Phase 4 — State Machine
-Business objective: replace ambiguous mutable status with a formal key lifecycle state machine.
-
-Acceptance:
-- Transition matrix exists.
-- Forbidden transitions are impossible.
-
-## Phase 5 — Event Sourcing Readiness
-Business objective: evolve operational history toward immutable event-based authority.
-
-Acceptance:
-- Core lifecycle events are defined.
-- State is derivable from valid events.
-
-## Phase 6 — Physical Inventory
-Business objective: support periodic and surprise inventory sessions.
-
-Acceptance:
-- Inventory sessions, counts, discrepancies, and investigations are supported.
-
-## Phase 7 — Maintenance Lifecycle
-Business objective: support maintenance, rekey, duplicate creation, retirement, and destruction lifecycle.
-
-Acceptance:
-- Maintenance history is complete and auditable.
-
-## Phase 8 — Unified Parties
-Business objective: extend the Party model beyond WorkforceMember Employee and Contractor recipients to additional party kinds without redesigning identity authority.
-
-Acceptance:
-- Visitors, vendors, and external companies can be modeled without redesigning Party or Workforce Eligibility authority.
-
-## Phase 9 — Smart Cabinet Integration
-Business objective: prepare architecture for electronic cabinets and storage devices.
-
-Acceptance:
-- Cabinet, slot, locker, and RFID integration concepts are supported without changing core custody authority.
-
-## Phase 10 — Policy Engine
-Business objective: replace hardcoded authorization rules with configurable policy authority.
-
-Acceptance:
-- Policies govern authorization decisions without workflow rewrites.
-
-## Phase 11 — Advanced Authorization
-Business objective: support dual approval, N-of-M approval, emergency override, escalation, and expiration.
-
-Acceptance:
-- Advanced authorization is policy-driven.
-
-## Phase 12 — Digital Trust
-Business objective: separate integrity proof from acceptance/authentication.
-
-Acceptance:
-- Integrity and authentication are distinct authorities.
-
-## Phase 13 — Business Intelligence
-Business objective: provide operational and analytical KPIs.
-
-Acceptance:
-- Operational and analytical metrics are available from authoritative sources.
-
-## Phase 14 — Enterprise Readiness
-Business objective: complete disaster recovery, backup validation, security testing, performance testing, monitoring, runbooks, and guides.
-
-Acceptance:
-- Enterprise operation is documented and validated.
+## Future Capabilities
+Future strategic capabilities are not pre-authorized by this document.
+Human product governance selects the next concrete operational capability after asking what the key custodian needs next.
+Candidates may include only capabilities that serve this building's day-to-day operations, such as richer custody accountability, overdue handling, inventory checks, maintenance records, or simple operational reporting, and only when a concrete need is stated.
+The following are not strategic commitments and must not drive design:
+- Policy engines or generalized authorization engines.
+- Workflow engines or event platforms.
+- Event-sourcing readiness programs.
+- Smart cabinet / RFID platform preparation.
+- Multi-campus, multi-building-enterprise, multi-tenant, or large-scale distribution architecture.
+- Advanced multi-party approval frameworks justified only by institutional scale.
+- Enterprise business-intelligence platforms.
+- Speculative extensibility frameworks.
 
 ## Depends On
 - product-vision.md

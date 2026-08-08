@@ -85,6 +85,13 @@ public sealed class MigrationBoundaryTests
         Assert.Contains("KeyTypes", tableNames);
         Assert.Contains("Loans", tableNames);
         Assert.Contains("Returns", tableNames);
+        Assert.Contains("Parties", tableNames);
+        Assert.Contains("Organizations", tableNames);
+        Assert.Contains("Departments", tableNames);
+        Assert.Contains("Buildings", tableNames);
+        Assert.Contains("Rooms", tableNames);
+        Assert.Contains("WorkforceMembers", tableNames);
+        Assert.Contains("WorkAssignments", tableNames);
         Assert.Contains("AspNetUsers", tableNames);
 
         Type[] clrTypes = model.GetEntityTypes().Select(entityType => entityType.ClrType).ToArray();
@@ -92,6 +99,13 @@ public sealed class MigrationBoundaryTests
         Assert.Contains(typeof(KeyAssetEntity), clrTypes);
         Assert.Contains(typeof(LoanEntity), clrTypes);
         Assert.Contains(typeof(ReturnEntity), clrTypes);
+        Assert.Contains(typeof(PartyEntity), clrTypes);
+        Assert.Contains(typeof(OrganizationEntity), clrTypes);
+        Assert.Contains(typeof(DepartmentEntity), clrTypes);
+        Assert.Contains(typeof(BuildingEntity), clrTypes);
+        Assert.Contains(typeof(RoomEntity), clrTypes);
+        Assert.Contains(typeof(WorkforceMemberEntity), clrTypes);
+        Assert.Contains(typeof(WorkAssignmentEntity), clrTypes);
         Assert.Contains(typeof(KeyInventory.Infrastructure.Identity.ApplicationUser), clrTypes);
         Assert.DoesNotContain(typeof(KeyInventory.Domain.Catalog.KeySeries), clrTypes);
         Assert.DoesNotContain(typeof(KeyInventory.Domain.Catalog.Lock), clrTypes);

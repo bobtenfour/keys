@@ -1,24 +1,24 @@
-using KeyInventory.Application.Workflow;
+using KeyInventory.Application.Lookup;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace KeyInventory.Web.Pages.Operations;
 
 public sealed class ActiveModel : PageModel
 {
-    private readonly IListOpenLoansUseCase _listOpenLoans;
+    private readonly IOperationalKeyLookupUseCase _lookup;
 
-    public ActiveModel(IListOpenLoansUseCase listOpenLoans)
+    public ActiveModel(IOperationalKeyLookupUseCase lookup)
     {
-        _listOpenLoans = listOpenLoans ?? throw new ArgumentNullException(nameof(listOpenLoans));
+        _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
     }
 
-    public IReadOnlyList<LoanListItem> ActiveIssues { get; private set; } = [];
+    public IReadOnlyList<OperationalLoanDisplay> ActiveIssues { get; private set; } = [];
 
     public DateTimeOffset UtcNow { get; private set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         UtcNow = DateTimeOffset.UtcNow;
-        ActiveIssues = await _listOpenLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        ActiveIssues = await _lookup.ListOpenLoansWithHoldersAsync(cancellationToken).ConfigureAwait(false);
     }
 }

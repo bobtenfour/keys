@@ -19,6 +19,20 @@ public sealed class KeyInventoryDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<ReturnEntity> Returns => Set<ReturnEntity>();
 
+    public DbSet<PartyEntity> Parties => Set<PartyEntity>();
+
+    public DbSet<OrganizationEntity> Organizations => Set<OrganizationEntity>();
+
+    public DbSet<DepartmentEntity> Departments => Set<DepartmentEntity>();
+
+    public DbSet<BuildingEntity> Buildings => Set<BuildingEntity>();
+
+    public DbSet<RoomEntity> Rooms => Set<RoomEntity>();
+
+    public DbSet<WorkforceMemberEntity> WorkforceMembers => Set<WorkforceMemberEntity>();
+
+    public DbSet<WorkAssignmentEntity> WorkAssignments => Set<WorkAssignmentEntity>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

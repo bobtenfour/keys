@@ -1,4 +1,5 @@
 @page
+@using KeyInventory.Application.Lookup
 @model KeyInventory.Web.Pages.Operations.ActiveModel
 @{
     ViewData["Title"] = "Active Loans";
@@ -30,7 +31,7 @@
                 <thead>
                     <tr>
                         <th>Key</th>
-                        <th>Borrower</th>
+                        <th>Holder</th>
                         <th>Issued</th>
                         <th>Due</th>
                         <th>Status</th>
@@ -43,7 +44,7 @@
                     bool overdue = item.DueAtUtc < Model.UtcNow;
                     <tr>
                         <td>@item.CatalogKeyCode</td>
-                        <td>@item.BorrowerPartyReference</td>
+                        <td>@PartyHolderDisplayFormatter.Format(item.HolderFirstName, item.HolderLastName, item.HolderUin)</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.IssuedAtUtc)</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.DueAtUtc)</td>
                         <td>
@@ -56,7 +57,7 @@
                                 <span class="badge badge-attention">Active</span>
                             }
                         </td>
-                        <td><a asp-page="/Operations/Receive">Receive</a></td>
+                        <td><a asp-page="/Operations/Receive" asp-route-issueReference="@item.LoanCode">Receive</a></td>
                     </tr>
                 }
                 </tbody>

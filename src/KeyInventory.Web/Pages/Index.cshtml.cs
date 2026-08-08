@@ -1,3 +1,4 @@
+using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Workflow;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -5,17 +6,12 @@ namespace KeyInventory.Web.Pages;
 
 public sealed class IndexModel : PageModel
 {
-    private readonly IListOpenLoansUseCase _listOpenLoans;
-    private readonly IListReturnedLoansUseCase _listReturnedLoans;
+    private readonly IOperationalKeyLookupUseCase _lookup;
     private readonly IListKeyAssetsUseCase _listKeyAssets;
 
-    public IndexModel(
-        IListOpenLoansUseCase listOpenLoans,
-        IListReturnedLoansUseCase listReturnedLoans,
-        IListKeyAssetsUseCase listKeyAssets)
+    public IndexModel(IOperationalKeyLookupUseCase lookup, IListKeyAssetsUseCase listKeyAssets)
     {
-        _listOpenLoans = listOpenLoans ?? throw new ArgumentNullException(nameof(listOpenLoans));
-        _listReturnedLoans = listReturnedLoans ?? throw new ArgumentNullException(nameof(listReturnedLoans));
+        _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
         _listKeyAssets = listKeyAssets ?? throw new ArgumentNullException(nameof(listKeyAssets));
     }
 
@@ -26,8 +22,10 @@ public sealed class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyList<LoanListItem> openLoans = await _listOpenLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<LoanListItem> returnedLoans = await _listReturnedLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<OperationalLoanDisplay> openLoans =
+            await _lookup.ListOpenLoansWithHoldersAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<OperationalLoanDisplay> returnedLoans =
+            await _lookup.ListReturnedLoansWithHoldersAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<KeyAssetListItem> keys = await _listKeyAssets.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -41,12 +39,12 @@ public sealed class IndexModel : PageModel
 
         RecentActivity = openLoans
             .Select(loan => new OperationsActivityItem(
-                $"Issued Key {loan.CatalogKeyCode} to {loan.BorrowerPartyReference}",
+                $"Issued Key {loan.CatalogKeyCode} to {PartyHolderDisplayFormatter.Format(loan.HolderFirstName, loan.HolderLastName, loan.HolderUin)}",
                 loan.IssuedAtUtc,
                 loan.DueAtUtc < now ? "Overdue" : "Attention",
                 "Issued"))
             .Concat(returnedLoans.Select(loan => new OperationsActivityItem(
-                $"Received Key {loan.CatalogKeyCode} from {loan.BorrowerPartyReference}",
+                $"Received Key {loan.CatalogKeyCode} from {PartyHolderDisplayFormatter.Format(loan.HolderFirstName, loan.HolderLastName, loan.HolderUin)}",
                 loan.ReturnedAtUtc ?? loan.IssuedAtUtc,
                 "Success",
                 "Received")))

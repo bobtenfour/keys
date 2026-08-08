@@ -63,19 +63,37 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
         IIssueLoanUseCase issue = scope.ServiceProvider.GetRequiredService<IIssueLoanUseCase>();
         IListOpenLoansUseCase listOpen = scope.ServiceProvider.GetRequiredService<IListOpenLoansUseCase>();
 
+        var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lv200")
+            .ConfigureAwait(true);
         await create.ExecuteAsync("key-200", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 3, 12, 0, 0, TimeSpan.Zero);
         DateTimeOffset due = issued.AddDays(1);
-        await issue.ExecuteAsync("loan-200", "key-200", "party-9", issued, due, CancellationToken.None)
+        await issue.ExecuteAsync(
+                "loan-200",
+                "key-200",
+                seeded.MemberCode,
+                "Department",
+                seeded.DepartmentCode,
+                issued,
+                due,
+                CancellationToken.None)
             .ConfigureAwait(true);
 
         IReadOnlyList<LoanListItem> openLoans = await listOpen.ExecuteAsync(CancellationToken.None).ConfigureAwait(true);
-        Assert.Contains(openLoans, loan => loan.LoanCode == "loan-200");
+        Assert.Contains(openLoans, loan => loan.LoanCode == "loan-200" && loan.BorrowerPartyReference == seeded.PartyCode);
 
         DateTimeOffset nonUtc = new(2026, 8, 3, 12, 0, 0, TimeSpan.FromHours(-5));
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            issue.ExecuteAsync("loan-201", "key-200", "party-9", nonUtc, nonUtc.AddDays(1), CancellationToken.None));
+            issue.ExecuteAsync(
+                "loan-201",
+                "key-200",
+                seeded.MemberCode,
+                "Department",
+                seeded.DepartmentCode,
+                nonUtc,
+                nonUtc.AddDays(1),
+                CancellationToken.None));
     }
 
     [Fact]
@@ -87,9 +105,19 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
         ICompleteReturnUseCase completeReturn = scope.ServiceProvider.GetRequiredService<ICompleteReturnUseCase>();
         IListReturnedLoansUseCase listReturned = scope.ServiceProvider.GetRequiredService<IListReturnedLoansUseCase>();
 
+        var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lv300")
+            .ConfigureAwait(true);
         await create.ExecuteAsync("key-300", "mechanical", CancellationToken.None).ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 3, 12, 0, 0, TimeSpan.Zero);
-        await issue.ExecuteAsync("loan-300", "key-300", "party-3", issued, issued.AddDays(1), CancellationToken.None)
+        await issue.ExecuteAsync(
+                "loan-300",
+                "key-300",
+                seeded.MemberCode,
+                "Department",
+                seeded.DepartmentCode,
+                issued,
+                issued.AddDays(1),
+                CancellationToken.None)
             .ConfigureAwait(true);
 
         await completeReturn.ExecuteAsync("return-300", "loan-300", issued.AddHours(2), CancellationToken.None)
@@ -112,12 +140,30 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
         IListOpenLoansUseCase listOpen = scope.ServiceProvider.GetRequiredService<IListOpenLoansUseCase>();
         IListReturnedLoansUseCase listReturned = scope.ServiceProvider.GetRequiredService<IListReturnedLoansUseCase>();
 
+        var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lv400")
+            .ConfigureAwait(true);
         await create.ExecuteAsync("key-400", "mechanical", CancellationToken.None).ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 3, 10, 0, 0, TimeSpan.Zero);
-        await issue.ExecuteAsync("loan-open", "key-400", "party-1", issued, issued.AddDays(1), CancellationToken.None)
+        await issue.ExecuteAsync(
+                "loan-open",
+                "key-400",
+                seeded.MemberCode,
+                "Department",
+                seeded.DepartmentCode,
+                issued,
+                issued.AddDays(1),
+                CancellationToken.None)
             .ConfigureAwait(true);
         await create.ExecuteAsync("key-401", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await issue.ExecuteAsync("loan-done", "key-401", "party-2", issued, issued.AddDays(1), CancellationToken.None)
+        await issue.ExecuteAsync(
+                "loan-done",
+                "key-401",
+                seeded.MemberCode,
+                "Department",
+                seeded.DepartmentCode,
+                issued,
+                issued.AddDays(1),
+                CancellationToken.None)
             .ConfigureAwait(true);
         await completeReturn.ExecuteAsync("return-done", "loan-done", issued.AddHours(1), CancellationToken.None)
             .ConfigureAwait(true);

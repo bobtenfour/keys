@@ -1,4 +1,5 @@
 using System.Globalization;
+using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Workflow;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -9,12 +10,12 @@ namespace KeyInventory.Web.Pages.Operations;
 public sealed class ReceiveModel : PageModel
 {
     private readonly ICompleteReturnUseCase _completeReturn;
-    private readonly IListOpenLoansUseCase _listOpenLoans;
+    private readonly IOperationalKeyLookupUseCase _lookup;
 
-    public ReceiveModel(ICompleteReturnUseCase completeReturn, IListOpenLoansUseCase listOpenLoans)
+    public ReceiveModel(ICompleteReturnUseCase completeReturn, IOperationalKeyLookupUseCase lookup)
     {
         _completeReturn = completeReturn ?? throw new ArgumentNullException(nameof(completeReturn));
-        _listOpenLoans = listOpenLoans ?? throw new ArgumentNullException(nameof(listOpenLoans));
+        _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
     }
 
     [BindProperty]
@@ -32,8 +33,13 @@ public sealed class ReceiveModel : PageModel
 
     public string? ErrorMessage { get; private set; }
 
-    public async Task OnGetAsync(CancellationToken cancellationToken)
+    public async Task OnGetAsync(string? issueReference, CancellationToken cancellationToken)
     {
+        if (!string.IsNullOrWhiteSpace(issueReference))
+        {
+            IssueReference = issueReference;
+        }
+
         await LoadActiveIssuesAsync(cancellationToken).ConfigureAwait(false);
         ReceivedAtUtcText = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture);
     }
@@ -66,11 +72,13 @@ public sealed class ReceiveModel : PageModel
 
     private async Task LoadActiveIssuesAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyList<LoanListItem> openItems = await _listOpenLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<OperationalLoanDisplay> openItems =
+            await _lookup.ListOpenLoansWithHoldersAsync(cancellationToken).ConfigureAwait(false);
         ActiveIssueOptions = openItems
             .Select(item => new SelectListItem(
-                $"{item.CatalogKeyCode} · {item.BorrowerPartyReference}",
-                item.LoanCode))
+                $"{item.CatalogKeyCode} · {PartyHolderDisplayFormatter.Format(item.HolderFirstName, item.HolderLastName, item.HolderUin)}",
+                item.LoanCode,
+                string.Equals(item.LoanCode, IssueReference, StringComparison.Ordinal)))
             .ToArray();
     }
 }

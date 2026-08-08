@@ -1,0 +1,156 @@
+@page
+@model KeyInventory.Web.Pages.Administration.WorkforceMembers.IndexModel
+@{
+    ViewData["Title"] = "Workforce Members";
+    ViewData["NavSection"] = "administration";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Workforce Members</h1>
+    <p class="lede">Workforce relationships for key eligibility. Party identity stays separate.</p>
+</header>
+
+<section class="card form-card">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+    }
+
+    <h2>Create party</h2>
+    <form method="post" asp-page-handler="CreateParty" class="form-grid">
+        <label>Party code<input asp-for="PartyCode" required /></label>
+        <label>First name<input asp-for="FirstName" required /></label>
+        <label>Last name<input asp-for="LastName" required /></label>
+        <label>UIN<input asp-for="Uin" required /><span class="hint">Exactly nine digits.</span></label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Party</button>
+        </div>
+    </form>
+</section>
+
+<section class="card form-card">
+    <h2>@(Model.IsBootstrap ? "Create initial workforce pair" : "Create workforce member")</h2>
+    <form method="post" asp-page-handler="CreateMember" class="form-grid">
+        <label>Workforce member code<input asp-for="WorkforceMemberCode" required /></label>
+        <label>Party code<input asp-for="PartyCode" required /></label>
+        <label>
+            Workforce type
+            <select asp-for="WorkforceType">
+                <option value="Employee">Employee</option>
+                <option value="Contractor">Contractor</option>
+            </select>
+        </label>
+        <label>Organization code<input asp-for="OrganizationCode" required /></label>
+        <label>Department code<input asp-for="DepartmentCode" required /></label>
+        @if (Model.IsBootstrap)
+        {
+            <label>First name<input asp-for="FirstName" required /></label>
+            <label>Last name<input asp-for="LastName" required /></label>
+            <label>UIN<input asp-for="Uin" required /></label>
+            <label>Peer workforce member code<input asp-for="PeerWorkforceMemberCode" required /></label>
+            <label>Peer party code<input asp-for="PeerPartyCode" required /></label>
+            <label>Peer first name<input asp-for="PeerFirstName" required /></label>
+            <label>Peer last name<input asp-for="PeerLastName" required /></label>
+            <label>Peer UIN<input asp-for="PeerUin" required /></label>
+            <label>
+                Peer workforce type
+                <select asp-for="PeerWorkforceType">
+                    <option value="Employee">Employee</option>
+                    <option value="Contractor">Contractor</option>
+                </select>
+            </label>
+        }
+        else
+        {
+            <label>
+                Responsible manager
+                <select asp-for="ResponsibleManagerWorkforceMemberCode" asp-items="Model.ManagerOptions" required></select>
+            </label>
+        }
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a class="btn btn-secondary" asp-page="/Administration/Index">Back</a>
+        </div>
+    </form>
+</section>
+
+<section class="card form-card">
+    <h2>Terminate workforce member</h2>
+    <form method="post" asp-page-handler="Terminate" class="form-grid">
+        <label>Workforce member code<input asp-for="TerminateWorkforceMemberCode" required /></label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Terminate</button>
+        </div>
+    </form>
+    @if (Model.Obligations.Count > 0)
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Loan</th>
+                        <th>Key</th>
+                        <th>Party</th>
+                        <th>Due</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.Obligations)
+                {
+                    <tr>
+                        <td>@item.LoanCode</td>
+                        <td>@item.CatalogKeyCode</td>
+                        <td>@item.BorrowerPartyReference</td>
+                        <td>@item.DueAtUtc.ToString("u")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="card">
+    @if (Model.Members.Count == 0)
+    {
+        <div class="empty-state"><strong>No workforce members</strong></div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Party</th>
+                        <th>Type</th>
+                        <th>Organization</th>
+                        <th>Department</th>
+                        <th>Manager</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.Members)
+                {
+                    <tr>
+                        <td>@item.WorkforceMemberCode</td>
+                        <td>@item.PartyCode</td>
+                        <td>@item.WorkforceType</td>
+                        <td>@item.OrganizationCode</td>
+                        <td>@item.DepartmentCode</td>
+                        <td>@item.ResponsibleManagerWorkforceMemberCode</td>
+                        <td>@item.Status</td>
+                        <td><a asp-page="/Operations/MemberKeys" asp-route-member="@item.WorkforceMemberCode">Issued keys</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
