@@ -47,13 +47,14 @@ Define the approved execution order without expanding into detailed slice specif
 | Slice | Status | Depends On | Slice Spec |
 |---|---|---|---|
 | WORKFORCE-ELIGIBILITY-1 | Accepted | PHASE-1-CLOSE | slices/WORKFORCE-ELIGIBILITY-1.md |
-| KEY-LOOKUP-1 | Implementation Complete | WORKFORCE-ELIGIBILITY-1 | slices/KEY-LOOKUP-1.md |
+| KEY-LOOKUP-1 | Accepted | WORKFORCE-ELIGIBILITY-1 | slices/KEY-LOOKUP-1.md |
 
 ## Later Phases
 Later phase slices must be created only when human governance selects a concrete operational capability for this building and architectural contracts are mature enough to support implementation without assumptions.
-KEY-LOOKUP-1 is Implementation Complete and awaits architectural governance ACCEPT.
-REPORTS-1 remains queued and must not be prepared or implemented until explicitly authorized after KEY-LOOKUP-1 acceptance.
-After KEY-LOOKUP-1 is Accepted, Next Allowed Slice remains STOP until human governance explicitly prepares the next concrete operational capability.
+KEY-LOOKUP-1 is Accepted. No further implementation slice is listed on this roadmap.
+REPORTS-1 remains queued and must not be prepared until human governance explicitly authorizes Prepare Next Slice for it.
+Next Allowed Slice: STOP.
+The next slice may be prepared only through explicit Prepare Next Slice governance naming the exact slice after human governance selects the next concrete operational capability.
 Do not prepare or invent slices for speculative enterprise scale, multi-campus design, policy engines, workflow engines, event platforms, or extensibility frameworks.
 
 ## Depends On
