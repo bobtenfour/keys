@@ -49,12 +49,12 @@ Define the approved execution order without expanding into detailed slice specif
 | WORKFORCE-ELIGIBILITY-1 | Accepted | PHASE-1-CLOSE | slices/WORKFORCE-ELIGIBILITY-1.md |
 | KEY-LOOKUP-1 | Accepted | WORKFORCE-ELIGIBILITY-1 | slices/KEY-LOOKUP-1.md |
 | REPORTS-1 | Accepted | KEY-LOOKUP-1 | slices/REPORTS-1.md |
+| KEY-ROOM-ASSIGNMENT-1 | Accepted | REPORTS-1 | slices/KEY-ROOM-ASSIGNMENT-1.md |
 
 ## Later Phases
 Later phase slices must be created only when human governance selects a concrete operational capability for this building and architectural contracts are mature enough to support implementation without assumptions.
-REPORTS-1 is Accepted. No further implementation slice is listed on this roadmap.
-Next Allowed Slice: STOP.
-The next slice may be prepared only through explicit Prepare Next Slice governance naming the exact slice after human governance selects the next concrete operational capability.
+KEY-ROOM-ASSIGNMENT-1 is Accepted.
+Next Allowed Slice remains STOP until human governance explicitly prepares the next concrete operational capability.
 Do not prepare or invent slices for speculative enterprise scale, multi-campus design, policy engines, workflow engines, event platforms, or extensibility frameworks.
 
 ## Depends On

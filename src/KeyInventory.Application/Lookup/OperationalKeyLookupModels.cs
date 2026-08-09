@@ -1,3 +1,5 @@
+using KeyInventory.Application.Catalog;
+
 namespace KeyInventory.Application.Lookup;
 
 public sealed record PartyHolderDisplay(
@@ -10,7 +12,8 @@ public sealed record KeyLookupResult(
     string TypeCode,
     string AvailabilityStatus,
     PartyHolderDisplay? CurrentHolder,
-    string? OpenLoanCode);
+    string? OpenLoanCode,
+    IReadOnlyList<KeyOpenedRoomItem> OpenedRooms);
 
 public sealed record OperationalLoanDisplay(
     string LoanCode,

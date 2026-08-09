@@ -1,3 +1,4 @@
+using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Reports;
 using KeyInventory.Domain.Loans;
@@ -10,10 +11,14 @@ namespace KeyInventory.Infrastructure.Reports;
 public sealed class OperationalReportsAdapter : IOperationalReportsPort
 {
     private readonly KeyInventoryDbContext _dbContext;
+    private readonly IKeyRoomAssignmentPersistencePort _roomAssignments;
 
-    public OperationalReportsAdapter(KeyInventoryDbContext dbContext)
+    public OperationalReportsAdapter(
+        KeyInventoryDbContext dbContext,
+        IKeyRoomAssignmentPersistencePort roomAssignments)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _roomAssignments = roomAssignments ?? throw new ArgumentNullException(nameof(roomAssignments));
     }
 
     public async Task<IReadOnlyList<CurrentKeyHolderReportRow>> ListCurrentKeyHoldersAsync(
@@ -281,6 +286,10 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
+            .ListForKeysAsync(keys.Select(key => key.CatalogKeyCode), cancellationToken)
+            .ConfigureAwait(false);
+
         return keys
             .Select(key => new KeyCatalogReportRow(
                 key.CatalogKeyCode,
@@ -288,7 +297,10 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                 key.IsActive,
                 issuedKeys.Contains(key.CatalogKeyCode)
                     ? OperationalKeyAvailability.Issued
-                    : OperationalKeyAvailability.Available))
+                    : OperationalKeyAvailability.Available,
+                roomsByKey.TryGetValue(key.CatalogKeyCode, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
+                    ? rooms
+                    : []))
             .ToArray();
     }
 

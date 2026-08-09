@@ -104,4 +104,76 @@ public sealed class CatalogDomainInvariantTests
 
         Assert.Throws<InvalidOperationException>(() => location.Retire(hasActiveChildLocations: true));
     }
+
+    [Fact]
+    public void KeyAssetAllowsZeroOneAndMultipleRoomAssignments()
+    {
+        KeyType keyType = new("mechanical");
+        KeyAsset keyAsset = new("key-rooms", keyType);
+
+        Assert.Empty(keyAsset.OpenedRoomCodes);
+
+        keyAsset.AssignOpenedRoom("room-a");
+        Assert.Equal(["room-a"], keyAsset.OpenedRoomCodes.Order(StringComparer.Ordinal));
+
+        keyAsset.AssignOpenedRoom("room-b");
+        Assert.Equal(["room-a", "room-b"], keyAsset.OpenedRoomCodes.Order(StringComparer.Ordinal));
+
+        keyAsset.RemoveOpenedRoom("room-a");
+        Assert.Equal(["room-b"], keyAsset.OpenedRoomCodes.Order(StringComparer.Ordinal));
+
+        keyAsset.RemoveOpenedRoom("room-b");
+        Assert.Empty(keyAsset.OpenedRoomCodes);
+    }
+
+    [Fact]
+    public void KeyAssetRejectsDuplicateRoomAssignment()
+    {
+        KeyType keyType = new("mechanical");
+        KeyAsset keyAsset = new("key-dup", keyType);
+        keyAsset.AssignOpenedRoom("room-a");
+
+        Assert.Throws<InvalidOperationException>(() => keyAsset.AssignOpenedRoom("room-a"));
+    }
+
+    [Fact]
+    public void MultipleKeyAssetsMayOpenTheSameRoom()
+    {
+        KeyType keyType = new("mechanical");
+        KeyAsset first = new("key-1", keyType);
+        KeyAsset second = new("key-2", keyType);
+
+        first.AssignOpenedRoom("shared-room");
+        second.AssignOpenedRoom("shared-room");
+
+        Assert.Contains("shared-room", first.OpenedRoomCodes);
+        Assert.Contains("shared-room", second.OpenedRoomCodes);
+    }
+
+    [Fact]
+    public void KeyAssetDoesNotOwnBuildingAndKeyTypeDoesNotOwnRoomAssignments()
+    {
+        Assert.DoesNotContain(
+            typeof(KeyAsset).GetProperties(),
+            property => string.Equals(property.Name, "Building", StringComparison.Ordinal)
+                || string.Equals(property.Name, "BuildingCode", StringComparison.Ordinal));
+
+        Assert.DoesNotContain(
+            typeof(KeyType).GetMethods(),
+            method => method.Name.Contains("Room", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            typeof(KeyType).GetProperties(),
+            property => property.Name.Contains("Room", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void RoomAssignmentDoesNotRequireIntendedLock()
+    {
+        KeyType keyType = new("mechanical");
+        KeyAsset keyAsset = new("key-no-lock", keyType);
+
+        Assert.Null(keyAsset.IntendedLock);
+        keyAsset.AssignOpenedRoom("room-open");
+        Assert.Contains("room-open", keyAsset.OpenedRoomCodes);
+    }
 }

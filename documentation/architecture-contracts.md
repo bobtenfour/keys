@@ -12,6 +12,9 @@ Do not introduce abstractions solely for hypothetical multi-campus, multi-buildi
 Do not introduce policy engines, generalized authorization engines, workflow engines, event platforms, or extensibility frameworks unless a concrete KeyInventory business requirement later proves they are necessary.
 Workforce Eligibility evaluates legitimate active-worker key issue eligibility; it is not a generalized access-control or key-authorization policy engine.
 Building and Room must not be expanded into Campus or enterprise location hierarchies without a future explicit business requirement.
+Key Catalog owns current KeyAsset-to-Room opening assignments; Location owns Building and Room identity; Building for a key is derived only through Room.
+Key-to-Room Assignment is the operational authority for which Rooms a physical key opens; Lock must not be required or used as an intermediate room-opening authority.
+Master/sub-master hierarchy is out of scope; multiple Rooms are represented by multiple current assignments.
 
 ## Layers
 ### Domain
@@ -48,7 +51,8 @@ Runtime composition belongs to the application host. Service registration must n
 - MIGRATION-1 establishes the minimum persistence foundation required for LOAN-VERTICAL-1.
 - MIGRATION-1 includes one EF Core `DbContext` in Infrastructure.
 - MIGRATION-1 includes the initial migration for only these entities: KeyType, KeyAsset, Loan, and Return.
-- KeyAsset persistence may omit optional KeySeries and Lock references until a later authorized slice.
+- KeyAsset persistence may omit optional KeySeries references until a later authorized slice.
+- KeyAsset persistence must not treat Lock as required intermediate authority for Rooms opened by a key; Key-to-Room Assignment is the contracted room-opening authority when later implemented.
 - Authoritative UTC timestamps persist as `DateTimeOffset` values without conversion or normalization.
 - A design-time `DbContext` factory may exist in Infrastructure solely to create and apply migrations against SQL Server using `ConnectionStrings:KeyInventory`.
 - MIGRATION-1 does not implement Application port adapters, command handlers, repository facades beyond the `DbContext`, business DI registrations, UI, seed data, or demo pages.

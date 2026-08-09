@@ -92,11 +92,13 @@ public sealed class MigrationBoundaryTests
         Assert.Contains("Rooms", tableNames);
         Assert.Contains("WorkforceMembers", tableNames);
         Assert.Contains("WorkAssignments", tableNames);
+        Assert.Contains("KeyRoomAssignments", tableNames);
         Assert.Contains("AspNetUsers", tableNames);
 
         Type[] clrTypes = model.GetEntityTypes().Select(entityType => entityType.ClrType).ToArray();
         Assert.Contains(typeof(KeyTypeEntity), clrTypes);
         Assert.Contains(typeof(KeyAssetEntity), clrTypes);
+        Assert.Contains(typeof(KeyRoomAssignmentEntity), clrTypes);
         Assert.Contains(typeof(LoanEntity), clrTypes);
         Assert.Contains(typeof(ReturnEntity), clrTypes);
         Assert.Contains(typeof(PartyEntity), clrTypes);

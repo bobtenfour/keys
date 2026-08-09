@@ -2,6 +2,8 @@ namespace KeyInventory.Domain.Catalog;
 
 public sealed class KeyAsset
 {
+    private readonly HashSet<string> _openedRoomCodes = new(StringComparer.Ordinal);
+
     public KeyAsset(string catalogKeyCode, KeyType keyType, KeySeries? keySeries = null, Lock? intendedLock = null)
     {
         CatalogKeyCode = CatalogText.Require(catalogKeyCode, nameof(catalogKeyCode));
@@ -17,9 +19,17 @@ public sealed class KeyAsset
 
     public KeySeries? KeySeries { get; private set; }
 
+    /// <summary>
+    /// Optional catalog Lock identity only. Not room-opening authority.
+    /// </summary>
     public Lock? IntendedLock { get; private set; }
 
     public bool IsActive { get; private set; }
+
+    /// <summary>
+    /// Current Room codes this physical key opens. Building is derived through Room outside KeyAsset.
+    /// </summary>
+    public IReadOnlyCollection<string> OpenedRoomCodes => _openedRoomCodes;
 
     public void AssignKeyType(KeyType keyType)
     {
@@ -34,6 +44,24 @@ public sealed class KeyAsset
     public void AssignIntendedLock(Lock? intendedLock)
     {
         IntendedLock = RequireActiveLock(intendedLock);
+    }
+
+    public void AssignOpenedRoom(string roomCode)
+    {
+        string normalized = CatalogText.Require(roomCode, nameof(roomCode));
+        if (!_openedRoomCodes.Add(normalized))
+        {
+            throw new InvalidOperationException("A current Key-to-Room assignment for this Key and Room already exists.");
+        }
+    }
+
+    public void RemoveOpenedRoom(string roomCode)
+    {
+        string normalized = CatalogText.Require(roomCode, nameof(roomCode));
+        if (!_openedRoomCodes.Remove(normalized))
+        {
+            throw new InvalidOperationException("The Key-to-Room assignment was not found.");
+        }
     }
 
     public void Activate()

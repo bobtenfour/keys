@@ -1,0 +1,79 @@
+@page
+@using KeyInventory.Application.Catalog
+@model KeyInventory.Web.Pages.Catalog.KeyRoomsModel
+@{
+    ViewData["Title"] = "Key Rooms";
+    ViewData["NavSection"] = "catalog";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Rooms for @Model.Key</h1>
+    <p class="lede">Assign the Rooms this physical key currently opens. Building comes from each Room.</p>
+</header>
+
+<section class="card form-card">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+    }
+
+    <form method="post" asp-page-handler="Assign" class="form-grid">
+        <input type="hidden" asp-for="Key" />
+        <label>
+            Room
+            <select asp-for="RoomCode" asp-items="Model.RoomOptions" required>
+                <option value="">Select a room...</option>
+            </select>
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Assign Room</button>
+            <a class="btn btn-secondary" asp-page="/Catalog/Keys">Back to Keys</a>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    @if (Model.OpenedRooms.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No rooms assigned</strong>
+            This key has zero Room assignments. Registration remains valid; assign Rooms when known.
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Building</th>
+                        <th>Room</th>
+                        <th>Room code</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var room in Model.OpenedRooms)
+                {
+                    <tr>
+                        <td>@room.BuildingCode</td>
+                        <td>@room.RoomNumber</td>
+                        <td>@room.RoomCode</td>
+                        <td>
+                            <form method="post" asp-page-handler="Remove">
+                                <input type="hidden" name="Key" value="@Model.Key" />
+                                <input type="hidden" name="roomCode" value="@room.RoomCode" />
+                                <button type="submit" class="btn btn-secondary">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

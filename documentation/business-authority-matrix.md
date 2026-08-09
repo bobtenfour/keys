@@ -24,7 +24,10 @@ Prevent duplicated authority.
 | Business concepts and aggregate boundaries | key-inventory-domain-contract.md |
 | Key catalog identity | key-inventory-domain-contract.md |
 | Key catalog classifications | key-inventory-domain-contract.md |
+| KeyAsset-to-Room current opening assignments | key-inventory-domain-contract.md |
 | Location hierarchy | key-inventory-domain-contract.md |
+| Lock as intermediate room-opening authority | Forbidden; Key-to-Room Assignment is sole operational room-opening authority in key-inventory-domain-contract.md |
+| Master/sub-master key hierarchy | Forbidden for this product; multiple Rooms use multiple Key-to-Room assignments in key-inventory-domain-contract.md |
 | Loan issuance workflow | key-inventory-domain-contract.md |
 | Return completion workflow | key-inventory-domain-contract.md |
 | LOAN-VERTICAL-1 runnable workflow orchestration | architecture-contracts.md |

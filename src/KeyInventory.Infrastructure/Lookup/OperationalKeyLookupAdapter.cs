@@ -1,3 +1,4 @@
+using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Lookup;
 using KeyInventory.Domain.Loans;
 using KeyInventory.Domain.Workforce;
@@ -9,10 +10,14 @@ namespace KeyInventory.Infrastructure.Lookup;
 public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
 {
     private readonly KeyInventoryDbContext _dbContext;
+    private readonly IKeyRoomAssignmentPersistencePort _roomAssignments;
 
-    public OperationalKeyLookupAdapter(KeyInventoryDbContext dbContext)
+    public OperationalKeyLookupAdapter(
+        KeyInventoryDbContext dbContext,
+        IKeyRoomAssignmentPersistencePort roomAssignments)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _roomAssignments = roomAssignments ?? throw new ArgumentNullException(nameof(roomAssignments));
     }
 
     public async Task<IReadOnlyList<KeyLookupResult>> SearchKeysAsync(
@@ -57,9 +62,18 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
             .ToDictionaryAsync(party => party.PartyCode, StringComparer.Ordinal, cancellationToken)
             .ConfigureAwait(false);
 
+        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
+            .ListForKeysAsync(keys.Select(key => key.CatalogKeyCode), cancellationToken)
+            .ConfigureAwait(false);
+
         List<KeyLookupResult> results = [];
         foreach (KeyAssetEntity key in keys)
         {
+            IReadOnlyList<KeyOpenedRoomItem> openedRooms =
+                roomsByKey.TryGetValue(key.CatalogKeyCode, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
+                    ? rooms
+                    : [];
+
             if (openByKey.TryGetValue(key.CatalogKeyCode, out (string LoanCode, string PartyCode) open))
             {
                 parties.TryGetValue(open.PartyCode, out PartyEntity? party);
@@ -71,7 +85,8 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
                     key.KeyTypeCode,
                     OperationalKeyAvailability.Issued,
                     holder,
-                    open.LoanCode));
+                    open.LoanCode,
+                    openedRooms));
             }
             else
             {
@@ -80,7 +95,8 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
                     key.KeyTypeCode,
                     OperationalKeyAvailability.Available,
                     null,
-                    null));
+                    null,
+                    openedRooms));
             }
         }
 

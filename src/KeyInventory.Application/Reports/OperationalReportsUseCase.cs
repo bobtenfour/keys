@@ -1,3 +1,5 @@
+using KeyInventory.Application.Catalog;
+
 namespace KeyInventory.Application.Reports;
 
 public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
@@ -287,13 +289,14 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
     {
         ArgumentNullException.ThrowIfNull(rows);
         return ReportCsvFormatter.Build(
-            ["Key", "Type", "Active", "Availability"],
+            ["Key", "Type", "Active", "Availability", "Rooms Opened"],
             rows.Select(row => (IReadOnlyList<string>)
             [
                 row.CatalogKeyCode,
                 row.TypeCode,
                 row.IsActive ? "Yes" : "No",
-                row.AvailabilityStatus
+                row.AvailabilityStatus,
+                KeyOpenedRoomDisplayFormatter.Format(row.OpenedRooms)
             ]));
     }
 

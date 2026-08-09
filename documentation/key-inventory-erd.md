@@ -8,6 +8,7 @@ Define the logical entities and relationships required by the domain. It is not 
 
 ## Initial Logical Entities
 - KeyAsset
+- KeyRoomAssignment
 - KeySeries
 - KeyType
 - Lock
@@ -47,7 +48,8 @@ Define the logical entities and relationships required by the domain. It is not 
 ## Entity Ownership Matrix
 | Entity | Owning aggregate or boundary | Authority document | Authoritative or derived | Lifecycle phase |
 |---|---|---|---|---|
-| KeyAsset | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative for catalog identity only | Current baseline |
+| KeyAsset | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative for catalog identity and current Key-to-Room assignments | Current baseline |
+| KeyRoomAssignment | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative current KeyAsset-to-Room opening association | Contracted; runtime when authorized |
 | KeySeries | Key Catalog classification | key-inventory-domain-contract.md | Authoritative classification | Current baseline |
 | KeyType | Key Catalog classification | key-inventory-domain-contract.md | Authoritative classification | Current baseline |
 | Lock | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative | Current baseline |
@@ -96,12 +98,22 @@ Define the logical entities and relationships required by the domain. It is not 
 ### KeyAsset
 - Purpose: authoritative catalog identity for one controlled physical key asset.
 - Owning aggregate or boundary: Key Catalog aggregate.
-- Authoritative or derived: Authoritative for catalog identity only.
-- Required relationships: references exactly one KeyType; may reference one KeySeries; may reference one Lock.
-- Cardinalities: one KeyType to zero or more KeyAsset records; zero or one KeySeries to zero or more KeyAsset records; zero or one Lock to zero or more KeyAsset records.
+- Authoritative or derived: Authoritative for catalog identity and current Key-to-Room opening associations.
+- Required relationships: references exactly one KeyType; may reference one KeySeries; may have zero, one, or multiple current KeyRoomAssignment records.
+- Cardinalities: one KeyType to zero or more KeyAsset records; zero or one KeySeries to zero or more KeyAsset records; one KeyAsset to zero or more KeyRoomAssignment records.
 - Required uniqueness: CatalogKeyCode is unique across KeyAsset records.
-- Required integrity constraints: CatalogKeyCode is required; KeyType reference is required; referenced KeyType, KeySeries, and Lock must be active for new catalog assignment.
-- Prohibited authority: must not store current possession, current custodian, loan state, return state, lifecycle state, audit history, maintenance workflow state, authorization state, authentication state, policy state, persistence-provider configuration, or UI state.
+- Required integrity constraints: CatalogKeyCode is required; KeyType reference is required; referenced KeyType and KeySeries must be active for new catalog assignment; Building is derived only through assigned Rooms; KeyAsset must not independently own Building.
+- Prohibited authority: must not store current possession, current custodian, loan state, return state, lifecycle state, audit history, maintenance workflow state, authorization state, authentication state, policy state, persistence-provider configuration, or UI state; must not use Lock or Location hierarchy as room-opening authority; must not own master/sub-master hierarchy.
+
+### KeyRoomAssignment
+- Purpose: current authoritative association of one KeyAsset to one Room that the physical key opens.
+- Owning aggregate or boundary: Key Catalog aggregate.
+- Authoritative or derived: Authoritative for current assignment only.
+- Required relationships: references exactly one KeyAsset; references exactly one Room.
+- Cardinalities: one KeyAsset to zero or more KeyRoomAssignment records; one Room to zero or more KeyRoomAssignment records.
+- Required uniqueness: the pair (KeyAsset, Room) is unique among current assignments.
+- Required integrity constraints: KeyAsset and Room references are required; active operational assignment requires an active Room in an active Building; assignment history is not required; KeyType does not participate.
+- Prohibited authority: must not own Building independently; must not require Lock as an intermediate authority; must not invent assignment history as a second source of truth; must not authorize REPORTS-2 or new report families.
 
 ### KeySeries
 - Purpose: authoritative catalog classification for an organizational keying system, pattern, or managed series.
@@ -123,14 +135,15 @@ Define the logical entities and relationships required by the domain. It is not 
 - Prohibited authority: must not encode custody, loan, return, lifecycle, maintenance, authorization, policy, authentication, persistence, or UI state.
 
 ### Lock
-- Purpose: authoritative catalog identity for one controlled physical lock.
+- Purpose: optional catalog identity for one controlled physical lock device.
 - Owning aggregate or boundary: Key Catalog aggregate.
-- Authoritative or derived: Authoritative.
-- Required relationships: references exactly one Location; may be referenced by zero or more KeyAsset records.
-- Cardinalities: one Location to zero or more Lock records; one Lock to zero or more KeyAsset records; a KeyAsset has zero or one intended Lock.
+- Authoritative or derived: Authoritative for Lock device identity only when used.
+- Required relationships: may reference one Location.
+- Cardinalities: one Location to zero or more Lock records when Location is used.
 - Required uniqueness: LockCode is unique across Lock records.
-- Required integrity constraints: LockCode is required; Location reference is required; referenced Location must be active for new Lock assignment.
-- Prohibited authority: must not store possession, custody, loan, return, lifecycle, maintenance, audit, authorization, authentication, policy, persistence-provider configuration, or UI state.
+- Required integrity constraints: LockCode is required; when Location is referenced it must be active for new Lock assignment.
+- Authority reconciliation: Lock is not intermediate or required authority for Key-to-Room opening associations; KeyRoomAssignment is the sole operational room-opening authority for KeyAsset.
+- Prohibited authority: must not store possession, custody, loan, return, lifecycle, maintenance, audit, authorization, authentication, policy, Key-to-Room opening authority, persistence-provider configuration, or UI state.
 
 ### Location
 - Purpose: authoritative physical organizational place where a key, lock, or custody action is relevant.
@@ -154,14 +167,14 @@ Define the logical entities and relationships required by the domain. It is not 
 - Lifecycle phase: WORKFORCE-ELIGIBILITY-1.
 
 ### Room
-- Purpose: physical room within one Building used for WorkAssignment and Room-based key-issue justification.
+- Purpose: physical room within one Building used for WorkAssignment, Room-based key-issue justification, and Key-to-Room opening associations.
 - Owning aggregate or boundary: Location boundary.
-- Authoritative or derived: Authoritative.
-- Required relationships: references exactly one Building; may be referenced by zero or more WorkAssignment records.
-- Cardinalities: one Building to zero or more Room records; one Room to zero or more WorkAssignment records.
+- Authoritative or derived: Authoritative for Room identity; Key Catalog owns KeyRoomAssignment references to Room.
+- Required relationships: references exactly one Building; may be referenced by zero or more WorkAssignment records; may be referenced by zero or more KeyRoomAssignment records.
+- Cardinalities: one Building to zero or more Room records; one Room to zero or more WorkAssignment records; one Room to zero or more KeyRoomAssignment records.
 - Required uniqueness: RoomCode is unique across Room records; RoomNumber is unique within one Building.
-- Required integrity constraints: RoomNumber is required as the operator-facing room identifier; Room must reference exactly one Building; only an active Room in an active Building may be used for active WorkAssignment or Room-based key-issue justification.
-- Prohibited authority: must not own WorkforceMember eligibility decisions, Organization, Department, Loan, Return, custody, audit, authentication, or UI; Room must not exist outside Location boundary place authority.
+- Required integrity constraints: RoomNumber is required as the operator-facing room identifier; Room must reference exactly one Building; only an active Room in an active Building may be used for active WorkAssignment, Room-based key-issue justification, or active KeyRoomAssignment.
+- Prohibited authority: must not own WorkforceMember eligibility decisions, Organization, Department, Loan, Return, custody, audit, authentication, Key Catalog identity, Key-to-Room assignment ownership, or UI; Room must not exist outside Location boundary place authority.
 - Lifecycle phase: WORKFORCE-ELIGIBILITY-1.
 
 ## Workforce Eligibility Logical Contract

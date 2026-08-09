@@ -1,3 +1,5 @@
+using KeyInventory.Application.Catalog;
+
 namespace KeyInventory.Application.Reports;
 
 public sealed record CurrentKeyHolderReportRow(
@@ -86,7 +88,8 @@ public sealed record KeyCatalogReportRow(
     string CatalogKeyCode,
     string TypeCode,
     bool IsActive,
-    string AvailabilityStatus);
+    string AvailabilityStatus,
+    IReadOnlyList<KeyOpenedRoomItem> OpenedRooms);
 
 public sealed record WorkforceMemberReportOption(
     string WorkforceMemberCode,

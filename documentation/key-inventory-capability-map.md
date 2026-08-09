@@ -25,7 +25,8 @@ Workforce Key Eligibility ensures keys are issued to legitimate active workers; 
 ## Capability Details
 - Solution Foundation includes authoritative UTC timestamps for business evidence and workflow times, and SQL Server EF Core persistence for the delivered operational model, without owning local-time display or system clock infrastructure.
 - Identity and Access includes the authentication foundation required for application use; it does not authorize a generalized enterprise authorization or policy engine.
-- Key Catalog includes controlled physical key identity and type classification for this building's keys.
+- Key Catalog includes controlled physical key identity, type classification, and current Key-to-Room opening assignments for this building's keys; KeyType does not own Room assignments; Building is derived through Room; Lock is not required as intermediate room-opening authority; master/sub-master hierarchy is out of scope.
+- Existing Key Catalog, Find Key / operational lookup, and existing REPORTS-1 key surfaces may consume Key-to-Room assignments when a later authorized slice implements them; this does not authorize REPORTS-2 or new report families.
 - Loan and Return includes create key asset, issue loan, complete return, and list open and returned loans as a usable operational workflow.
 - Immutable Audit includes append-only AuditEvent evidence for business and security-relevant actions, immutable after creation, without rewriting audit history and without owning authentication, authorization, policy, custody, lifecycle, loan workflow, or return workflow authority.
 - Workforce Key Eligibility includes Organization, Department, Building, Room with RoomNumber unique within Building, Party as persistent person identity with UIN, WorkforceMember as the workforce relationship and eligibility authority for WorkforceType Employee and Contractor, ResponsibleManager, WorkAssignment to Room, key-issue eligibility, and termination return obligations completed through existing Return authority, without a separate Employment aggregate, Borrower aggregate, temporary borrower fields, duplicate person-identity authority, or HR integration.
@@ -40,9 +41,12 @@ Workforce Key Eligibility ensures keys are issued to legitimate active workers; 
 - Workflow engine
 - Event platform or event-sourcing readiness program
 - Smart cabinet / RFID platform integration
+- Electronic access control or smart locks
+- Master/sub-master key hierarchy platforms
 - Multi-campus or multi-tenant architecture
 - Advanced institutional approval frameworks justified only by scale
 - Enterprise business-intelligence platform
+- REPORTS-2 or new report families beyond existing REPORTS-1 surfaces
 - Speculative extensibility frameworks
 
 ## Rules

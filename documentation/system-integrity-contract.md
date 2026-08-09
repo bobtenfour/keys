@@ -24,6 +24,8 @@ Prevent hidden coupling, documentation drift, authority duplication, and operati
 - WorkforceMember is the sole workforce relationship and eligibility authority and must not own FirstName, LastName, UIN, or other Party person-identity attributes.
 - Employment is not a separate aggregate and must not duplicate WorkforceMember relationship authority.
 - RoomNumber is required and unique within one Building; Room place authority remains inside the Location boundary.
+- Current KeyAsset-to-Room opening assignments are owned by Key Catalog; Location owns Building and Room identity; Building for a key is derived only through Room; KeyAsset must not independently own Building.
+- Key-to-Room Assignment is the sole operational authority for which Rooms a physical key opens; Lock must not mediate or duplicate that authority; KeyType must not own Room assignments; assignment history is not required; master/sub-master hierarchy is forbidden for this product.
 - Key issue eligibility for a WorkforceMember requires Active status, Party person identity with valid UIN, Department, ResponsibleManager, and at least one active Room WorkAssignment relevant to the key being issued.
 - Keys may be issued only for the Department or Room where the WorkforceMember is authorized to work.
 - WorkforceMember termination, rehire, Department change, Organization change, and Employee or Contractor WorkforceType transition must not rewrite Party person identity.

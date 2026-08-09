@@ -1,4 +1,5 @@
 @page
+@using KeyInventory.Application.Catalog
 @using KeyInventory.Application.Lookup
 @model KeyInventory.Web.Pages.Reports.KeyCatalogModel
 @{
@@ -8,7 +9,7 @@
 
 <header class="page-header page-header-compact">
     <h1>Key Catalog</h1>
-    <p class="lede">Registered keys with type, active flag, and Available or Issued state.</p>
+    <p class="lede">Registered keys with type, active flag, Available or Issued state, and Rooms opened.</p>
 </header>
 
 <section class="card form-card">
@@ -43,6 +44,7 @@
                         <th>Type</th>
                         <th>Active</th>
                         <th>Availability</th>
+                        <th>Rooms opened</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -60,6 +62,19 @@
                             else
                             {
                                 <span class="badge badge-success">Available</span>
+                            }
+                        </td>
+                        <td>
+                            @{
+                                string rooms = KeyOpenedRoomDisplayFormatter.Format(row.OpenedRooms);
+                            }
+                            @if (string.IsNullOrEmpty(rooms))
+                            {
+                                <span>—</span>
+                            }
+                            else
+                            {
+                                @rooms
                             }
                         </td>
                     </tr>

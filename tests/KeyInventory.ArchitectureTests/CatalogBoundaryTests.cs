@@ -65,20 +65,31 @@ public sealed class CatalogBoundaryTests
     }
 
     [Fact]
-    public void ApplicationDefinesLookupPortsOnlyForCatalog()
+    public void ApplicationCatalogNamespaceContainsLookupPortsAndRoomAssignmentAuthorityOnly()
     {
         Assembly applicationAssembly = typeof(IKeyAssetLookupPort).Assembly;
 
         Type[] catalogTypes = applicationAssembly
             .GetTypes()
             .Where(type => string.Equals(type.Namespace, "KeyInventory.Application.Catalog", StringComparison.Ordinal))
+            .Where(type => !type.IsNested && !type.Name.StartsWith('<') && !type.Name.Contains("<>", StringComparison.Ordinal))
             .ToArray();
 
-        Assert.All(catalogTypes, type =>
-        {
-            Assert.True(type.IsInterface);
-            Assert.EndsWith("LookupPort", type.Name, StringComparison.Ordinal);
-        });
+        Assert.Contains(catalogTypes, type => type == typeof(IKeyAssetLookupPort));
+        Assert.Contains(catalogTypes, type => type == typeof(IKeyRoomAssignmentUseCase));
+        Assert.Contains(catalogTypes, type => type == typeof(IKeyRoomAssignmentPersistencePort));
+        Assert.Contains(catalogTypes, type => type == typeof(KeyOpenedRoomItem));
+        Assert.Contains(catalogTypes, type => type == typeof(KeyRoomAssignmentUseCase));
+
+        string[] unexpected = catalogTypes
+            .Select(type => type.Name)
+            .Where(name =>
+                !name.EndsWith("LookupPort", StringComparison.Ordinal)
+                && !name.Contains("KeyRoomAssignment", StringComparison.Ordinal)
+                && !name.Contains("KeyOpenedRoom", StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.Empty(unexpected);
     }
 
     [Fact]
@@ -99,7 +110,10 @@ public sealed class CatalogBoundaryTests
                 "Sql",
                 "EntityFramework",
                 "DbContext",
-                "Configuration"))
+                "Configuration",
+                "History",
+                "MasterKey",
+                "SubMaster"))
             .ToArray();
 
         Assert.Empty(prohibitedTypes);

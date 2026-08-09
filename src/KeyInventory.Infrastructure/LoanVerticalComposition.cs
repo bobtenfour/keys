@@ -1,7 +1,9 @@
+using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Reports;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Application.Workflow;
+using KeyInventory.Infrastructure.Catalog;
 using KeyInventory.Infrastructure.Data;
 using KeyInventory.Infrastructure.Lookup;
 using KeyInventory.Infrastructure.Reports;
@@ -20,11 +22,13 @@ public static class LoanVerticalComposition
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         services.AddDbContext<KeyInventoryDbContext>(options => options.UseSqlServer(connectionString));
+        services.AddScoped<IKeyRoomAssignmentPersistencePort, KeyRoomAssignmentPersistenceAdapter>();
         services.AddScoped<IKeyCatalogPersistencePort, KeyCatalogPersistenceAdapter>();
         services.AddScoped<ILoanPersistencePort, LoanPersistenceAdapter>();
         services.AddScoped<IWorkforcePersistencePort, WorkforcePersistenceAdapter>();
         services.AddScoped<ICreateKeyAssetUseCase, CreateKeyAssetUseCase>();
         services.AddScoped<IListKeyAssetsUseCase, ListKeyAssetsUseCase>();
+        services.AddScoped<IKeyRoomAssignmentUseCase, KeyRoomAssignmentUseCase>();
         services.AddScoped<IIssueLoanUseCase, IssueLoanUseCase>();
         services.AddScoped<ICompleteReturnUseCase, CompleteReturnUseCase>();
         services.AddScoped<IListOpenLoansUseCase, ListOpenLoansUseCase>();
