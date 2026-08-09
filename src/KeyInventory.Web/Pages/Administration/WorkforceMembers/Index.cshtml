@@ -79,6 +79,40 @@
 </section>
 
 <section class="card form-card">
+    <h2>Maintain active workforce member</h2>
+    <p class="hint">Organization, Department, Responsible Manager, and Workforce Type only. Terminated members cannot be reactivated here.</p>
+    @if (Model.ActiveMemberOptions.Count == 0)
+    {
+        <div class="empty-state"><strong>No active workforce members to maintain</strong></div>
+    }
+    else
+    {
+        <form method="post" asp-page-handler="Maintain" class="form-grid">
+            <label>
+                Workforce member
+                <select asp-for="MaintainWorkforceMemberCode" asp-items="Model.ActiveMemberOptions" required></select>
+            </label>
+            <label>Organization code<input asp-for="MaintainOrganizationCode" required /></label>
+            <label>Department code<input asp-for="MaintainDepartmentCode" required /></label>
+            <label>
+                Responsible manager
+                <select asp-for="MaintainResponsibleManagerWorkforceMemberCode" asp-items="Model.ManagerOptions" required></select>
+            </label>
+            <label>
+                Workforce type
+                <select asp-for="MaintainWorkforceType">
+                    <option value="Employee">Employee</option>
+                    <option value="Contractor">Contractor</option>
+                </select>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save relationship changes</button>
+            </div>
+        </form>
+    }
+</section>
+
+<section class="card form-card">
     <h2>Terminate workforce member</h2>
     <form method="post" asp-page-handler="Terminate" class="form-grid">
         <label>Workforce member code<input asp-for="TerminateWorkforceMemberCode" required /></label>

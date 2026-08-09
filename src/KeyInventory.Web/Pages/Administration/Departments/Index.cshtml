@@ -62,6 +62,7 @@
                         <th>Organization</th>
                         <th>Department</th>
                         <th>Status</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,7 +71,25 @@
                     <tr>
                         <td>@item.OrganizationCode</td>
                         <td>@item.DepartmentCode</td>
-                        <td>@(item.IsActive ? "Active" : "Inactive")</td>
+                        <td>@(item.IsActive ? "Active" : "Retired")</td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <form method="post" asp-page-handler="Retire" style="display:inline">
+                                    <input type="hidden" name="organizationCode" value="@item.OrganizationCode" />
+                                    <input type="hidden" name="departmentCode" value="@item.DepartmentCode" />
+                                    <button type="submit" class="btn btn-secondary">Retire</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="Activate" style="display:inline">
+                                    <input type="hidden" name="organizationCode" value="@item.OrganizationCode" />
+                                    <input type="hidden" name="departmentCode" value="@item.DepartmentCode" />
+                                    <button type="submit" class="btn btn-secondary">Activate</button>
+                                </form>
+                            }
+                        </td>
                     </tr>
                 }
                 </tbody>

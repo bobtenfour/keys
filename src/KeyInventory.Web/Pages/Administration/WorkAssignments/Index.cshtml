@@ -66,6 +66,7 @@
                         <th>Room</th>
                         <th>Primary</th>
                         <th>Status</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -77,6 +78,29 @@
                         <td>@item.RoomCode</td>
                         <td>@(item.IsPrimary ? "Yes" : "No")</td>
                         <td>@(item.IsActive ? "Active" : "Ended")</td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                @if (!item.IsPrimary)
+                                {
+                                    <form method="post" asp-page-handler="MarkPrimary" style="display:inline">
+                                        <input type="hidden" name="workAssignmentCode" value="@item.WorkAssignmentCode" />
+                                        <button type="submit" class="btn btn-secondary">Make primary</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="ClearPrimary" style="display:inline">
+                                        <input type="hidden" name="workAssignmentCode" value="@item.WorkAssignmentCode" />
+                                        <button type="submit" class="btn btn-secondary">Clear primary</button>
+                                    </form>
+                                }
+                                <form method="post" asp-page-handler="End" style="display:inline">
+                                    <input type="hidden" name="workAssignmentCode" value="@item.WorkAssignmentCode" />
+                                    <button type="submit" class="btn btn-secondary">End</button>
+                                </form>
+                            }
+                        </td>
                     </tr>
                 }
                 </tbody>

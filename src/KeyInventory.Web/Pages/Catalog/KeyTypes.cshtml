@@ -7,10 +7,19 @@
 
 <header class="page-header">
     <h1>Key Types</h1>
-    <p class="lede">Types currently used by registered keys.</p>
+    <p class="lede">Catalog key types. Retire only when no active keys require the type.</p>
 </header>
 
 <section class="card">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+    }
+
     <div class="toolbar">
         <a class="btn btn-primary" asp-page="/Catalog/Register">Register Key</a>
     </div>
@@ -29,8 +38,9 @@
                 <thead>
                     <tr>
                         <th>Type</th>
-                        <th>Keys</th>
-                        <th>Active</th>
+                        <th>Active keys</th>
+                        <th>Status</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,8 +48,24 @@
                 {
                     <tr>
                         <td>@type.TypeCode</td>
-                        <td>@type.KeyCount</td>
-                        <td>@type.ActiveKeyCount</td>
+                        <td>@type.ActiveKeyAssetCount</td>
+                        <td>@(type.IsActive ? "Active" : "Retired")</td>
+                        <td>
+                            @if (type.IsActive)
+                            {
+                                <form method="post" asp-page-handler="Retire" style="display:inline">
+                                    <input type="hidden" name="typeCode" value="@type.TypeCode" />
+                                    <button type="submit" class="btn btn-secondary">Retire</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="Activate" style="display:inline">
+                                    <input type="hidden" name="typeCode" value="@type.TypeCode" />
+                                    <button type="submit" class="btn btn-secondary">Activate</button>
+                                </form>
+                            }
+                        </td>
                     </tr>
                 }
                 </tbody>

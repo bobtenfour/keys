@@ -18,6 +18,8 @@ public interface IWorkforcePersistencePort
 
     Task AddOrganizationAsync(Organization organization, CancellationToken cancellationToken);
 
+    Task UpdateOrganizationAsync(Organization organization, CancellationToken cancellationToken);
+
     Task<Organization?> FindOrganizationAsync(string organizationCode, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<OrganizationListItem>> ListOrganizationsAsync(CancellationToken cancellationToken);
@@ -26,6 +28,8 @@ public interface IWorkforcePersistencePort
 
     Task AddDepartmentAsync(Department department, CancellationToken cancellationToken);
 
+    Task UpdateDepartmentAsync(Department department, CancellationToken cancellationToken);
+
     Task<Department?> FindDepartmentAsync(string organizationCode, string departmentCode, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<DepartmentListItem>> ListDepartmentsAsync(CancellationToken cancellationToken);
@@ -33,6 +37,8 @@ public interface IWorkforcePersistencePort
     Task<bool> BuildingExistsAsync(string buildingCode, CancellationToken cancellationToken);
 
     Task AddBuildingAsync(Building building, CancellationToken cancellationToken);
+
+    Task UpdateBuildingAsync(Building building, CancellationToken cancellationToken);
 
     Task<Building?> FindBuildingAsync(string buildingCode, CancellationToken cancellationToken);
 
@@ -43,6 +49,8 @@ public interface IWorkforcePersistencePort
     Task<bool> RoomNumberExistsInBuildingAsync(string buildingCode, string roomNumber, CancellationToken cancellationToken);
 
     Task AddRoomAsync(Room room, CancellationToken cancellationToken);
+
+    Task UpdateRoomAsync(Room room, CancellationToken cancellationToken);
 
     Task<Room?> FindRoomAsync(string roomCode, CancellationToken cancellationToken);
 
@@ -67,6 +75,10 @@ public interface IWorkforcePersistencePort
     Task<bool> WorkAssignmentExistsAsync(string workAssignmentCode, CancellationToken cancellationToken);
 
     Task AddWorkAssignmentAsync(WorkAssignment assignment, CancellationToken cancellationToken);
+
+    Task UpdateWorkAssignmentAsync(WorkAssignment assignment, CancellationToken cancellationToken);
+
+    Task<WorkAssignment?> FindWorkAssignmentAsync(string workAssignmentCode, CancellationToken cancellationToken);
 
     Task ClearPrimaryAssignmentsAsync(string workforceMemberCode, CancellationToken cancellationToken);
 

@@ -70,6 +70,7 @@
                         <th>Room number</th>
                         <th>Description</th>
                         <th>Status</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -80,7 +81,23 @@
                         <td>@item.BuildingCode</td>
                         <td>@item.RoomNumber</td>
                         <td>@item.Description</td>
-                        <td>@(item.IsActive ? "Active" : "Inactive")</td>
+                        <td>@(item.IsActive ? "Active" : "Retired")</td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <form method="post" asp-page-handler="Retire" style="display:inline">
+                                    <input type="hidden" name="roomCode" value="@item.RoomCode" />
+                                    <button type="submit" class="btn btn-secondary">Retire</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="Activate" style="display:inline">
+                                    <input type="hidden" name="roomCode" value="@item.RoomCode" />
+                                    <button type="submit" class="btn btn-secondary">Activate</button>
+                                </form>
+                            }
+                        </td>
                     </tr>
                 }
                 </tbody>

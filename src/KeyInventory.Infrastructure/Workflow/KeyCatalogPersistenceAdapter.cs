@@ -43,6 +43,50 @@ public sealed class KeyCatalogPersistenceAdapter : IKeyCatalogPersistencePort
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task UpdateKeyTypeAsync(KeyType keyType, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(keyType);
+        KeyTypeEntity? entity = await _dbContext.KeyTypes
+            .FirstOrDefaultAsync(item => item.TypeCode == keyType.TypeCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The key type was not found in persistence.");
+        }
+
+        entity.IsActive = keyType.IsActive;
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task<int> CountActiveKeyAssetsForTypeAsync(string typeCode, CancellationToken cancellationToken)
+    {
+        return _dbContext.KeyAssets.CountAsync(
+            entity => entity.KeyTypeCode == typeCode && entity.IsActive,
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<KeyTypeListItem>> ListKeyTypesAsync(CancellationToken cancellationToken)
+    {
+        List<KeyTypeEntity> types = await _dbContext.KeyTypes.AsNoTracking()
+            .OrderBy(entity => entity.TypeCode)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        Dictionary<string, int> activeCounts = await _dbContext.KeyAssets.AsNoTracking()
+            .Where(entity => entity.IsActive)
+            .GroupBy(entity => entity.KeyTypeCode)
+            .Select(group => new { TypeCode = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.TypeCode, item => item.Count, StringComparer.Ordinal, cancellationToken)
+            .ConfigureAwait(false);
+
+        return types
+            .Select(entity => new KeyTypeListItem(
+                entity.TypeCode,
+                entity.IsActive,
+                activeCounts.TryGetValue(entity.TypeCode, out int count) ? count : 0))
+            .ToArray();
+    }
+
     public async Task AddKeyAssetAsync(KeyAsset keyAsset, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(keyAsset);

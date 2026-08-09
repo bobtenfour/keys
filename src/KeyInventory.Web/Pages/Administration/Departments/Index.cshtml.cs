@@ -10,15 +10,21 @@ public sealed class IndexModel : PageModel
     private readonly ICreateDepartmentUseCase _create;
     private readonly IListDepartmentsUseCase _list;
     private readonly IListOrganizationsUseCase _organizations;
+    private readonly IActivateDepartmentUseCase _activate;
+    private readonly IRetireDepartmentUseCase _retire;
 
     public IndexModel(
         ICreateDepartmentUseCase create,
         IListDepartmentsUseCase list,
-        IListOrganizationsUseCase organizations)
+        IListOrganizationsUseCase organizations,
+        IActivateDepartmentUseCase activate,
+        IRetireDepartmentUseCase retire)
     {
         _create = create ?? throw new ArgumentNullException(nameof(create));
         _list = list ?? throw new ArgumentNullException(nameof(list));
         _organizations = organizations ?? throw new ArgumentNullException(nameof(organizations));
+        _activate = activate ?? throw new ArgumentNullException(nameof(activate));
+        _retire = retire ?? throw new ArgumentNullException(nameof(retire));
     }
 
     [BindProperty]
@@ -47,6 +53,44 @@ public sealed class IndexModel : PageModel
             await _create.ExecuteAsync(OrganizationCode, DepartmentCode, cancellationToken).ConfigureAwait(false);
             SuccessMessage = $"Department {DepartmentCode} was created.";
             DepartmentCode = string.Empty;
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+
+        await LoadAsync(cancellationToken).ConfigureAwait(false);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostActivateAsync(
+        string organizationCode,
+        string departmentCode,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _activate.ExecuteAsync(organizationCode, departmentCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = $"Department {departmentCode} was activated.";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+
+        await LoadAsync(cancellationToken).ConfigureAwait(false);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostRetireAsync(
+        string organizationCode,
+        string departmentCode,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _retire.ExecuteAsync(organizationCode, departmentCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = $"Department {departmentCode} was retired.";
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {

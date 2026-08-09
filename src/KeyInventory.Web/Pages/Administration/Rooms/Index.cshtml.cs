@@ -10,12 +10,21 @@ public sealed class IndexModel : PageModel
     private readonly ICreateRoomUseCase _create;
     private readonly IListRoomsUseCase _list;
     private readonly IListBuildingsUseCase _buildings;
+    private readonly IActivateRoomUseCase _activate;
+    private readonly IRetireRoomUseCase _retire;
 
-    public IndexModel(ICreateRoomUseCase create, IListRoomsUseCase list, IListBuildingsUseCase buildings)
+    public IndexModel(
+        ICreateRoomUseCase create,
+        IListRoomsUseCase list,
+        IListBuildingsUseCase buildings,
+        IActivateRoomUseCase activate,
+        IRetireRoomUseCase retire)
     {
         _create = create ?? throw new ArgumentNullException(nameof(create));
         _list = list ?? throw new ArgumentNullException(nameof(list));
         _buildings = buildings ?? throw new ArgumentNullException(nameof(buildings));
+        _activate = activate ?? throw new ArgumentNullException(nameof(activate));
+        _retire = retire ?? throw new ArgumentNullException(nameof(retire));
     }
 
     [BindProperty]
@@ -53,6 +62,38 @@ public sealed class IndexModel : PageModel
             RoomCode = string.Empty;
             RoomNumber = string.Empty;
             Description = string.Empty;
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+
+        await LoadAsync(cancellationToken).ConfigureAwait(false);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostActivateAsync(string roomCode, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _activate.ExecuteAsync(roomCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = $"Room {roomCode} was activated.";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+
+        await LoadAsync(cancellationToken).ConfigureAwait(false);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostRetireAsync(string roomCode, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _retire.ExecuteAsync(roomCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = $"Room {roomCode} was retired.";
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {

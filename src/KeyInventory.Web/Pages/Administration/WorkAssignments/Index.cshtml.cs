@@ -11,17 +11,26 @@ public sealed class IndexModel : PageModel
     private readonly IListWorkAssignmentsUseCase _list;
     private readonly IListWorkforceMembersUseCase _members;
     private readonly IListRoomsUseCase _rooms;
+    private readonly IEndWorkAssignmentUseCase _end;
+    private readonly IMarkWorkAssignmentPrimaryUseCase _markPrimary;
+    private readonly IClearWorkAssignmentPrimaryUseCase _clearPrimary;
 
     public IndexModel(
         ICreateWorkAssignmentUseCase create,
         IListWorkAssignmentsUseCase list,
         IListWorkforceMembersUseCase members,
-        IListRoomsUseCase rooms)
+        IListRoomsUseCase rooms,
+        IEndWorkAssignmentUseCase end,
+        IMarkWorkAssignmentPrimaryUseCase markPrimary,
+        IClearWorkAssignmentPrimaryUseCase clearPrimary)
     {
         _create = create ?? throw new ArgumentNullException(nameof(create));
         _list = list ?? throw new ArgumentNullException(nameof(list));
         _members = members ?? throw new ArgumentNullException(nameof(members));
         _rooms = rooms ?? throw new ArgumentNullException(nameof(rooms));
+        _end = end ?? throw new ArgumentNullException(nameof(end));
+        _markPrimary = markPrimary ?? throw new ArgumentNullException(nameof(markPrimary));
+        _clearPrimary = clearPrimary ?? throw new ArgumentNullException(nameof(clearPrimary));
     }
 
     [BindProperty]
@@ -64,6 +73,54 @@ public sealed class IndexModel : PageModel
                 .ConfigureAwait(false);
             SuccessMessage = $"Work assignment {WorkAssignmentCode} was created.";
             WorkAssignmentCode = string.Empty;
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+
+        await LoadAsync(cancellationToken).ConfigureAwait(false);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostEndAsync(string workAssignmentCode, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _end.ExecuteAsync(workAssignmentCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = $"Work assignment {workAssignmentCode} was ended.";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+
+        await LoadAsync(cancellationToken).ConfigureAwait(false);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostMarkPrimaryAsync(string workAssignmentCode, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _markPrimary.ExecuteAsync(workAssignmentCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = $"Work assignment {workAssignmentCode} is now primary.";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+
+        await LoadAsync(cancellationToken).ConfigureAwait(false);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostClearPrimaryAsync(string workAssignmentCode, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _clearPrimary.ExecuteAsync(workAssignmentCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = $"Primary cleared for work assignment {workAssignmentCode}.";
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {

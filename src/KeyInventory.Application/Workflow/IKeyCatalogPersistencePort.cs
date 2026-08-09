@@ -10,6 +10,12 @@ public interface IKeyCatalogPersistencePort
 
     Task AddKeyTypeAsync(KeyType keyType, CancellationToken cancellationToken);
 
+    Task UpdateKeyTypeAsync(KeyType keyType, CancellationToken cancellationToken);
+
+    Task<int> CountActiveKeyAssetsForTypeAsync(string typeCode, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<KeyTypeListItem>> ListKeyTypesAsync(CancellationToken cancellationToken);
+
     Task AddKeyAssetAsync(KeyAsset keyAsset, CancellationToken cancellationToken);
 
     Task<KeyAsset?> FindKeyAssetAsync(string catalogKeyCode, CancellationToken cancellationToken);

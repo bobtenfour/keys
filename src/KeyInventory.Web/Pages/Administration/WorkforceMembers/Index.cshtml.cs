@@ -13,6 +13,9 @@ public sealed class IndexModel : PageModel
     private readonly IListWorkforceMembersUseCase _listMembers;
     private readonly ITerminateWorkforceMemberUseCase _terminate;
     private readonly IListOutstandingReturnObligationsUseCase _obligations;
+    private readonly IUpdateWorkforceMemberOrganizationDepartmentUseCase _updateOrgDept;
+    private readonly IUpdateWorkforceMemberResponsibleManagerUseCase _updateManager;
+    private readonly IUpdateWorkforceMemberWorkforceTypeUseCase _updateType;
 
     public IndexModel(
         ICreatePartyUseCase createParty,
@@ -20,7 +23,10 @@ public sealed class IndexModel : PageModel
         ICreateBootstrapWorkforcePairUseCase createBootstrapPair,
         IListWorkforceMembersUseCase listMembers,
         ITerminateWorkforceMemberUseCase terminate,
-        IListOutstandingReturnObligationsUseCase obligations)
+        IListOutstandingReturnObligationsUseCase obligations,
+        IUpdateWorkforceMemberOrganizationDepartmentUseCase updateOrgDept,
+        IUpdateWorkforceMemberResponsibleManagerUseCase updateManager,
+        IUpdateWorkforceMemberWorkforceTypeUseCase updateType)
     {
         _createParty = createParty ?? throw new ArgumentNullException(nameof(createParty));
         _createMember = createMember ?? throw new ArgumentNullException(nameof(createMember));
@@ -28,6 +34,9 @@ public sealed class IndexModel : PageModel
         _listMembers = listMembers ?? throw new ArgumentNullException(nameof(listMembers));
         _terminate = terminate ?? throw new ArgumentNullException(nameof(terminate));
         _obligations = obligations ?? throw new ArgumentNullException(nameof(obligations));
+        _updateOrgDept = updateOrgDept ?? throw new ArgumentNullException(nameof(updateOrgDept));
+        _updateManager = updateManager ?? throw new ArgumentNullException(nameof(updateManager));
+        _updateType = updateType ?? throw new ArgumentNullException(nameof(updateType));
     }
 
     [BindProperty]
@@ -78,11 +87,28 @@ public sealed class IndexModel : PageModel
     [BindProperty]
     public string TerminateWorkforceMemberCode { get; set; } = string.Empty;
 
+    [BindProperty]
+    public string MaintainWorkforceMemberCode { get; set; } = string.Empty;
+
+    [BindProperty]
+    public string MaintainOrganizationCode { get; set; } = string.Empty;
+
+    [BindProperty]
+    public string MaintainDepartmentCode { get; set; } = string.Empty;
+
+    [BindProperty]
+    public string MaintainResponsibleManagerWorkforceMemberCode { get; set; } = string.Empty;
+
+    [BindProperty]
+    public string MaintainWorkforceType { get; set; } = "Employee";
+
     public bool IsBootstrap { get; private set; }
 
     public IReadOnlyList<WorkforceMemberListItem> Members { get; private set; } = [];
 
     public IReadOnlyList<SelectListItem> ManagerOptions { get; private set; } = [];
+
+    public IReadOnlyList<SelectListItem> ActiveMemberOptions { get; private set; } = [];
 
     public IReadOnlyList<OutstandingReturnObligationItem> Obligations { get; private set; } = [];
 
@@ -177,6 +203,37 @@ public sealed class IndexModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostMaintainAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _updateOrgDept.ExecuteAsync(
+                    MaintainWorkforceMemberCode,
+                    MaintainOrganizationCode,
+                    MaintainDepartmentCode,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            await _updateManager.ExecuteAsync(
+                    MaintainWorkforceMemberCode,
+                    MaintainResponsibleManagerWorkforceMemberCode,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            await _updateType.ExecuteAsync(
+                    MaintainWorkforceMemberCode,
+                    MaintainWorkforceType,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            SuccessMessage = $"Workforce member {MaintainWorkforceMemberCode} was updated.";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+
+        await LoadAsync(cancellationToken).ConfigureAwait(false);
+        return Page();
+    }
+
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
         Members = await _listMembers.ExecuteAsync(cancellationToken).ConfigureAwait(false);
@@ -185,5 +242,6 @@ public sealed class IndexModel : PageModel
             .Where(item => string.Equals(item.Status, "Active", StringComparison.Ordinal))
             .Select(item => new SelectListItem(item.WorkforceMemberCode, item.WorkforceMemberCode))
             .ToArray();
+        ActiveMemberOptions = ManagerOptions;
     }
 }

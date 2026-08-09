@@ -45,6 +45,7 @@
                     <tr>
                         <th>Building</th>
                         <th>Status</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,7 +53,23 @@
                 {
                     <tr>
                         <td>@item.BuildingCode</td>
-                        <td>@(item.IsActive ? "Active" : "Inactive")</td>
+                        <td>@(item.IsActive ? "Active" : "Retired")</td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <form method="post" asp-page-handler="Retire" style="display:inline">
+                                    <input type="hidden" name="buildingCode" value="@item.BuildingCode" />
+                                    <button type="submit" class="btn btn-secondary">Retire</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="Activate" style="display:inline">
+                                    <input type="hidden" name="buildingCode" value="@item.BuildingCode" />
+                                    <button type="submit" class="btn btn-secondary">Activate</button>
+                                </form>
+                            }
+                        </td>
                     </tr>
                 }
                 </tbody>

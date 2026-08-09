@@ -1,28 +1,65 @@
 using KeyInventory.Application.Workflow;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace KeyInventory.Web.Pages.Catalog;
 
 public sealed class KeyTypesModel : PageModel
 {
-    private readonly IListKeyAssetsUseCase _listKeyAssets;
+    private readonly IListKeyTypesUseCase _listKeyTypes;
+    private readonly IActivateKeyTypeUseCase _activate;
+    private readonly IRetireKeyTypeUseCase _retire;
 
-    public KeyTypesModel(IListKeyAssetsUseCase listKeyAssets)
+    public KeyTypesModel(
+        IListKeyTypesUseCase listKeyTypes,
+        IActivateKeyTypeUseCase activate,
+        IRetireKeyTypeUseCase retire)
     {
-        _listKeyAssets = listKeyAssets ?? throw new ArgumentNullException(nameof(listKeyAssets));
+        _listKeyTypes = listKeyTypes ?? throw new ArgumentNullException(nameof(listKeyTypes));
+        _activate = activate ?? throw new ArgumentNullException(nameof(activate));
+        _retire = retire ?? throw new ArgumentNullException(nameof(retire));
     }
 
-    public IReadOnlyList<KeyTypeSummary> KeyTypes { get; private set; } = [];
+    public IReadOnlyList<KeyTypeListItem> KeyTypes { get; private set; } = [];
+
+    public string? SuccessMessage { get; private set; }
+
+    public string? ErrorMessage { get; private set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyList<KeyAssetListItem> keys = await _listKeyAssets.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        KeyTypes = keys
-            .GroupBy(key => key.TypeCode, StringComparer.OrdinalIgnoreCase)
-            .Select(group => new KeyTypeSummary(group.Key, group.Count(), group.Count(key => key.IsActive)))
-            .OrderBy(item => item.TypeCode, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        KeyTypes = await _listKeyTypes.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<IActionResult> OnPostActivateAsync(string typeCode, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _activate.ExecuteAsync(typeCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = $"Key type {typeCode} was activated.";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+
+        KeyTypes = await _listKeyTypes.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostRetireAsync(string typeCode, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _retire.ExecuteAsync(typeCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = $"Key type {typeCode} was retired.";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+
+        KeyTypes = await _listKeyTypes.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        return Page();
     }
 }
-
-public sealed record KeyTypeSummary(string TypeCode, int KeyCount, int ActiveKeyCount);
