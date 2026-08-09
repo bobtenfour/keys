@@ -20,7 +20,9 @@
         </label>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Apply</button>
-            <a class="btn btn-secondary" asp-page="/Reports/KeyCatalog" asp-page-handler="Export" asp-route-key="@Model.KeyFilter">Export CSV</a>
+            <a class="btn btn-secondary" asp-page="/Reports/KeyCatalog" asp-page-handler="Export" asp-route-format="csv" asp-route-key="@Model.KeyFilter">CSV</a>
+            <a class="btn btn-secondary" asp-page="/Reports/KeyCatalog" asp-page-handler="Export" asp-route-format="xlsx" asp-route-key="@Model.KeyFilter">Excel</a>
+            <a class="btn btn-secondary" asp-page="/Reports/KeyCatalog" asp-page-handler="Export" asp-route-format="pdf" asp-route-key="@Model.KeyFilter">PDF</a>
             <a class="btn btn-secondary" asp-page="/Reports/Index">All Reports</a>
         </div>
     </form>

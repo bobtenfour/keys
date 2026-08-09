@@ -53,17 +53,20 @@ public sealed class ReportsBoundaryTests
             .Select(type => type.FullName ?? type.Name)
             .Where(name => ContainsAny(
                 name,
-                "ExcelExport",
-                "PdfExport",
                 "DataWarehouse",
                 "ReportDesigner",
                 "Elasticsearch",
                 "DashboardWidget",
                 "Reports2",
-                "ChartJs"))
+                "ChartJs",
+                "ExportCapabilityRegistry",
+                "ScheduledReport",
+                "EmailDelivery"))
             .ToArray();
 
         Assert.Empty(prohibited);
+        Assert.NotNull(typeof(IReportExcelExporter));
+        Assert.NotNull(typeof(IReportPdfExporter));
     }
 
     [Fact]

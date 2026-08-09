@@ -24,10 +24,16 @@ public sealed class KeyCatalogModel : PageModel
         Rows = await _reports.ListKeyCatalogReportAsync(key, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IActionResult> OnGetExportAsync(string? key, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetExportAsync(string? key, string? format, CancellationToken cancellationToken)
     {
         IReadOnlyList<KeyCatalogReportRow> rows =
             await _reports.ListKeyCatalogReportAsync(key, cancellationToken).ConfigureAwait(false);
-        return ReportCsvResultFactory.Create("key-catalog.csv", _reports.FormatKeyCatalogCsv(rows));
+        string filterContext = ReportFilterContext.Key(key);
+        return ReportExportResultFactory.Create(
+            format,
+            "key-catalog",
+            () => _reports.FormatKeyCatalogCsv(rows),
+            () => _reports.FormatKeyCatalogXlsx(rows, filterContext),
+            () => _reports.FormatKeyCatalogPdf(rows, filterContext));
     }
 }

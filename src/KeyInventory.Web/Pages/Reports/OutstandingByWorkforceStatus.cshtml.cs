@@ -34,12 +34,16 @@ public sealed class OutstandingByWorkforceStatusModel : PageModel
             .ConfigureAwait(false);
     }
 
-    public async Task<IActionResult> OnGetExportAsync(string? status, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetExportAsync(string? status, string? format, CancellationToken cancellationToken)
     {
         IReadOnlyList<OutstandingWorkforceKeyReportRow> rows =
             await _reports.ListOutstandingKeysByWorkforceStatusAsync(status, cancellationToken).ConfigureAwait(false);
-        return ReportCsvResultFactory.Create(
-            "outstanding-by-workforce-status.csv",
-            _reports.FormatOutstandingKeysByWorkforceStatusCsv(rows));
+        string filterContext = ReportFilterContext.Status(status);
+        return ReportExportResultFactory.Create(
+            format,
+            "outstanding-by-workforce-status",
+            () => _reports.FormatOutstandingKeysByWorkforceStatusCsv(rows),
+            () => _reports.FormatOutstandingKeysByWorkforceStatusXlsx(rows, filterContext),
+            () => _reports.FormatOutstandingKeysByWorkforceStatusPdf(rows, filterContext));
     }
 }

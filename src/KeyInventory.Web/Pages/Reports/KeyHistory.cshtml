@@ -26,7 +26,9 @@
             <button type="submit" class="btn btn-primary">Show</button>
             @if (!string.IsNullOrWhiteSpace(Model.SelectedKeyCode))
             {
-                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-key="@Model.SelectedKeyCode">Export CSV</a>
+                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-format="csv" asp-route-key="@Model.SelectedKeyCode">CSV</a>
+                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-format="xlsx" asp-route-key="@Model.SelectedKeyCode">Excel</a>
+                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-format="pdf" asp-route-key="@Model.SelectedKeyCode">PDF</a>
             }
             <a class="btn btn-secondary" asp-page="/Reports/Index">All Reports</a>
         </div>

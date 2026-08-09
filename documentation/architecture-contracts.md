@@ -16,6 +16,12 @@ Key Catalog owns current KeyAsset-to-Room opening assignments; Location owns Bui
 Key-to-Room Assignment is the operational authority for which Rooms a physical key opens; Lock must not be required or used as an intermediate room-opening authority.
 Master/sub-master hierarchy is out of scope; multiple Rooms are represented by multiple current assignments.
 
+## Operational Report Export Boundary
+Existing REPORTS-1 tabular reports may be represented as on-screen tables and as CSV, XLSX, and PDF downloads of the same Application-owned filtered result set.
+Application owns report queries and DTO result sets; export formatters consume those results and must not independently query SQL Server or invent a second reporting store.
+XLSX must be a genuine Excel workbook and PDF must be a genuine readable PDF; CSV behavior established by REPORTS-1 remains authoritative for the CSV representation.
+This boundary does not authorize REPORTS-2, new report families, BI platforms, report designers, scheduled delivery, email delivery, or enterprise analytics frameworks.
+
 ## Layers
 ### Domain
 Owns business rules, domain invariants, and aggregate consistency.

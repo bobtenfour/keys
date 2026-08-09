@@ -24,10 +24,16 @@ public sealed class CurrentKeyHoldersModel : PageModel
         Rows = await _reports.ListCurrentKeyHoldersAsync(key, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IActionResult> OnGetExportAsync(string? key, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetExportAsync(string? key, string? format, CancellationToken cancellationToken)
     {
         IReadOnlyList<CurrentKeyHolderReportRow> rows =
             await _reports.ListCurrentKeyHoldersAsync(key, cancellationToken).ConfigureAwait(false);
-        return ReportCsvResultFactory.Create("current-key-holders.csv", _reports.FormatCurrentKeyHoldersCsv(rows));
+        string filterContext = ReportFilterContext.Key(key);
+        return ReportExportResultFactory.Create(
+            format,
+            "current-key-holders",
+            () => _reports.FormatCurrentKeyHoldersCsv(rows),
+            () => _reports.FormatCurrentKeyHoldersXlsx(rows, filterContext),
+            () => _reports.FormatCurrentKeyHoldersPdf(rows, filterContext));
     }
 }

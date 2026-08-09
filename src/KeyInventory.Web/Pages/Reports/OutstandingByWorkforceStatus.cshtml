@@ -18,7 +18,9 @@
         </label>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Apply</button>
-            <a class="btn btn-secondary" asp-page="/Reports/OutstandingByWorkforceStatus" asp-page-handler="Export" asp-route-status="@Model.StatusFilter">Export CSV</a>
+            <a class="btn btn-secondary" asp-page="/Reports/OutstandingByWorkforceStatus" asp-page-handler="Export" asp-route-format="csv" asp-route-status="@Model.StatusFilter">CSV</a>
+            <a class="btn btn-secondary" asp-page="/Reports/OutstandingByWorkforceStatus" asp-page-handler="Export" asp-route-format="xlsx" asp-route-status="@Model.StatusFilter">Excel</a>
+            <a class="btn btn-secondary" asp-page="/Reports/OutstandingByWorkforceStatus" asp-page-handler="Export" asp-route-format="pdf" asp-route-status="@Model.StatusFilter">PDF</a>
             <a class="btn btn-secondary" asp-page="/Reports/Index">All Reports</a>
         </div>
     </form>

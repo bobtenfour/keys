@@ -24,10 +24,16 @@ public sealed class ActiveLoansModel : PageModel
         Rows = await _reports.ListActiveLoansReportAsync(key, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IActionResult> OnGetExportAsync(string? key, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetExportAsync(string? key, string? format, CancellationToken cancellationToken)
     {
         IReadOnlyList<ActiveLoanReportRow> rows =
             await _reports.ListActiveLoansReportAsync(key, cancellationToken).ConfigureAwait(false);
-        return ReportCsvResultFactory.Create("active-loans.csv", _reports.FormatActiveLoansCsv(rows));
+        string filterContext = ReportFilterContext.Key(key);
+        return ReportExportResultFactory.Create(
+            format,
+            "active-loans",
+            () => _reports.FormatActiveLoansCsv(rows),
+            () => _reports.FormatActiveLoansXlsx(rows, filterContext),
+            () => _reports.FormatActiveLoansPdf(rows, filterContext));
     }
 }

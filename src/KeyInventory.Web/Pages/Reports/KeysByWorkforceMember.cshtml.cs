@@ -51,7 +51,7 @@ public sealed class KeysByWorkforceMemberModel : PageModel
         }
     }
 
-    public async Task<IActionResult> OnGetExportAsync(string? member, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetExportAsync(string? member, string? format, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(member))
         {
@@ -65,9 +65,13 @@ public sealed class KeysByWorkforceMemberModel : PageModel
             return NotFound();
         }
 
-        return ReportCsvResultFactory.Create(
-            $"keys-by-member-{member}.csv",
-            _reports.FormatKeysByWorkforceMemberCsv(report));
+        string filterContext = ReportFilterContext.Member(member);
+        return ReportExportResultFactory.Create(
+            format,
+            $"keys-by-member-{member}",
+            () => _reports.FormatKeysByWorkforceMemberCsv(report),
+            () => _reports.FormatKeysByWorkforceMemberXlsx(report, filterContext),
+            () => _reports.FormatKeysByWorkforceMemberPdf(report, filterContext));
     }
 
     private async Task LoadOptionsAsync(CancellationToken cancellationToken)

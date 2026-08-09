@@ -26,7 +26,9 @@
             <button type="submit" class="btn btn-primary">Show</button>
             @if (!string.IsNullOrWhiteSpace(Model.SelectedMemberCode))
             {
-                <a class="btn btn-secondary" asp-page="/Reports/KeysByWorkforceMember" asp-page-handler="Export" asp-route-member="@Model.SelectedMemberCode">Export CSV</a>
+                <a class="btn btn-secondary" asp-page="/Reports/KeysByWorkforceMember" asp-page-handler="Export" asp-route-format="csv" asp-route-member="@Model.SelectedMemberCode">CSV</a>
+                <a class="btn btn-secondary" asp-page="/Reports/KeysByWorkforceMember" asp-page-handler="Export" asp-route-format="xlsx" asp-route-member="@Model.SelectedMemberCode">Excel</a>
+                <a class="btn btn-secondary" asp-page="/Reports/KeysByWorkforceMember" asp-page-handler="Export" asp-route-format="pdf" asp-route-member="@Model.SelectedMemberCode">PDF</a>
             }
             <a class="btn btn-secondary" asp-page="/Reports/Index">All Reports</a>
         </div>

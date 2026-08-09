@@ -69,6 +69,8 @@ public static class LoanVerticalComposition
         services.AddScoped<IOperationalKeyLookupPort, OperationalKeyLookupAdapter>();
         services.AddScoped<IOperationalKeyLookupUseCase, OperationalKeyLookupUseCase>();
         services.AddScoped<IOperationalReportsPort, OperationalReportsAdapter>();
+        services.AddSingleton<IReportExcelExporter, ClosedXmlReportExcelExporter>();
+        services.AddSingleton<IReportPdfExporter, QuestPdfReportPdfExporter>();
         services.AddScoped<IOperationalReportsUseCase, OperationalReportsUseCase>();
     }
 }

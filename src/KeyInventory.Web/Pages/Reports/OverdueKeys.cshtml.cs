@@ -25,10 +25,16 @@ public sealed class OverdueKeysModel : PageModel
             .ConfigureAwait(false);
     }
 
-    public async Task<IActionResult> OnGetExportAsync(string? key, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetExportAsync(string? key, string? format, CancellationToken cancellationToken)
     {
         IReadOnlyList<OverdueKeyReportRow> rows =
             await _reports.ListOverdueKeysAsync(DateTimeOffset.UtcNow, key, cancellationToken).ConfigureAwait(false);
-        return ReportCsvResultFactory.Create("overdue-keys.csv", _reports.FormatOverdueKeysCsv(rows));
+        string filterContext = ReportFilterContext.Key(key);
+        return ReportExportResultFactory.Create(
+            format,
+            "overdue-keys",
+            () => _reports.FormatOverdueKeysCsv(rows),
+            () => _reports.FormatOverdueKeysXlsx(rows, filterContext),
+            () => _reports.FormatOverdueKeysPdf(rows, filterContext));
     }
 }

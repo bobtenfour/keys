@@ -34,6 +34,7 @@ Workforce Key Eligibility ensures keys are issued to legitimate active workers; 
 - Organization supports the real employee/contractor distinction and responsible organization where required; it does not authorize multi-organization enterprise hierarchy design.
 - Operational Accountability means the product must make clear who has each key through the delivered loan/return and eligibility model.
 - Straightforward Audit and History means operators can review operational evidence without an enterprise analytics platform.
+- Existing REPORTS-1 tabular reports support operator download as CSV, XLSX, and PDF of the same filtered authoritative result set shown on screen; this does not authorize REPORTS-2, new report families, or an enterprise BI platform.
 
 ## Out of Capability Scope Unless Explicitly Required Later
 - Policy Engine

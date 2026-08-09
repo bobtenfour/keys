@@ -46,7 +46,7 @@ public sealed class KeyHistoryModel : PageModel
         Rows = await _reports.ListKeyHistoryAsync(key, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IActionResult> OnGetExportAsync(string? key, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetExportAsync(string? key, string? format, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(key))
         {
@@ -55,6 +55,12 @@ public sealed class KeyHistoryModel : PageModel
 
         IReadOnlyList<KeyHistoryReportRow> rows =
             await _reports.ListKeyHistoryAsync(key, cancellationToken).ConfigureAwait(false);
-        return ReportCsvResultFactory.Create($"key-history-{key}.csv", _reports.FormatKeyHistoryCsv(rows));
+        string filterContext = ReportFilterContext.Key(key);
+        return ReportExportResultFactory.Create(
+            format,
+            $"key-history-{key}",
+            () => _reports.FormatKeyHistoryCsv(rows),
+            () => _reports.FormatKeyHistoryXlsx(rows, filterContext),
+            () => _reports.FormatKeyHistoryPdf(rows, filterContext));
     }
 }
