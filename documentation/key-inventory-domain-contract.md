@@ -480,7 +480,9 @@ Loan and Return authority may never store:
 ### Loan and Return Future Slice Ownership
 - Custody transfer authority remains future custody slice scope.
 - Lifecycle event and state derivation remain future lifecycle slice scope.
-- Audit Event foundation is owned by the Audit boundary under AUDIT-1; automatic audit emission from loan or return workflow handlers remains future slice scope.
+- Audit Event foundation is owned by the Audit boundary under AUDIT-1.
+- OPERATOR-AUDIT-1 authorizes Application-owned append-only `OperatorAuditRecord` emission for authenticated-operator business mutations as operational accountability history; that trail must not reconstruct current Domain state, must not become event sourcing, and must remain distinct from inventing a second Operator identity aggregate.
+- Automatic emission of Domain `AuditEvent` aggregates from workflow handlers remains deferred unless a later slice explicitly bridges authenticated operators to SecurityPrincipal without violating Party independence.
 - Authorization enforcement remains future authorization slice scope.
 - Persistence foundation for Loan and Return belongs to MIGRATION-1; Application port adapters, workflow DI, and LOAN-VERTICAL-1 UI belong to LOAN-VERTICAL-1.
 - UI behavior outside LOAN-VERTICAL-1 remains future product experience or UI slice scope.

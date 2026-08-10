@@ -29,6 +29,12 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 - Workforce Members index shows person identity (FirstName LastName, UIN), Type, Organization, Department, Responsible Manager, Status, and actions; PartyCode and WorkforceMemberCode are not primary operator-facing columns; Add and Detail/Edit are dedicated routes; Terminate lives on the selected member detail page with deliberate confirmation.
 - Prefer authoritative selectors over manually typed foreign-reference codes when Application list authorities already expose the choices.
 
+## OPERATOR-AUDIT-1 Product Experience
+- Administration includes an Audit Trail list showing Date/Time, Operator, Action, Subject, and Details for persisted operator business mutations.
+- Prefer operator-readable action and subject labels; authenticated operator display uses the existing KeyInventory user identity name.
+- Practical filters (date range, operator, action, subject/reference) are presentation over Application trail query results.
+- Do not turn normal operations pages into audit dashboards; optional subject links to filtered history are allowed when simple.
+
 ## Applies When
 This document is required only for slices that create or modify UI, navigation, user workflows, messages, or product-facing behavior.
 

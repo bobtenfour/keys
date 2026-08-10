@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Domain.Workforce;
 
 namespace KeyInventory.Application.Workforce;
@@ -15,10 +16,12 @@ public interface IListDepartmentsUseCase
 public sealed class CreateDepartmentUseCase : ICreateDepartmentUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public CreateDepartmentUseCase(IWorkforcePersistencePort workforce)
+    public CreateDepartmentUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string organizationCode, string departmentCode, CancellationToken cancellationToken)
@@ -41,7 +44,13 @@ public sealed class CreateDepartmentUseCase : ICreateDepartmentUseCase
             throw new InvalidOperationException("A department with this code already exists in the organization.");
         }
 
-        await _workforce.AddDepartmentAsync(new Department(departmentCode, organization), cancellationToken)
+        Department department = new(departmentCode, organization);
+        _audit.Stage(
+            OperatorAuditActions.DepartmentCreated,
+            OperatorAuditSubjects.Department,
+            $"{organization.OrganizationCode}/{department.DepartmentCode}",
+            $"Organization={organization.OrganizationCode}; Department={department.DepartmentCode}");
+        await _workforce.AddDepartmentAsync(department, cancellationToken)
             .ConfigureAwait(false);
     }
 }

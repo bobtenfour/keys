@@ -35,6 +35,8 @@ public sealed class KeyInventoryDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<WorkAssignmentEntity> WorkAssignments => Set<WorkAssignmentEntity>();
 
+    public DbSet<OperatorAuditRecordEntity> OperatorAuditRecords => Set<OperatorAuditRecordEntity>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

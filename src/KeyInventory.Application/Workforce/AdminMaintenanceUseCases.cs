@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Domain.Locations;
 using KeyInventory.Domain.Workforce;
 
@@ -86,10 +87,12 @@ public interface IClearWorkAssignmentPrimaryUseCase
 public sealed class ActivateOrganizationUseCase : IActivateOrganizationUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public ActivateOrganizationUseCase(IWorkforcePersistencePort workforce)
+    public ActivateOrganizationUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string organizationCode, CancellationToken cancellationToken)
@@ -97,6 +100,10 @@ public sealed class ActivateOrganizationUseCase : IActivateOrganizationUseCase
         Organization organization = await RequireOrganizationAsync(organizationCode, cancellationToken)
             .ConfigureAwait(false);
         organization.Activate();
+        _audit.Stage(
+            OperatorAuditActions.OrganizationActivated,
+            OperatorAuditSubjects.Organization,
+            organization.OrganizationCode);
         await _workforce.UpdateOrganizationAsync(organization, cancellationToken).ConfigureAwait(false);
     }
 
@@ -112,10 +119,12 @@ public sealed class ActivateOrganizationUseCase : IActivateOrganizationUseCase
 public sealed class RetireOrganizationUseCase : IRetireOrganizationUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public RetireOrganizationUseCase(IWorkforcePersistencePort workforce)
+    public RetireOrganizationUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string organizationCode, CancellationToken cancellationToken)
@@ -129,6 +138,10 @@ public sealed class RetireOrganizationUseCase : IRetireOrganizationUseCase
         }
 
         organization.Retire();
+        _audit.Stage(
+            OperatorAuditActions.OrganizationRetired,
+            OperatorAuditSubjects.Organization,
+            organization.OrganizationCode);
         await _workforce.UpdateOrganizationAsync(organization, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -136,10 +149,12 @@ public sealed class RetireOrganizationUseCase : IRetireOrganizationUseCase
 public sealed class ActivateDepartmentUseCase : IActivateDepartmentUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public ActivateDepartmentUseCase(IWorkforcePersistencePort workforce)
+    public ActivateDepartmentUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -166,6 +181,11 @@ public sealed class ActivateDepartmentUseCase : IActivateDepartmentUseCase
         }
 
         department.Activate(organization);
+        _audit.Stage(
+            OperatorAuditActions.DepartmentActivated,
+            OperatorAuditSubjects.Department,
+            $"{department.OrganizationCode}/{department.DepartmentCode}",
+            $"Organization={department.OrganizationCode}; Department={department.DepartmentCode}");
         await _workforce.UpdateDepartmentAsync(department, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -173,10 +193,12 @@ public sealed class ActivateDepartmentUseCase : IActivateDepartmentUseCase
 public sealed class RetireDepartmentUseCase : IRetireDepartmentUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public RetireDepartmentUseCase(IWorkforcePersistencePort workforce)
+    public RetireDepartmentUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -196,6 +218,11 @@ public sealed class RetireDepartmentUseCase : IRetireDepartmentUseCase
         }
 
         department.Retire();
+        _audit.Stage(
+            OperatorAuditActions.DepartmentRetired,
+            OperatorAuditSubjects.Department,
+            $"{department.OrganizationCode}/{department.DepartmentCode}",
+            $"Organization={department.OrganizationCode}; Department={department.DepartmentCode}");
         await _workforce.UpdateDepartmentAsync(department, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -203,10 +230,12 @@ public sealed class RetireDepartmentUseCase : IRetireDepartmentUseCase
 public sealed class ActivateBuildingUseCase : IActivateBuildingUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public ActivateBuildingUseCase(IWorkforcePersistencePort workforce)
+    public ActivateBuildingUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string buildingCode, CancellationToken cancellationToken)
@@ -220,6 +249,10 @@ public sealed class ActivateBuildingUseCase : IActivateBuildingUseCase
         }
 
         building.Activate();
+        _audit.Stage(
+            OperatorAuditActions.BuildingActivated,
+            OperatorAuditSubjects.Building,
+            building.BuildingCode);
         await _workforce.UpdateBuildingAsync(building, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -227,10 +260,12 @@ public sealed class ActivateBuildingUseCase : IActivateBuildingUseCase
 public sealed class RetireBuildingUseCase : IRetireBuildingUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public RetireBuildingUseCase(IWorkforcePersistencePort workforce)
+    public RetireBuildingUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string buildingCode, CancellationToken cancellationToken)
@@ -244,6 +279,10 @@ public sealed class RetireBuildingUseCase : IRetireBuildingUseCase
         }
 
         building.Retire();
+        _audit.Stage(
+            OperatorAuditActions.BuildingRetired,
+            OperatorAuditSubjects.Building,
+            building.BuildingCode);
         await _workforce.UpdateBuildingAsync(building, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -251,10 +290,12 @@ public sealed class RetireBuildingUseCase : IRetireBuildingUseCase
 public sealed class ActivateRoomUseCase : IActivateRoomUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public ActivateRoomUseCase(IWorkforcePersistencePort workforce)
+    public ActivateRoomUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string roomCode, CancellationToken cancellationToken)
@@ -274,6 +315,10 @@ public sealed class ActivateRoomUseCase : IActivateRoomUseCase
         }
 
         room.Activate(building);
+        _audit.Stage(
+            OperatorAuditActions.RoomActivated,
+            OperatorAuditSubjects.Room,
+            room.RoomCode);
         await _workforce.UpdateRoomAsync(room, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -281,10 +326,12 @@ public sealed class ActivateRoomUseCase : IActivateRoomUseCase
 public sealed class RetireRoomUseCase : IRetireRoomUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public RetireRoomUseCase(IWorkforcePersistencePort workforce)
+    public RetireRoomUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string roomCode, CancellationToken cancellationToken)
@@ -297,6 +344,10 @@ public sealed class RetireRoomUseCase : IRetireRoomUseCase
         }
 
         room.Retire();
+        _audit.Stage(
+            OperatorAuditActions.RoomRetired,
+            OperatorAuditSubjects.Room,
+            room.RoomCode);
         await _workforce.UpdateRoomAsync(room, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -305,10 +356,14 @@ public sealed class UpdateWorkforceMemberOrganizationDepartmentUseCase
     : IUpdateWorkforceMemberOrganizationDepartmentUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public UpdateWorkforceMemberOrganizationDepartmentUseCase(IWorkforcePersistencePort workforce)
+    public UpdateWorkforceMemberOrganizationDepartmentUseCase(
+        IWorkforcePersistencePort workforce,
+        IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -340,6 +395,11 @@ public sealed class UpdateWorkforceMemberOrganizationDepartmentUseCase
         }
 
         member.AssignOrganizationAndDepartment(organization.OrganizationCode, department.DepartmentCode);
+        _audit.Stage(
+            OperatorAuditActions.WorkforceMemberMaintained,
+            OperatorAuditSubjects.WorkforceMember,
+            member.WorkforceMemberCode,
+            $"Organization={organization.OrganizationCode}; Department={department.DepartmentCode}");
         await _workforce.UpdateWorkforceMemberAsync(member, cancellationToken).ConfigureAwait(false);
     }
 
@@ -367,10 +427,14 @@ public sealed class UpdateWorkforceMemberResponsibleManagerUseCase
     : IUpdateWorkforceMemberResponsibleManagerUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public UpdateWorkforceMemberResponsibleManagerUseCase(IWorkforcePersistencePort workforce)
+    public UpdateWorkforceMemberResponsibleManagerUseCase(
+        IWorkforcePersistencePort workforce,
+        IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -402,6 +466,11 @@ public sealed class UpdateWorkforceMemberResponsibleManagerUseCase
         }
 
         member.AssignResponsibleManager(manager.WorkforceMemberCode);
+        _audit.Stage(
+            OperatorAuditActions.WorkforceMemberMaintained,
+            OperatorAuditSubjects.WorkforceMember,
+            member.WorkforceMemberCode,
+            $"ResponsibleManager={manager.WorkforceMemberCode}");
         await _workforce.UpdateWorkforceMemberAsync(member, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -409,10 +478,14 @@ public sealed class UpdateWorkforceMemberResponsibleManagerUseCase
 public sealed class UpdateWorkforceMemberWorkforceTypeUseCase : IUpdateWorkforceMemberWorkforceTypeUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public UpdateWorkforceMemberWorkforceTypeUseCase(IWorkforcePersistencePort workforce)
+    public UpdateWorkforceMemberWorkforceTypeUseCase(
+        IWorkforcePersistencePort workforce,
+        IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -442,6 +515,11 @@ public sealed class UpdateWorkforceMemberWorkforceTypeUseCase : IUpdateWorkforce
         }
 
         member.ChangeWorkforceType(parsed);
+        _audit.Stage(
+            OperatorAuditActions.WorkforceMemberMaintained,
+            OperatorAuditSubjects.WorkforceMember,
+            member.WorkforceMemberCode,
+            $"WorkforceType={parsed}");
         await _workforce.UpdateWorkforceMemberAsync(member, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -449,10 +527,12 @@ public sealed class UpdateWorkforceMemberWorkforceTypeUseCase : IUpdateWorkforce
 public sealed class EndWorkAssignmentUseCase : IEndWorkAssignmentUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public EndWorkAssignmentUseCase(IWorkforcePersistencePort workforce)
+    public EndWorkAssignmentUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string workAssignmentCode, CancellationToken cancellationToken)
@@ -467,6 +547,10 @@ public sealed class EndWorkAssignmentUseCase : IEndWorkAssignmentUseCase
         }
 
         assignment.End();
+        _audit.Stage(
+            OperatorAuditActions.WorkAssignmentEnded,
+            OperatorAuditSubjects.WorkAssignment,
+            assignment.WorkAssignmentCode);
         await _workforce.UpdateWorkAssignmentAsync(assignment, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -474,10 +558,12 @@ public sealed class EndWorkAssignmentUseCase : IEndWorkAssignmentUseCase
 public sealed class MarkWorkAssignmentPrimaryUseCase : IMarkWorkAssignmentPrimaryUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public MarkWorkAssignmentPrimaryUseCase(IWorkforcePersistencePort workforce)
+    public MarkWorkAssignmentPrimaryUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string workAssignmentCode, CancellationToken cancellationToken)
@@ -499,6 +585,11 @@ public sealed class MarkWorkAssignmentPrimaryUseCase : IMarkWorkAssignmentPrimar
         await _workforce.ClearPrimaryAssignmentsAsync(assignment.WorkforceMemberCode, cancellationToken)
             .ConfigureAwait(false);
         assignment.MarkPrimary();
+        _audit.Stage(
+            OperatorAuditActions.WorkAssignmentPrimaryChanged,
+            OperatorAuditSubjects.WorkAssignment,
+            assignment.WorkAssignmentCode,
+            "Primary=true");
         await _workforce.UpdateWorkAssignmentAsync(assignment, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -506,10 +597,12 @@ public sealed class MarkWorkAssignmentPrimaryUseCase : IMarkWorkAssignmentPrimar
 public sealed class ClearWorkAssignmentPrimaryUseCase : IClearWorkAssignmentPrimaryUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public ClearWorkAssignmentPrimaryUseCase(IWorkforcePersistencePort workforce)
+    public ClearWorkAssignmentPrimaryUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string workAssignmentCode, CancellationToken cancellationToken)
@@ -524,6 +617,11 @@ public sealed class ClearWorkAssignmentPrimaryUseCase : IClearWorkAssignmentPrim
         }
 
         assignment.ClearPrimary();
+        _audit.Stage(
+            OperatorAuditActions.WorkAssignmentPrimaryChanged,
+            OperatorAuditSubjects.WorkAssignment,
+            assignment.WorkAssignmentCode,
+            "Primary=false");
         await _workforce.UpdateWorkAssignmentAsync(assignment, cancellationToken).ConfigureAwait(false);
     }
 }

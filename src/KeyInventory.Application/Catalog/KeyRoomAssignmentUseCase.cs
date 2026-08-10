@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Application.Workflow;
 using KeyInventory.Domain.Catalog;
@@ -10,15 +11,18 @@ public sealed class KeyRoomAssignmentUseCase : IKeyRoomAssignmentUseCase
     private readonly IKeyCatalogPersistencePort _catalog;
     private readonly IWorkforcePersistencePort _workforce;
     private readonly IKeyRoomAssignmentPersistencePort _assignments;
+    private readonly IOperatorAuditRecorder _audit;
 
     public KeyRoomAssignmentUseCase(
         IKeyCatalogPersistencePort catalog,
         IWorkforcePersistencePort workforce,
-        IKeyRoomAssignmentPersistencePort assignments)
+        IKeyRoomAssignmentPersistencePort assignments,
+        IOperatorAuditRecorder audit)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
         _assignments = assignments ?? throw new ArgumentNullException(nameof(assignments));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task AssignRoomAsync(
@@ -30,6 +34,11 @@ public sealed class KeyRoomAssignmentUseCase : IKeyRoomAssignmentUseCase
         Room room = await RequireActiveRoomAsync(roomCode, cancellationToken).ConfigureAwait(false);
 
         keyAsset.AssignOpenedRoom(room.RoomCode);
+        _audit.Stage(
+            OperatorAuditActions.KeyRoomAssignmentAdded,
+            OperatorAuditSubjects.KeyRoomAssignment,
+            $"{keyAsset.CatalogKeyCode}@{room.RoomCode}",
+            $"Key={keyAsset.CatalogKeyCode}; Room={room.RoomCode}");
         await _assignments.AssignAsync(keyAsset.CatalogKeyCode, room.RoomCode, cancellationToken)
             .ConfigureAwait(false);
     }
@@ -42,6 +51,11 @@ public sealed class KeyRoomAssignmentUseCase : IKeyRoomAssignmentUseCase
         KeyAsset keyAsset = await RequireKeyAssetAsync(catalogKeyCode, cancellationToken).ConfigureAwait(false);
         string normalizedRoomCode = roomCode?.Trim() ?? string.Empty;
         keyAsset.RemoveOpenedRoom(normalizedRoomCode);
+        _audit.Stage(
+            OperatorAuditActions.KeyRoomAssignmentRemoved,
+            OperatorAuditSubjects.KeyRoomAssignment,
+            $"{keyAsset.CatalogKeyCode}@{normalizedRoomCode}",
+            $"Key={keyAsset.CatalogKeyCode}; Room={normalizedRoomCode}");
         await _assignments.RemoveAsync(keyAsset.CatalogKeyCode, normalizedRoomCode, cancellationToken)
             .ConfigureAwait(false);
     }

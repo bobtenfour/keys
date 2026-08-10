@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Domain.Parties;
 using KeyInventory.Domain.Workforce;
 
@@ -42,10 +43,12 @@ public interface ITerminateWorkforceMemberUseCase
 public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public CreateWorkforceMemberUseCase(IWorkforcePersistencePort workforce)
+    public CreateWorkforceMemberUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -57,7 +60,7 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
         string responsibleManagerWorkforceMemberCode,
         CancellationToken cancellationToken)
     {
-        await EnsureMemberPrerequisitesAsync(
+        Party party = await EnsureMemberPrerequisitesAsync(
                 workforceMemberCode,
                 partyCode,
                 organizationCode,
@@ -81,10 +84,15 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
             departmentCode,
             responsibleManagerWorkforceMemberCode);
 
+        _audit.Stage(
+            OperatorAuditActions.WorkforceMemberCreated,
+            OperatorAuditSubjects.WorkforceMember,
+            member.WorkforceMemberCode,
+            $"FirstName={party.FirstName}; LastName={party.LastName}; UIN={party.Uin}");
         await _workforce.AddWorkforceMemberAsync(member, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task EnsureMemberPrerequisitesAsync(
+    private async Task<Party> EnsureMemberPrerequisitesAsync(
         string workforceMemberCode,
         string partyCode,
         string organizationCode,
@@ -122,6 +130,8 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
         {
             throw new InvalidOperationException("The department was not found or is inactive.");
         }
+
+        return party;
     }
 
     internal static WorkforceType ParseWorkforceType(string workforceType)
@@ -139,10 +149,12 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
 public sealed class CreateBootstrapWorkforcePairUseCase : ICreateBootstrapWorkforcePairUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public CreateBootstrapWorkforcePairUseCase(IWorkforcePersistencePort workforce)
+    public CreateBootstrapWorkforcePairUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -162,8 +174,8 @@ public sealed class CreateBootstrapWorkforcePairUseCase : ICreateBootstrapWorkfo
                 "Bootstrap workforce pair may be created only when no WorkforceMember records exist.");
         }
 
-        await ValidatePartyAsync(firstPartyCode, cancellationToken).ConfigureAwait(false);
-        await ValidatePartyAsync(secondPartyCode, cancellationToken).ConfigureAwait(false);
+        Party firstParty = await ValidatePartyAsync(firstPartyCode, cancellationToken).ConfigureAwait(false);
+        Party secondParty = await ValidatePartyAsync(secondPartyCode, cancellationToken).ConfigureAwait(false);
 
         if (string.Equals(firstPartyCode, secondPartyCode, StringComparison.OrdinalIgnoreCase))
         {
@@ -200,16 +212,28 @@ public sealed class CreateBootstrapWorkforcePairUseCase : ICreateBootstrapWorkfo
             department.DepartmentCode,
             firstWorkforceMemberCode);
 
+        _audit.Stage(
+            OperatorAuditActions.WorkforceMemberCreated,
+            OperatorAuditSubjects.WorkforceMember,
+            first.WorkforceMemberCode,
+            $"FirstName={firstParty.FirstName}; LastName={firstParty.LastName}; UIN={firstParty.Uin}");
+        _audit.Stage(
+            OperatorAuditActions.WorkforceMemberCreated,
+            OperatorAuditSubjects.WorkforceMember,
+            second.WorkforceMemberCode,
+            $"FirstName={secondParty.FirstName}; LastName={secondParty.LastName}; UIN={secondParty.Uin}");
         await _workforce.AddWorkforceMembersAsync([first, second], cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task ValidatePartyAsync(string partyCode, CancellationToken cancellationToken)
+    private async Task<Party> ValidatePartyAsync(string partyCode, CancellationToken cancellationToken)
     {
         Party? party = await _workforce.FindPartyAsync(partyCode, cancellationToken).ConfigureAwait(false);
         if (party is null || !party.IsActive)
         {
             throw new InvalidOperationException($"Party '{partyCode}' was not found or is inactive.");
         }
+
+        return party;
     }
 }
 
@@ -231,10 +255,12 @@ public sealed class ListWorkforceMembersUseCase : IListWorkforceMembersUseCase
 public sealed class TerminateWorkforceMemberUseCase : ITerminateWorkforceMemberUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public TerminateWorkforceMemberUseCase(IWorkforcePersistencePort workforce)
+    public TerminateWorkforceMemberUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string workforceMemberCode, CancellationToken cancellationToken)
@@ -247,6 +273,10 @@ public sealed class TerminateWorkforceMemberUseCase : ITerminateWorkforceMemberU
         }
 
         member.Terminate();
+        _audit.Stage(
+            OperatorAuditActions.WorkforceMemberTerminated,
+            OperatorAuditSubjects.WorkforceMember,
+            member.WorkforceMemberCode);
         await _workforce.UpdateWorkforceMemberAsync(member, cancellationToken).ConfigureAwait(false);
     }
 }

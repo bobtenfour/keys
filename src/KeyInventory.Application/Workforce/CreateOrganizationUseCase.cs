@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Domain.Workforce;
 
 namespace KeyInventory.Application.Workforce;
@@ -15,10 +16,12 @@ public interface IListOrganizationsUseCase
 public sealed class CreateOrganizationUseCase : ICreateOrganizationUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public CreateOrganizationUseCase(IWorkforcePersistencePort workforce)
+    public CreateOrganizationUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string organizationCode, CancellationToken cancellationToken)
@@ -28,7 +31,12 @@ public sealed class CreateOrganizationUseCase : ICreateOrganizationUseCase
             throw new InvalidOperationException("An organization with this code already exists.");
         }
 
-        await _workforce.AddOrganizationAsync(new Organization(organizationCode), cancellationToken).ConfigureAwait(false);
+        Organization organization = new(organizationCode);
+        _audit.Stage(
+            OperatorAuditActions.OrganizationCreated,
+            OperatorAuditSubjects.Organization,
+            organization.OrganizationCode);
+        await _workforce.AddOrganizationAsync(organization, cancellationToken).ConfigureAwait(false);
     }
 }
 

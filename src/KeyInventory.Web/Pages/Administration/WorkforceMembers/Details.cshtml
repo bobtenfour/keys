@@ -55,6 +55,7 @@
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Save changes</button>
                 <a class="btn btn-secondary" asp-page="./Index">Back to list</a>
+                <a class="btn btn-secondary" asp-page="/Administration/AuditTrail" asp-route-Subject="@selected.WorkforceMemberCode">Audit history</a>
             </div>
         </form>
     }
@@ -69,6 +70,7 @@
         <p class="hint">Terminated members cannot be reactivated or edited.</p>
         <div class="form-actions">
             <a class="btn btn-secondary" asp-page="./Index">Back to list</a>
+            <a class="btn btn-secondary" asp-page="/Administration/AuditTrail" asp-route-Subject="@selected.WorkforceMemberCode">Audit history</a>
         </div>
     }
 </section>

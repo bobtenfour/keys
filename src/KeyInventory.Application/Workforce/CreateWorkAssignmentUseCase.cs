@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Domain.Locations;
 using KeyInventory.Domain.Workforce;
 
@@ -21,10 +22,12 @@ public interface IListWorkAssignmentsUseCase
 public sealed class CreateWorkAssignmentUseCase : ICreateWorkAssignmentUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public CreateWorkAssignmentUseCase(IWorkforcePersistencePort workforce)
+    public CreateWorkAssignmentUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -66,6 +69,11 @@ public sealed class CreateWorkAssignmentUseCase : ICreateWorkAssignmentUseCase
         }
 
         WorkAssignment assignment = new(workAssignmentCode, member.WorkforceMemberCode, room.RoomCode, isPrimary);
+        _audit.Stage(
+            OperatorAuditActions.WorkAssignmentCreated,
+            OperatorAuditSubjects.WorkAssignment,
+            assignment.WorkAssignmentCode,
+            $"WorkforceMember={assignment.WorkforceMemberCode}; Room={assignment.RoomCode}; Primary={assignment.IsPrimary}");
         await _workforce.AddWorkAssignmentAsync(assignment, cancellationToken).ConfigureAwait(false);
     }
 }

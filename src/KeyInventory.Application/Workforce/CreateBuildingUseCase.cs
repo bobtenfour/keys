@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Domain.Locations;
 
 namespace KeyInventory.Application.Workforce;
@@ -15,10 +16,12 @@ public interface IListBuildingsUseCase
 public sealed class CreateBuildingUseCase : ICreateBuildingUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public CreateBuildingUseCase(IWorkforcePersistencePort workforce)
+    public CreateBuildingUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string buildingCode, CancellationToken cancellationToken)
@@ -28,7 +31,12 @@ public sealed class CreateBuildingUseCase : ICreateBuildingUseCase
             throw new InvalidOperationException("A building with this code already exists.");
         }
 
-        await _workforce.AddBuildingAsync(new Building(buildingCode), cancellationToken).ConfigureAwait(false);
+        Building building = new(buildingCode);
+        _audit.Stage(
+            OperatorAuditActions.BuildingCreated,
+            OperatorAuditSubjects.Building,
+            building.BuildingCode);
+        await _workforce.AddBuildingAsync(building, cancellationToken).ConfigureAwait(false);
     }
 }
 

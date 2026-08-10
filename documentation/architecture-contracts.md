@@ -116,6 +116,16 @@ Runtime composition belongs to the application host. Service registration must n
 - PartyCode and WorkforceMemberCode are internal system identifiers generated once on the Application/Domain creation path as opaque values with stable prefixes (`PARTY-{GUID}`, `WM-{GUID}`), persisted immutably, available for internal references/diagnostics, and not required as normal operator UI inputs; sequences, counters, configurable code-generation engines, database-specific generators, and user-configurable formats are forbidden for these identifiers.
 - WORKFORCE-ELIGIBILITY-1 is structural preparation and Approved slice specification only until Phase 1 close prerequisites are Accepted; implementation of this boundary is forbidden until the slice is authorized to start.
 
+## Operator Audit Boundary Contract
+- OPERATOR-AUDIT-1 authorizes one append-only operational audit authority (`OperatorAuditRecord`) persisted on the existing SQL Server `KeyInventoryDbContext`.
+- Minimum facts: AuditRecordId, OccurredAtUtc (UTC), authenticated Operator reference (existing ASP.NET Identity user name), ActionType, SubjectType, SubjectReference, and concise structured Details.
+- Operator identity is the authenticated KeyInventory user; it must not be modeled as a second Operator/User aggregate and must remain distinct from affected WorkforceMember identity.
+- Application owns the requirement to stage audit records for authorized business mutations; Infrastructure owns atomic persistence with the mutation SaveChanges; Web must not write audit after a use case returns and must not use DbContext for audit writes.
+- Audit records are immutable accountability history only: no normal edit, no normal delete, no event sourcing, and no reconstruction of current Domain state from audit rows.
+- Domain `AuditEvent` remains the AUDIT-1 foundation aggregate; OPERATOR-AUDIT-1 does not require emitting Domain `AuditEvent` or inventing SecurityPrincipal/Party bridges for ASP.NET Identity operators.
+- Page views, searches, report viewing, and export downloads are not audited unless a governing contract explicitly requires them.
+- Approval workflows, dual authorization, policy engines, event buses, second databases, and generic interception auditing are forbidden.
+
 ## Forbidden
 - Duplicate business rules.
 - Cross-layer shortcuts.

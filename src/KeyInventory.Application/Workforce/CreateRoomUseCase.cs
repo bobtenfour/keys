@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Domain.Locations;
 
 namespace KeyInventory.Application.Workforce;
@@ -20,10 +21,12 @@ public interface IListRoomsUseCase
 public sealed class CreateRoomUseCase : ICreateRoomUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public CreateRoomUseCase(IWorkforcePersistencePort workforce)
+    public CreateRoomUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -56,6 +59,11 @@ public sealed class CreateRoomUseCase : ICreateRoomUseCase
             throw new InvalidOperationException("RoomNumber must be unique within the Building.");
         }
 
+        _audit.Stage(
+            OperatorAuditActions.RoomCreated,
+            OperatorAuditSubjects.Room,
+            room.RoomCode,
+            $"Building={building.BuildingCode}; RoomNumber={room.RoomNumber}");
         await _workforce.AddRoomAsync(room, cancellationToken).ConfigureAwait(false);
     }
 }

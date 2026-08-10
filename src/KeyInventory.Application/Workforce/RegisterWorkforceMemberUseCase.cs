@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Domain.Parties;
 using KeyInventory.Domain.Workforce;
 
@@ -41,10 +42,12 @@ public interface IRegisterBootstrapWorkforcePairUseCase
 public sealed class RegisterWorkforceMemberUseCase : IRegisterWorkforceMemberUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public RegisterWorkforceMemberUseCase(IWorkforcePersistencePort workforce)
+    public RegisterWorkforceMemberUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task<string> ExecuteAsync(
@@ -103,6 +106,11 @@ public sealed class RegisterWorkforceMemberUseCase : IRegisterWorkforceMemberUse
             department.DepartmentCode,
             manager.WorkforceMemberCode);
 
+        _audit.Stage(
+            OperatorAuditActions.WorkforceMemberCreated,
+            OperatorAuditSubjects.WorkforceMember,
+            member.WorkforceMemberCode,
+            $"FirstName={party.FirstName}; LastName={party.LastName}; UIN={party.Uin}");
         await _workforce.AddPartyAndWorkforceMemberAsync(party, member, cancellationToken).ConfigureAwait(false);
         return workforceMemberCode;
     }
@@ -111,10 +119,12 @@ public sealed class RegisterWorkforceMemberUseCase : IRegisterWorkforceMemberUse
 public sealed class RegisterBootstrapWorkforcePairUseCase : IRegisterBootstrapWorkforcePairUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public RegisterBootstrapWorkforcePairUseCase(IWorkforcePersistencePort workforce)
+    public RegisterBootstrapWorkforcePairUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -185,6 +195,16 @@ public sealed class RegisterBootstrapWorkforcePairUseCase : IRegisterBootstrapWo
             department.DepartmentCode,
             firstMemberCode);
 
+        _audit.Stage(
+            OperatorAuditActions.WorkforceMemberCreated,
+            OperatorAuditSubjects.WorkforceMember,
+            first.WorkforceMemberCode,
+            $"FirstName={firstParty.FirstName}; LastName={firstParty.LastName}; UIN={firstParty.Uin}");
+        _audit.Stage(
+            OperatorAuditActions.WorkforceMemberCreated,
+            OperatorAuditSubjects.WorkforceMember,
+            second.WorkforceMemberCode,
+            $"FirstName={secondParty.FirstName}; LastName={secondParty.LastName}; UIN={secondParty.Uin}");
         await _workforce
             .AddBootstrapPartiesAndWorkforceMembersAsync(firstParty, secondParty, first, second, cancellationToken)
             .ConfigureAwait(false);

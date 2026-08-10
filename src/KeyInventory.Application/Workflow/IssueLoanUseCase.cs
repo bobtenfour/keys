@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Domain.Catalog;
 using KeyInventory.Domain.Loans;
@@ -11,15 +12,18 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
     private readonly IKeyCatalogPersistencePort _catalog;
     private readonly ILoanPersistencePort _loans;
     private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
 
     public IssueLoanUseCase(
         IKeyCatalogPersistencePort catalog,
         ILoanPersistencePort loans,
-        IWorkforcePersistencePort workforce)
+        IWorkforcePersistencePort workforce,
+        IOperatorAuditRecorder audit)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _loans = loans ?? throw new ArgumentNullException(nameof(loans));
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(
@@ -105,6 +109,11 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
             justificationCode);
 
         Loan loan = new(loanCode, keyAsset, party.PartyCode, issuedAtUtc, dueAtUtc);
+        _audit.Stage(
+            OperatorAuditActions.KeyIssued,
+            OperatorAuditSubjects.Loan,
+            loan.LoanCode,
+            $"Key={keyAsset.CatalogKeyCode}; WorkforceMember={member.WorkforceMemberCode}; Justification={kind}/{justificationCode?.Trim()}");
         await _loans.AddLoanAsync(loan, cancellationToken).ConfigureAwait(false);
     }
 }

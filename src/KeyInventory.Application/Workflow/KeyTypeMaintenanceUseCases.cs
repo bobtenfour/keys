@@ -1,3 +1,4 @@
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.Application.Workflow;
@@ -37,10 +38,12 @@ public sealed class ListKeyTypesUseCase : IListKeyTypesUseCase
 public sealed class ActivateKeyTypeUseCase : IActivateKeyTypeUseCase
 {
     private readonly IKeyCatalogPersistencePort _catalog;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public ActivateKeyTypeUseCase(IKeyCatalogPersistencePort catalog)
+    public ActivateKeyTypeUseCase(IKeyCatalogPersistencePort catalog, IOperatorAuditRecorder audit)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string typeCode, CancellationToken cancellationToken)
@@ -53,6 +56,10 @@ public sealed class ActivateKeyTypeUseCase : IActivateKeyTypeUseCase
         }
 
         keyType.Activate();
+        _audit.Stage(
+            OperatorAuditActions.KeyTypeActivated,
+            OperatorAuditSubjects.KeyType,
+            keyType.TypeCode);
         await _catalog.UpdateKeyTypeAsync(keyType, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -60,10 +67,12 @@ public sealed class ActivateKeyTypeUseCase : IActivateKeyTypeUseCase
 public sealed class RetireKeyTypeUseCase : IRetireKeyTypeUseCase
 {
     private readonly IKeyCatalogPersistencePort _catalog;
+    private readonly IOperatorAuditRecorder _audit;
 
-    public RetireKeyTypeUseCase(IKeyCatalogPersistencePort catalog)
+    public RetireKeyTypeUseCase(IKeyCatalogPersistencePort catalog, IOperatorAuditRecorder audit)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
     public async Task ExecuteAsync(string typeCode, CancellationToken cancellationToken)
@@ -79,6 +88,10 @@ public sealed class RetireKeyTypeUseCase : IRetireKeyTypeUseCase
             .CountActiveKeyAssetsForTypeAsync(keyType.TypeCode, cancellationToken)
             .ConfigureAwait(false);
         keyType.Retire(hasActiveKeyAssets: activeKeyAssets > 0);
+        _audit.Stage(
+            OperatorAuditActions.KeyTypeRetired,
+            OperatorAuditSubjects.KeyType,
+            keyType.TypeCode);
         await _catalog.UpdateKeyTypeAsync(keyType, cancellationToken).ConfigureAwait(false);
     }
 }
