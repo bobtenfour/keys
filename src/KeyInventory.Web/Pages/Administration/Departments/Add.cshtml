@@ -1,0 +1,46 @@
+@page
+@model KeyInventory.Web.Pages.Administration.Departments.AddModel
+@{
+    ViewData["Title"] = "Add Department";
+    ViewData["NavSection"] = "administration";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Add Department</h1>
+    <p class="lede">Create an organizational unit used for workforce membership and key-issue justification.</p>
+</header>
+
+<section class="card form-card admin-task-form">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    @if (Model.OrganizationOptions.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>Create an organization first</strong>
+        </div>
+        <div class="form-actions">
+            <a class="btn btn-primary" asp-page="/Administration/Organizations/Add">Add organization</a>
+            <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
+        </div>
+    }
+    else
+    {
+        <form method="post" class="form-grid">
+            <label>
+                Organization
+                <select asp-for="OrganizationCode" asp-items="Model.OrganizationOptions" required></select>
+            </label>
+            <label>
+                Department code
+                <input asp-for="DepartmentCode" autocomplete="off" required />
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create Department</button>
+                <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
+            </div>
+        </form>
+    }
+</section>

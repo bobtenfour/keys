@@ -5,12 +5,17 @@
     ViewData["NavSection"] = "administration";
 }
 
-<header class="page-header page-header-compact">
-    <h1>Buildings</h1>
-    <p class="lede">Physical buildings that contain rooms.</p>
-</header>
+<div class="page-header-row">
+    <header class="page-header page-header-compact">
+        <h1>Buildings</h1>
+        <p class="lede">Physical buildings that contain rooms.</p>
+    </header>
+    <div class="page-header-actions">
+        <a class="btn btn-primary" asp-page="./Add">+ Add building</a>
+    </div>
+</div>
 
-<section class="card form-card">
+<section class="card admin-list-panel">
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
         <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
@@ -20,19 +25,6 @@
         <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
     }
 
-    <form method="post" class="form-grid">
-        <label>
-            Building code
-            <input asp-for="BuildingCode" autocomplete="off" required />
-        </label>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Create Building</button>
-            <a class="btn btn-secondary" asp-page="/Administration/Index">Back</a>
-        </div>
-    </form>
-</section>
-
-<section class="card">
     @if (Model.Buildings.Count == 0)
     {
         <div class="empty-state"><strong>No buildings</strong></div>

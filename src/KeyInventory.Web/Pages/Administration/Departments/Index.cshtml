@@ -5,12 +5,17 @@
     ViewData["NavSection"] = "administration";
 }
 
-<header class="page-header page-header-compact">
-    <h1>Departments</h1>
-    <p class="lede">Organizational units used for workforce membership and key-issue justification.</p>
-</header>
+<div class="page-header-row">
+    <header class="page-header page-header-compact">
+        <h1>Departments</h1>
+        <p class="lede">Organizational units used for workforce membership and key-issue justification.</p>
+    </header>
+    <div class="page-header-actions">
+        <a class="btn btn-primary" asp-page="./Add">+ Add department</a>
+    </div>
+</div>
 
-<section class="card form-card">
+<section class="card admin-list-panel">
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
         <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
@@ -20,35 +25,6 @@
         <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
     }
 
-    @if (Model.OrganizationOptions.Count == 0)
-    {
-        <div class="empty-state">
-            <strong>Create an organization first</strong>
-        </div>
-        <div class="form-actions">
-            <a class="btn btn-primary" asp-page="/Administration/Organizations/Index">Organizations</a>
-        </div>
-    }
-    else
-    {
-        <form method="post" class="form-grid">
-            <label>
-                Organization
-                <select asp-for="OrganizationCode" asp-items="Model.OrganizationOptions" required></select>
-            </label>
-            <label>
-                Department code
-                <input asp-for="DepartmentCode" autocomplete="off" required />
-            </label>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Create Department</button>
-                <a class="btn btn-secondary" asp-page="/Administration/Index">Back</a>
-            </div>
-        </form>
-    }
-</section>
-
-<section class="card">
     @if (Model.Departments.Count == 0)
     {
         <div class="empty-state"><strong>No departments</strong></div>

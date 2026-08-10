@@ -22,6 +22,13 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 - Surface Domain and Application validation failures as actionable page messages.
 - Do not add login, dashboards, demo scaffolding, or unrelated marketing pages.
 
+## OPERATOR-UX-1 Product Experience
+- Issue Key must present an operator workflow (Key, Issue to, For, Issued, Due) rather than implementation-oriented codes or raw UTC ISO strings as the normal UI.
+- Operator-facing person selectors use FirstName LastName and UIN; internal WorkforceMemberCode/PartyCode remain submitted values when required and are not normal operator typing targets when selectors exist.
+- Administration list/create/maintain surfaces use list-first index pages with a primary Add action and dedicated create/detail task pages; do not present a wall of independent form cards as the primary administration pattern.
+- Workforce Members index shows person identity (FirstName LastName, UIN), Type, Organization, Department, Responsible Manager, Status, and actions; PartyCode and WorkforceMemberCode are not primary operator-facing columns; Add and Detail/Edit are dedicated routes; Terminate lives on the selected member detail page with deliberate confirmation.
+- Prefer authoritative selectors over manually typed foreign-reference codes when Application list authorities already expose the choices.
+
 ## Applies When
 This document is required only for slices that create or modify UI, navigation, user workflows, messages, or product-facing behavior.
 

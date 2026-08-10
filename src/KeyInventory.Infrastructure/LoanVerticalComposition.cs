@@ -34,6 +34,7 @@ public static class LoanVerticalComposition
         services.AddScoped<IListOpenLoansUseCase, ListOpenLoansUseCase>();
         services.AddScoped<IListReturnedLoansUseCase, ListReturnedLoansUseCase>();
         services.AddScoped<ICreatePartyUseCase, CreatePartyUseCase>();
+        services.AddScoped<IListPartiesUseCase, ListPartiesUseCase>();
         services.AddScoped<ICreateOrganizationUseCase, CreateOrganizationUseCase>();
         services.AddScoped<IListOrganizationsUseCase, ListOrganizationsUseCase>();
         services.AddScoped<IActivateOrganizationUseCase, ActivateOrganizationUseCase>();
@@ -55,6 +56,8 @@ public static class LoanVerticalComposition
         services.AddScoped<IRetireKeyTypeUseCase, RetireKeyTypeUseCase>();
         services.AddScoped<ICreateWorkforceMemberUseCase, CreateWorkforceMemberUseCase>();
         services.AddScoped<ICreateBootstrapWorkforcePairUseCase, CreateBootstrapWorkforcePairUseCase>();
+        services.AddScoped<IRegisterWorkforceMemberUseCase, RegisterWorkforceMemberUseCase>();
+        services.AddScoped<IRegisterBootstrapWorkforcePairUseCase, RegisterBootstrapWorkforcePairUseCase>();
         services.AddScoped<IListWorkforceMembersUseCase, ListWorkforceMembersUseCase>();
         services.AddScoped<ITerminateWorkforceMemberUseCase, TerminateWorkforceMemberUseCase>();
         services.AddScoped<IUpdateWorkforceMemberOrganizationDepartmentUseCase, UpdateWorkforceMemberOrganizationDepartmentUseCase>();

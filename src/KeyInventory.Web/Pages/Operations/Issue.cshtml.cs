@@ -1,6 +1,9 @@
-using System.Globalization;
+using System.Text.Json;
+using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Lookup;
+using KeyInventory.Application.Workforce;
 using KeyInventory.Application.Workflow;
+using KeyInventory.Web.Presentation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,25 +12,39 @@ namespace KeyInventory.Web.Pages.Operations;
 
 public sealed class IssueModel : PageModel
 {
+    private static readonly JsonSerializerOptions JustificationJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     private readonly IIssueLoanUseCase _issueLoan;
     private readonly IListKeyAssetsUseCase _listKeyAssets;
     private readonly IListOpenLoansUseCase _listOpenLoans;
     private readonly IOperationalKeyLookupUseCase _lookup;
+    private readonly IListWorkforceMembersUseCase _listMembers;
+    private readonly IListWorkAssignmentsUseCase _listAssignments;
+    private readonly IListRoomsUseCase _listRooms;
 
     public IssueModel(
         IIssueLoanUseCase issueLoan,
         IListKeyAssetsUseCase listKeyAssets,
         IListOpenLoansUseCase listOpenLoans,
-        IOperationalKeyLookupUseCase lookup)
+        IOperationalKeyLookupUseCase lookup,
+        IListWorkforceMembersUseCase listMembers,
+        IListWorkAssignmentsUseCase listAssignments,
+        IListRoomsUseCase listRooms)
     {
         _issueLoan = issueLoan ?? throw new ArgumentNullException(nameof(issueLoan));
         _listKeyAssets = listKeyAssets ?? throw new ArgumentNullException(nameof(listKeyAssets));
         _listOpenLoans = listOpenLoans ?? throw new ArgumentNullException(nameof(listOpenLoans));
         _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
+        _listMembers = listMembers ?? throw new ArgumentNullException(nameof(listMembers));
+        _listAssignments = listAssignments ?? throw new ArgumentNullException(nameof(listAssignments));
+        _listRooms = listRooms ?? throw new ArgumentNullException(nameof(listRooms));
     }
 
     [BindProperty]
-    public string IssueReference { get; set; } = string.Empty;
+    public string LoanCode { get; set; } = string.Empty;
 
     [BindProperty]
     public string CatalogKeyCode { get; set; } = string.Empty;
@@ -42,14 +59,20 @@ public sealed class IssueModel : PageModel
     public string JustificationCode { get; set; } = string.Empty;
 
     [BindProperty]
-    public string IssuedAtUtcText { get; set; } = string.Empty;
+    public string IssuedLocalText { get; set; } = string.Empty;
 
     [BindProperty]
-    public string DueAtUtcText { get; set; } = string.Empty;
+    public string DueLocalText { get; set; } = string.Empty;
 
     public IReadOnlyList<SelectListItem> KeyOptions { get; private set; } = [];
 
     public IReadOnlyList<SelectListItem> WorkforceMemberOptions { get; private set; } = [];
+
+    public IReadOnlyList<SelectListItem> DepartmentOptions { get; private set; } = [];
+
+    public IReadOnlyList<SelectListItem> RoomOptions { get; private set; } = [];
+
+    public string JustificationDataJson { get; private set; } = "{}";
 
     public string? SuccessMessage { get; private set; }
 
@@ -63,8 +86,8 @@ public sealed class IssueModel : PageModel
         }
 
         await LoadOptionsAsync(cancellationToken).ConfigureAwait(false);
-        IssuedAtUtcText = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture);
-        DueAtUtcText = DateTimeOffset.UtcNow.AddDays(1).ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture);
+        IssuedLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow);
+        DueLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow.AddDays(1));
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
@@ -73,18 +96,18 @@ public sealed class IssueModel : PageModel
 
         try
         {
-            if (!DateTimeOffset.TryParse(IssuedAtUtcText, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset issuedAtUtc))
+            if (!OperatorLocalTimestamp.TryParseToUtc(IssuedLocalText, out DateTimeOffset issuedAtUtc, out string? issuedError))
             {
-                throw new InvalidOperationException("Issue time must be a valid UTC timestamp.");
+                throw new InvalidOperationException(issuedError ?? "Issued time is invalid.");
             }
 
-            if (!DateTimeOffset.TryParse(DueAtUtcText, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset dueAtUtc))
+            if (!OperatorLocalTimestamp.TryParseToUtc(DueLocalText, out DateTimeOffset dueAtUtc, out string? dueError))
             {
-                throw new InvalidOperationException("Due time must be a valid UTC timestamp.");
+                throw new InvalidOperationException(dueError ?? "Due time is invalid.");
             }
 
             await _issueLoan.ExecuteAsync(
-                    IssueReference,
+                    LoanCode,
                     CatalogKeyCode,
                     WorkforceMemberCode,
                     JustificationKind,
@@ -95,7 +118,7 @@ public sealed class IssueModel : PageModel
                 .ConfigureAwait(false);
 
             SuccessMessage = $"Key {CatalogKeyCode} was issued.";
-            IssueReference = string.Empty;
+            LoanCode = string.Empty;
             WorkforceMemberCode = string.Empty;
             JustificationCode = string.Empty;
         }
@@ -115,10 +138,17 @@ public sealed class IssueModel : PageModel
 
         KeyOptions = keys
             .Where(key => key.IsActive && !issued.Contains(key.CatalogKeyCode))
-            .Select(key => new SelectListItem(
-                key.CatalogKeyCode,
-                key.CatalogKeyCode,
-                string.Equals(key.CatalogKeyCode, CatalogKeyCode, StringComparison.OrdinalIgnoreCase)))
+            .Select(key =>
+            {
+                string rooms = KeyOpenedRoomDisplayFormatter.Format(key.OpenedRooms);
+                string text = string.IsNullOrEmpty(rooms)
+                    ? $"{key.CatalogKeyCode} ({key.TypeCode})"
+                    : $"{key.CatalogKeyCode} ({key.TypeCode}) — {rooms}";
+                return new SelectListItem(
+                    text,
+                    key.CatalogKeyCode,
+                    string.Equals(key.CatalogKeyCode, CatalogKeyCode, StringComparison.OrdinalIgnoreCase));
+            })
             .ToArray();
 
         IReadOnlyList<WorkforceMemberIdentityDisplay> members = await _lookup
@@ -126,9 +156,81 @@ public sealed class IssueModel : PageModel
             .ConfigureAwait(false);
         WorkforceMemberOptions = members
             .Select(member => new SelectListItem(
-                $"{PartyHolderDisplayFormatter.Format(member.FirstName, member.LastName, member.Uin)} · {member.WorkforceMemberCode}",
+                PartyHolderDisplayFormatter.Format(member.FirstName, member.LastName, member.Uin),
                 member.WorkforceMemberCode,
                 string.Equals(member.WorkforceMemberCode, WorkforceMemberCode, StringComparison.Ordinal)))
             .ToArray();
+
+        IReadOnlyList<WorkforceMemberListItem> memberRows = await _listMembers.ExecuteAsync(cancellationToken)
+            .ConfigureAwait(false);
+        IReadOnlyList<WorkAssignmentListItem> assignments = await _listAssignments.ExecuteAsync(cancellationToken)
+            .ConfigureAwait(false);
+        IReadOnlyList<RoomListItem> rooms = await _listRooms.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        Dictionary<string, RoomListItem> roomsByCode = rooms
+            .Where(room => room.IsActive)
+            .ToDictionary(room => room.RoomCode, StringComparer.OrdinalIgnoreCase);
+
+        Dictionary<string, MemberJustificationOptions> byMember = new(StringComparer.OrdinalIgnoreCase);
+        foreach (WorkforceMemberListItem member in memberRows.Where(item =>
+                     string.Equals(item.Status, "Active", StringComparison.Ordinal)))
+        {
+            List<JustificationChoice> departmentChoices =
+            [
+                new JustificationChoice(member.DepartmentCode, member.DepartmentCode)
+            ];
+
+            List<JustificationChoice> roomChoices = assignments
+                .Where(item =>
+                    item.IsActive
+                    && string.Equals(item.WorkforceMemberCode, member.WorkforceMemberCode, StringComparison.Ordinal))
+                .Select(item =>
+                {
+                    if (!roomsByCode.TryGetValue(item.RoomCode, out RoomListItem? room))
+                    {
+                        return new JustificationChoice(item.RoomCode, item.RoomCode);
+                    }
+
+                    string label = string.IsNullOrWhiteSpace(room.Description)
+                        ? $"{room.BuildingCode}/{room.RoomNumber}"
+                        : $"{room.BuildingCode}/{room.RoomNumber} — {room.Description}";
+                    return new JustificationChoice(item.RoomCode, label);
+                })
+                .GroupBy(choice => choice.Code, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .OrderBy(choice => choice.Label, StringComparer.Ordinal)
+                .ToList();
+
+            byMember[member.WorkforceMemberCode] = new MemberJustificationOptions(departmentChoices, roomChoices);
+        }
+
+        JustificationDataJson = JsonSerializer.Serialize(byMember, JustificationJsonOptions);
+
+        if (!string.IsNullOrWhiteSpace(WorkforceMemberCode)
+            && byMember.TryGetValue(WorkforceMemberCode, out MemberJustificationOptions? selected))
+        {
+            DepartmentOptions = selected.Departments
+                .Select(choice => new SelectListItem(
+                    choice.Label,
+                    choice.Code,
+                    string.Equals(choice.Code, JustificationCode, StringComparison.OrdinalIgnoreCase)))
+                .ToArray();
+            RoomOptions = selected.Rooms
+                .Select(choice => new SelectListItem(
+                    choice.Label,
+                    choice.Code,
+                    string.Equals(choice.Code, JustificationCode, StringComparison.OrdinalIgnoreCase)))
+                .ToArray();
+        }
+        else
+        {
+            DepartmentOptions = [];
+            RoomOptions = [];
+        }
     }
+
+    private sealed record JustificationChoice(string Code, string Label);
+
+    private sealed record MemberJustificationOptions(
+        IReadOnlyList<JustificationChoice> Departments,
+        IReadOnlyList<JustificationChoice> Rooms);
 }

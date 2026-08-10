@@ -7,10 +7,10 @@
 
 <header class="page-header">
     <h1>Issue Key</h1>
-    <p class="lede">Hand a controlled key to an eligible workforce member. Timestamps must be UTC with a zero offset.</p>
+    <p class="lede">Hand a controlled key to an eligible workforce member.</p>
 </header>
 
-<section class="card form-card">
+<section class="card form-card form-card-operator">
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
         <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
@@ -48,44 +48,107 @@
     }
     else if (string.IsNullOrWhiteSpace(Model.SuccessMessage))
     {
-        <form method="post" class="form-grid">
-            <label>
-                Issue reference
-                <input asp-for="IssueReference" autocomplete="off" required />
-            </label>
+        <form method="post" class="form-grid" id="issue-key-form">
             <label>
                 Key
                 <select asp-for="CatalogKeyCode" asp-items="Model.KeyOptions" required></select>
             </label>
             <label>
-                Workforce member
-                <select asp-for="WorkforceMemberCode" asp-items="Model.WorkforceMemberOptions" required></select>
+                Issue to
+                <select asp-for="WorkforceMemberCode" asp-items="Model.WorkforceMemberOptions" id="issue-to" required></select>
             </label>
             <label>
-                Justification
-                <select asp-for="JustificationKind" required>
+                For
+                <select asp-for="JustificationKind" id="issue-for-kind" required>
                     <option value="Department">Department</option>
                     <option value="Room">Room</option>
                 </select>
             </label>
-            <label>
-                Justification code
-                <input asp-for="JustificationCode" autocomplete="off" required />
-                <span class="hint">Authorized department code or assigned room code.</span>
+            <label id="issue-for-department-label">
+                Department
+                <select asp-for="JustificationCode" asp-items="Model.DepartmentOptions" id="issue-for-department">
+                    <option value="">Select a department...</option>
+                </select>
+            </label>
+            <label id="issue-for-room-label" hidden>
+                Room
+                <select asp-items="Model.RoomOptions" id="issue-for-room">
+                    <option value="">Select a room...</option>
+                </select>
             </label>
             <label>
-                Issued at (UTC)
-                <input asp-for="IssuedAtUtcText" autocomplete="off" required />
-                <span class="hint">Example: 2026-08-03T12:00:00+00:00</span>
+                Issued
+                <input asp-for="IssuedLocalText" type="datetime-local" required />
             </label>
             <label>
-                Due at (UTC)
-                <input asp-for="DueAtUtcText" autocomplete="off" required />
+                Due
+                <input asp-for="DueLocalText" type="datetime-local" required />
+            </label>
+            <label>
+                Loan code
+                <input asp-for="LoanCode" autocomplete="off" required />
+                <span class="hint">Unique loan identity required by current authority. Automatic generation is not authorized.</span>
             </label>
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Issue Key</button>
                 <a class="btn btn-secondary" asp-page="/Index">Cancel</a>
             </div>
         </form>
+        <script type="application/json" id="issue-justification-data">@Html.Raw(Model.JustificationDataJson)</script>
+        <script>
+            (function () {
+                const dataEl = document.getElementById('issue-justification-data');
+                const data = dataEl ? JSON.parse(dataEl.textContent || '{}') : {};
+                const memberEl = document.getElementById('issue-to');
+                const kindEl = document.getElementById('issue-for-kind');
+                const deptLabel = document.getElementById('issue-for-department-label');
+                const roomLabel = document.getElementById('issue-for-room-label');
+                const deptSelect = document.getElementById('issue-for-department');
+                const roomSelect = document.getElementById('issue-for-room');
+                if (!memberEl || !kindEl || !deptSelect || !roomSelect) return;
+
+                function fill(select, choices, selected) {
+                    const keep = selected || select.value;
+                    select.innerHTML = '';
+                    const empty = document.createElement('option');
+                    empty.value = '';
+                    empty.textContent = select === deptSelect ? 'Select a department...' : 'Select a room...';
+                    select.appendChild(empty);
+                    (choices || []).forEach(function (choice) {
+                        const opt = document.createElement('option');
+                        opt.value = choice.code;
+                        opt.textContent = choice.label;
+                        if (keep && keep.toLowerCase() === String(choice.code).toLowerCase()) {
+                            opt.selected = true;
+                        }
+                        select.appendChild(opt);
+                    });
+                }
+
+                function sync() {
+                    const member = data[memberEl.value] || { departments: [], rooms: [] };
+                    fill(deptSelect, member.departments, deptSelect.value);
+                    fill(roomSelect, member.rooms, roomSelect.value);
+                    const isRoom = kindEl.value === 'Room';
+                    deptLabel.hidden = isRoom;
+                    roomLabel.hidden = !isRoom;
+                    deptSelect.disabled = isRoom;
+                    roomSelect.disabled = !isRoom;
+                    deptSelect.name = isRoom ? '' : 'JustificationCode';
+                    roomSelect.name = isRoom ? 'JustificationCode' : '';
+                    if (isRoom) {
+                        deptSelect.removeAttribute('required');
+                        roomSelect.setAttribute('required', 'required');
+                    } else {
+                        roomSelect.removeAttribute('required');
+                        deptSelect.setAttribute('required', 'required');
+                    }
+                }
+
+                memberEl.addEventListener('change', sync);
+                kindEl.addEventListener('change', sync);
+                sync();
+            })();
+        </script>
     }
 </section>

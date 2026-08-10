@@ -7,6 +7,11 @@ public interface ICreatePartyUseCase
     Task ExecuteAsync(string partyCode, string firstName, string lastName, string uin, CancellationToken cancellationToken);
 }
 
+public interface IListPartiesUseCase
+{
+    Task<IReadOnlyList<PartyListItem>> ExecuteAsync(CancellationToken cancellationToken);
+}
+
 public sealed class CreatePartyUseCase : ICreatePartyUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
@@ -35,5 +40,20 @@ public sealed class CreatePartyUseCase : ICreatePartyUseCase
         }
 
         await _workforce.AddPartyAsync(party, cancellationToken).ConfigureAwait(false);
+    }
+}
+
+public sealed class ListPartiesUseCase : IListPartiesUseCase
+{
+    private readonly IWorkforcePersistencePort _workforce;
+
+    public ListPartiesUseCase(IWorkforcePersistencePort workforce)
+    {
+        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+    }
+
+    public Task<IReadOnlyList<PartyListItem>> ExecuteAsync(CancellationToken cancellationToken)
+    {
+        return _workforce.ListPartiesAsync(cancellationToken);
     }
 }

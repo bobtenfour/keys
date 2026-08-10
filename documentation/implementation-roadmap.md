@@ -52,10 +52,11 @@ Define the approved execution order without expanding into detailed slice specif
 | KEY-ROOM-ASSIGNMENT-1 | Accepted | REPORTS-1 | slices/KEY-ROOM-ASSIGNMENT-1.md |
 | ADMIN-MAINTENANCE-1 | Accepted | KEY-ROOM-ASSIGNMENT-1 | slices/ADMIN-MAINTENANCE-1.md |
 | REPORT-EXPORTS-1 | Accepted | ADMIN-MAINTENANCE-1 | slices/REPORT-EXPORTS-1.md |
+| OPERATOR-UX-1 | Accepted | REPORT-EXPORTS-1 | slices/OPERATOR-UX-1.md |
 
 ## Later Phases
 Later phase slices must be created only when human governance selects a concrete operational capability for this building and architectural contracts are mature enough to support implementation without assumptions.
-REPORT-EXPORTS-1 is Accepted.
+OPERATOR-UX-1 is Accepted.
 Next Allowed Slice remains STOP until human governance explicitly prepares the next concrete operational capability.
 Do not prepare or invent slices for speculative enterprise scale, multi-campus design, policy engines, workflow engines, event platforms, or extensibility frameworks.
 

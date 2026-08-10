@@ -5,12 +5,17 @@
     ViewData["NavSection"] = "administration";
 }
 
-<header class="page-header page-header-compact">
-    <h1>Rooms</h1>
-    <p class="lede">Rooms within a building. Room number must be unique inside its building.</p>
-</header>
+<div class="page-header-row">
+    <header class="page-header page-header-compact">
+        <h1>Rooms</h1>
+        <p class="lede">Rooms within a building. Room number must be unique inside its building.</p>
+    </header>
+    <div class="page-header-actions">
+        <a class="btn btn-primary" asp-page="./Add">+ Add room</a>
+    </div>
+</div>
 
-<section class="card form-card">
+<section class="card admin-list-panel">
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
         <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
@@ -20,41 +25,6 @@
         <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
     }
 
-    @if (Model.BuildingOptions.Count == 0)
-    {
-        <div class="empty-state"><strong>Create a building first</strong></div>
-        <div class="form-actions">
-            <a class="btn btn-primary" asp-page="/Administration/Buildings/Index">Buildings</a>
-        </div>
-    }
-    else
-    {
-        <form method="post" class="form-grid">
-            <label>
-                Room code
-                <input asp-for="RoomCode" autocomplete="off" required />
-            </label>
-            <label>
-                Building
-                <select asp-for="BuildingCode" asp-items="Model.BuildingOptions" required></select>
-            </label>
-            <label>
-                Room number
-                <input asp-for="RoomNumber" autocomplete="off" required />
-            </label>
-            <label>
-                Description
-                <input asp-for="Description" autocomplete="off" />
-            </label>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Create Room</button>
-                <a class="btn btn-secondary" asp-page="/Administration/Index">Back</a>
-            </div>
-        </form>
-    }
-</section>
-
-<section class="card">
     @if (Model.Rooms.Count == 0)
     {
         <div class="empty-state"><strong>No rooms</strong></div>

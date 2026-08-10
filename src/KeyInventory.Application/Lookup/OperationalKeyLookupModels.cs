@@ -53,11 +53,11 @@ public static class PartyHolderDisplayFormatter
     public static string Format(PartyHolderDisplay holder)
     {
         ArgumentNullException.ThrowIfNull(holder);
-        return $"{holder.FirstName} {holder.LastName} ({holder.Uin})";
+        return Format(holder.FirstName, holder.LastName, holder.Uin);
     }
 
     public static string Format(string firstName, string lastName, string uin)
     {
-        return Format(new PartyHolderDisplay(firstName, lastName, uin));
+        return $"{firstName} {lastName} — UIN {uin}";
     }
 }

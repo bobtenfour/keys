@@ -5,12 +5,17 @@
     ViewData["NavSection"] = "administration";
 }
 
-<header class="page-header page-header-compact">
-    <h1>Work Assignments</h1>
-    <p class="lede">Assign workforce members to rooms. One active assignment may be primary.</p>
-</header>
+<div class="page-header-row">
+    <header class="page-header page-header-compact">
+        <h1>Work Assignments</h1>
+        <p class="lede">Assign workforce members to rooms. One active assignment may be primary.</p>
+    </header>
+    <div class="page-header-actions">
+        <a class="btn btn-primary" asp-page="./Add">+ Add work assignment</a>
+    </div>
+</div>
 
-<section class="card form-card">
+<section class="card admin-list-panel">
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
         <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
@@ -20,37 +25,6 @@
         <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
     }
 
-    @if (Model.MemberOptions.Count == 0 || Model.RoomOptions.Count == 0)
-    {
-        <div class="empty-state">
-            <strong>Active workforce members and rooms are required</strong>
-        </div>
-    }
-    else
-    {
-        <form method="post" class="form-grid">
-            <label>Work assignment code<input asp-for="WorkAssignmentCode" required /></label>
-            <label>
-                Workforce member
-                <select asp-for="WorkforceMemberCode" asp-items="Model.MemberOptions" required></select>
-            </label>
-            <label>
-                Room
-                <select asp-for="RoomCode" asp-items="Model.RoomOptions" required></select>
-            </label>
-            <label class="checkbox">
-                <input asp-for="IsPrimary" />
-                Primary assignment
-            </label>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Create Work Assignment</button>
-                <a class="btn btn-secondary" asp-page="/Administration/Index">Back</a>
-            </div>
-        </form>
-    }
-</section>
-
-<section class="card">
     @if (Model.Assignments.Count == 0)
     {
         <div class="empty-state"><strong>No work assignments</strong></div>
@@ -74,11 +48,11 @@
                 {
                     <tr>
                         <td>@item.WorkAssignmentCode</td>
-                        <td>@item.WorkforceMemberCode</td>
-                        <td>@item.RoomCode</td>
+                        <td>@Model.FormatMember(item.WorkforceMemberCode)</td>
+                        <td>@Model.FormatRoom(item.RoomCode)</td>
                         <td>@(item.IsPrimary ? "Yes" : "No")</td>
                         <td>@(item.IsActive ? "Active" : "Ended")</td>
-                        <td>
+                        <td class="table-actions">
                             @if (item.IsActive)
                             {
                                 @if (!item.IsPrimary)

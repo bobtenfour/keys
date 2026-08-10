@@ -1,13 +1,12 @@
+using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Workforce;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace KeyInventory.Web.Pages.Administration.WorkAssignments;
 
 public sealed class IndexModel : PageModel
 {
-    private readonly ICreateWorkAssignmentUseCase _create;
     private readonly IListWorkAssignmentsUseCase _list;
     private readonly IListWorkforceMembersUseCase _members;
     private readonly IListRoomsUseCase _rooms;
@@ -16,7 +15,6 @@ public sealed class IndexModel : PageModel
     private readonly IClearWorkAssignmentPrimaryUseCase _clearPrimary;
 
     public IndexModel(
-        ICreateWorkAssignmentUseCase create,
         IListWorkAssignmentsUseCase list,
         IListWorkforceMembersUseCase members,
         IListRoomsUseCase rooms,
@@ -24,7 +22,6 @@ public sealed class IndexModel : PageModel
         IMarkWorkAssignmentPrimaryUseCase markPrimary,
         IClearWorkAssignmentPrimaryUseCase clearPrimary)
     {
-        _create = create ?? throw new ArgumentNullException(nameof(create));
         _list = list ?? throw new ArgumentNullException(nameof(list));
         _members = members ?? throw new ArgumentNullException(nameof(members));
         _rooms = rooms ?? throw new ArgumentNullException(nameof(rooms));
@@ -33,23 +30,13 @@ public sealed class IndexModel : PageModel
         _clearPrimary = clearPrimary ?? throw new ArgumentNullException(nameof(clearPrimary));
     }
 
-    [BindProperty]
-    public string WorkAssignmentCode { get; set; } = string.Empty;
-
-    [BindProperty]
-    public string WorkforceMemberCode { get; set; } = string.Empty;
-
-    [BindProperty]
-    public string RoomCode { get; set; } = string.Empty;
-
-    [BindProperty]
-    public bool IsPrimary { get; set; }
-
     public IReadOnlyList<WorkAssignmentListItem> Assignments { get; private set; } = [];
 
-    public IReadOnlyList<SelectListItem> MemberOptions { get; private set; } = [];
+    public IReadOnlyDictionary<string, string> MemberDisplayByCode { get; private set; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-    public IReadOnlyList<SelectListItem> RoomOptions { get; private set; } = [];
+    public IReadOnlyDictionary<string, string> RoomDisplayByCode { get; private set; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     public string? SuccessMessage { get; private set; }
 
@@ -58,29 +45,6 @@ public sealed class IndexModel : PageModel
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         await LoadAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _create.ExecuteAsync(
-                    WorkAssignmentCode,
-                    WorkforceMemberCode,
-                    RoomCode,
-                    IsPrimary,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            SuccessMessage = $"Work assignment {WorkAssignmentCode} was created.";
-            WorkAssignmentCode = string.Empty;
-        }
-        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
-        {
-            ErrorMessage = exception.Message;
-        }
-
-        await LoadAsync(cancellationToken).ConfigureAwait(false);
-        return Page();
     }
 
     public async Task<IActionResult> OnPostEndAsync(string workAssignmentCode, CancellationToken cancellationToken)
@@ -134,13 +98,30 @@ public sealed class IndexModel : PageModel
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
         Assignments = await _list.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        MemberOptions = (await _members.ExecuteAsync(cancellationToken).ConfigureAwait(false))
-            .Where(item => string.Equals(item.Status, "Active", StringComparison.Ordinal))
-            .Select(item => new SelectListItem(item.WorkforceMemberCode, item.WorkforceMemberCode))
-            .ToArray();
-        RoomOptions = (await _rooms.ExecuteAsync(cancellationToken).ConfigureAwait(false))
-            .Where(item => item.IsActive)
-            .Select(item => new SelectListItem($"{item.BuildingCode} / {item.RoomNumber}", item.RoomCode))
-            .ToArray();
+        IReadOnlyList<WorkforceMemberListItem> members = await _members.ExecuteAsync(cancellationToken)
+            .ConfigureAwait(false);
+        MemberDisplayByCode = members.ToDictionary(
+            item => item.WorkforceMemberCode,
+            item => PartyHolderDisplayFormatter.Format(item.FirstName, item.LastName, item.Uin),
+            StringComparer.OrdinalIgnoreCase);
+        RoomDisplayByCode = (await _rooms.ExecuteAsync(cancellationToken).ConfigureAwait(false))
+            .ToDictionary(
+                item => item.RoomCode,
+                item => $"{item.BuildingCode} / {item.RoomNumber}",
+                StringComparer.OrdinalIgnoreCase);
+    }
+
+    public string FormatMember(string workforceMemberCode)
+    {
+        return MemberDisplayByCode.TryGetValue(workforceMemberCode, out string? display)
+            ? display
+            : workforceMemberCode;
+    }
+
+    public string FormatRoom(string roomCode)
+    {
+        return RoomDisplayByCode.TryGetValue(roomCode, out string? display)
+            ? display
+            : roomCode;
     }
 }

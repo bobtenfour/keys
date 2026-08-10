@@ -12,7 +12,24 @@ public interface IWorkforcePersistencePort
 
     Task AddPartyAsync(Party party, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Persists Party and WorkforceMember in one SQL Server transaction (all-or-nothing).
+    /// </summary>
+    Task AddPartyAndWorkforceMemberAsync(Party party, WorkforceMember member, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Persists two Parties and two WorkforceMembers in one SQL Server transaction (all-or-nothing).
+    /// </summary>
+    Task AddBootstrapPartiesAndWorkforceMembersAsync(
+        Party firstParty,
+        Party secondParty,
+        WorkforceMember firstMember,
+        WorkforceMember secondMember,
+        CancellationToken cancellationToken);
+
     Task<Party?> FindPartyAsync(string partyCode, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<PartyListItem>> ListPartiesAsync(CancellationToken cancellationToken);
 
     Task<bool> OrganizationExistsAsync(string organizationCode, CancellationToken cancellationToken);
 

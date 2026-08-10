@@ -33,6 +33,83 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task AddPartyAndWorkforceMemberAsync(
+        Party party,
+        WorkforceMember member,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(party);
+        ArgumentNullException.ThrowIfNull(member);
+
+        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction =
+            await _dbContext.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            _dbContext.Parties.Add(DomainWorkforceMapper.ToEntity(party));
+            _dbContext.WorkforceMembers.Add(DomainWorkforceMapper.ToEntity(member));
+            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
+        finally
+        {
+            await transaction.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    public async Task AddBootstrapPartiesAndWorkforceMembersAsync(
+        Party firstParty,
+        Party secondParty,
+        WorkforceMember firstMember,
+        WorkforceMember secondMember,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(firstParty);
+        ArgumentNullException.ThrowIfNull(secondParty);
+        ArgumentNullException.ThrowIfNull(firstMember);
+        ArgumentNullException.ThrowIfNull(secondMember);
+
+        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction =
+            await _dbContext.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            _dbContext.Parties.Add(DomainWorkforceMapper.ToEntity(firstParty));
+            _dbContext.Parties.Add(DomainWorkforceMapper.ToEntity(secondParty));
+            _dbContext.WorkforceMembers.Add(DomainWorkforceMapper.ToEntity(firstMember));
+            _dbContext.WorkforceMembers.Add(DomainWorkforceMapper.ToEntity(secondMember));
+            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
+        finally
+        {
+            await transaction.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    public async Task<IReadOnlyList<PartyListItem>> ListPartiesAsync(CancellationToken cancellationToken)
+    {
+        return await _dbContext.Parties.AsNoTracking()
+            .OrderBy(entity => entity.LastName)
+            .ThenBy(entity => entity.FirstName)
+            .ThenBy(entity => entity.Uin)
+            .Select(entity => new PartyListItem(
+                entity.PartyCode,
+                entity.FirstName,
+                entity.LastName,
+                entity.Uin))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task<Party?> FindPartyAsync(string partyCode, CancellationToken cancellationToken)
     {
         PartyEntity? entity = await _dbContext.Parties.AsNoTracking()
@@ -325,16 +402,21 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
     public async Task<IReadOnlyList<WorkforceMemberListItem>> ListWorkforceMembersAsync(
         CancellationToken cancellationToken)
     {
-        return await _dbContext.WorkforceMembers.AsNoTracking()
-            .OrderBy(entity => entity.WorkforceMemberCode)
-            .Select(entity => new WorkforceMemberListItem(
-                entity.WorkforceMemberCode,
-                entity.PartyCode,
-                entity.WorkforceType,
-                entity.OrganizationCode,
-                entity.DepartmentCode,
-                entity.ResponsibleManagerWorkforceMemberCode,
-                entity.Status))
+        return await (
+                from member in _dbContext.WorkforceMembers.AsNoTracking()
+                join party in _dbContext.Parties.AsNoTracking() on member.PartyCode equals party.PartyCode
+                orderby party.LastName, party.FirstName, member.WorkforceMemberCode
+                select new WorkforceMemberListItem(
+                    member.WorkforceMemberCode,
+                    member.PartyCode,
+                    party.FirstName,
+                    party.LastName,
+                    party.Uin,
+                    member.WorkforceType,
+                    member.OrganizationCode,
+                    member.DepartmentCode,
+                    member.ResponsibleManagerWorkforceMemberCode,
+                    member.Status))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }

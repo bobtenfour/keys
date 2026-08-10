@@ -1,0 +1,172 @@
+@page
+@model KeyInventory.Web.Pages.Administration.WorkforceMembers.DetailsModel
+@{
+    ViewData["Title"] = Model.Selected is null
+        ? "Workforce Member"
+        : $"{Model.Selected.FirstName} {Model.Selected.LastName}";
+    ViewData["NavSection"] = "administration";
+    var selected = Model.Selected!;
+    bool isActive = string.Equals(selected.Status, "Active", StringComparison.Ordinal);
+}
+
+<header class="page-header page-header-compact identity-header">
+    <p class="eyebrow"><a asp-page="./Index">Workforce Members</a></p>
+    <h1>@selected.FirstName @selected.LastName</h1>
+    <p class="identity-meta">
+        <span>UIN @selected.Uin</span>
+        <span class="status-pill">@selected.Status</span>
+    </p>
+</header>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+}
+
+<section class="card form-card admin-task-form">
+    <h2>Membership</h2>
+    @if (isActive)
+    {
+        <form method="post" asp-page-handler="Maintain" class="form-grid">
+            <input type="hidden" asp-for="Member" />
+            <label>
+                Workforce type
+                <select asp-for="WorkforceType">
+                    <option value="Employee">Employee</option>
+                    <option value="Contractor">Contractor</option>
+                </select>
+            </label>
+            <label>
+                Organization
+                <select asp-for="OrganizationCode" asp-items="Model.OrganizationOptions" required></select>
+            </label>
+            <label>
+                Department
+                <select asp-for="DepartmentCode" asp-items="Model.DepartmentOptions" required></select>
+            </label>
+            <label>
+                Responsible Manager
+                <select asp-for="ResponsibleManagerWorkforceMemberCode" asp-items="Model.ManagerOptions" required></select>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save changes</button>
+                <a class="btn btn-secondary" asp-page="./Index">Back to list</a>
+            </div>
+        </form>
+    }
+    else
+    {
+        <dl class="detail-list">
+            <div><dt>Workforce type</dt><dd>@selected.WorkforceType</dd></div>
+            <div><dt>Organization</dt><dd>@selected.OrganizationCode</dd></div>
+            <div><dt>Department</dt><dd>@selected.DepartmentCode</dd></div>
+            <div><dt>Responsible Manager</dt><dd>@Model.ManagerDisplay</dd></div>
+        </dl>
+        <p class="hint">Terminated members cannot be reactivated or edited.</p>
+        <div class="form-actions">
+            <a class="btn btn-secondary" asp-page="./Index">Back to list</a>
+        </div>
+    }
+</section>
+
+<section class="card admin-list-panel">
+    <h2>Work Assignments / Rooms</h2>
+    @if (Model.WorkAssignments.Count == 0)
+    {
+        <div class="empty-state"><strong>No active work assignments</strong></div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Building</th>
+                        <th>Room</th>
+                        <th>Description</th>
+                        <th>Primary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.WorkAssignments)
+                {
+                    <tr>
+                        <td>@(string.IsNullOrEmpty(item.BuildingCode) ? "—" : item.BuildingCode)</td>
+                        <td>@item.RoomNumber</td>
+                        <td>@(string.IsNullOrEmpty(item.Description) ? "—" : item.Description)</td>
+                        <td>@(item.IsPrimary ? "Yes" : "No")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+    <div class="form-actions">
+        <a class="btn btn-secondary" asp-page="/Administration/WorkAssignments/Index">Manage work assignments</a>
+    </div>
+</section>
+
+<section class="card admin-list-panel">
+    <h2>Currently issued keys</h2>
+    @if (Model.IssuedKeys.Count == 0)
+    {
+        <div class="empty-state"><strong>No currently issued keys</strong></div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Issued</th>
+                        <th>Due</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.IssuedKeys)
+                {
+                    <tr>
+                        <td>@item.CatalogKeyCode</td>
+                        <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.IssuedAtUtc)</td>
+                        <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.DueAtUtc)</td>
+                        <td><a asp-page="/Operations/Receive" asp-route-issueReference="@item.LoanCode">Receive</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+    <div class="form-actions">
+        <a class="btn btn-secondary" asp-page="/Operations/MemberKeys" asp-route-member="@selected.WorkforceMemberCode">Issued Keys</a>
+    </div>
+</section>
+
+@if (isActive)
+{
+    <section class="card form-card destructive-panel">
+        <h2>Terminate workforce member</h2>
+        <p class="lede">Termination ends eligibility for new key issues. Outstanding keys must still be received through Return.</p>
+        @if (Model.Obligations.Count > 0)
+        {
+            <div class="alert alert-warning" role="status">
+                Outstanding return obligations: @Model.Obligations.Count
+            </div>
+        }
+        <form method="post" asp-page-handler="Terminate" class="form-grid">
+            <input type="hidden" asp-for="Member" />
+            <label class="checkbox">
+                <input asp-for="ConfirmTerminate" />
+                I confirm termination of @selected.FirstName @selected.LastName
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-danger">Terminate workforce member</button>
+            </div>
+        </form>
+    </section>
+}

@@ -1,0 +1,29 @@
+@page
+@model KeyInventory.Web.Pages.Administration.Buildings.AddModel
+@{
+    ViewData["Title"] = "Add Building";
+    ViewData["NavSection"] = "administration";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Add Building</h1>
+    <p class="lede">Create a physical building that contains rooms.</p>
+</header>
+
+<section class="card form-card admin-task-form">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <form method="post" class="form-grid">
+        <label>
+            Building code
+            <input asp-for="BuildingCode" autocomplete="off" required />
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Building</button>
+            <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
+        </div>
+    </form>
+</section>

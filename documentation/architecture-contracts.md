@@ -34,6 +34,8 @@ Owns persistence, external systems, integration adapters, and technical implemen
 
 ### Web
 Owns presentation, request/response binding, navigation, and product experience.
+- Operator-facing local civil time controls may be used for Issue/Receive capture; conversion to authoritative zero-offset UTC occurs only at the Web→Application boundary and must not create a second time authority.
+- Web must not query `KeyInventoryDbContext` or reimplement Domain eligibility; selector options come from Application list/query authorities.
 
 ## Dependency Rules
 - Domain references no project.
@@ -110,6 +112,8 @@ Runtime composition belongs to the application host. Service registration must n
 - WorkforceMember termination, rehire, Department change, Organization change, and Employee or Contractor WorkforceType transition are relationship changes and must not rewrite Party person identity.
 - WorkforceMember termination may forbid new key issues and signal a mandatory return obligation; it must not automatically mutate Loan, Return, custody, lifecycle, or audit authority.
 - Required key returns after termination complete only through the existing Return workflow.
+- Application owns one atomic Create Workforce Member operation that creates Party identity and an Active WorkforceMember relationship from one operator request (FirstName, LastName, UIN, WorkforceType, Organization, Department, ResponsibleManager) inside one SQL Server transaction; partial Party persistence is forbidden when WorkforceMember persistence fails; Web must call that single Application authority and must not orchestrate separate Party and WorkforceMember writes.
+- PartyCode and WorkforceMemberCode are internal system identifiers generated once on the Application/Domain creation path as opaque values with stable prefixes (`PARTY-{GUID}`, `WM-{GUID}`), persisted immutably, available for internal references/diagnostics, and not required as normal operator UI inputs; sequences, counters, configurable code-generation engines, database-specific generators, and user-configurable formats are forbidden for these identifiers.
 - WORKFORCE-ELIGIBILITY-1 is structural preparation and Approved slice specification only until Phase 1 close prerequisites are Accepted; implementation of this boundary is forbidden until the slice is authorized to start.
 
 ## Forbidden

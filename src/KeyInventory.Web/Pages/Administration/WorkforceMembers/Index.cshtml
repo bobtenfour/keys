@@ -5,153 +5,37 @@
     ViewData["NavSection"] = "administration";
 }
 
-<header class="page-header page-header-compact">
-    <h1>Workforce Members</h1>
-    <p class="lede">Workforce relationships for key eligibility. Party identity stays separate.</p>
-</header>
+<div class="page-header-row">
+    <header class="page-header page-header-compact">
+        <h1>Workforce Members</h1>
+        <p class="lede">People with an active or terminated workforce relationship for key eligibility.</p>
+    </header>
+    <div class="page-header-actions">
+        <a class="btn btn-primary" asp-page="./Add">+ Add workforce member</a>
+    </div>
+</div>
 
-<section class="card form-card">
-    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-    {
-        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
-    }
-    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
-    {
-        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
-    }
-
-    <h2>Create party</h2>
-    <form method="post" asp-page-handler="CreateParty" class="form-grid">
-        <label>Party code<input asp-for="PartyCode" required /></label>
-        <label>First name<input asp-for="FirstName" required /></label>
-        <label>Last name<input asp-for="LastName" required /></label>
-        <label>UIN<input asp-for="Uin" required /><span class="hint">Exactly nine digits.</span></label>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Create Party</button>
-        </div>
-    </form>
-</section>
-
-<section class="card form-card">
-    <h2>@(Model.IsBootstrap ? "Create initial workforce pair" : "Create workforce member")</h2>
-    <form method="post" asp-page-handler="CreateMember" class="form-grid">
-        <label>Workforce member code<input asp-for="WorkforceMemberCode" required /></label>
-        <label>Party code<input asp-for="PartyCode" required /></label>
-        <label>
-            Workforce type
-            <select asp-for="WorkforceType">
-                <option value="Employee">Employee</option>
-                <option value="Contractor">Contractor</option>
-            </select>
+<section class="card admin-list-panel">
+    <form method="get" class="toolbar admin-filter-bar" role="search">
+        <label class="admin-filter-field">
+            <span class="visually-hidden">Search workforce members</span>
+            <input type="search" name="Q" value="@Model.Q" placeholder="Search name, UIN, organization…" />
         </label>
-        <label>Organization code<input asp-for="OrganizationCode" required /></label>
-        <label>Department code<input asp-for="DepartmentCode" required /></label>
-        @if (Model.IsBootstrap)
+        <button type="submit" class="btn btn-secondary">Search</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Q))
         {
-            <label>First name<input asp-for="FirstName" required /></label>
-            <label>Last name<input asp-for="LastName" required /></label>
-            <label>UIN<input asp-for="Uin" required /></label>
-            <label>Peer workforce member code<input asp-for="PeerWorkforceMemberCode" required /></label>
-            <label>Peer party code<input asp-for="PeerPartyCode" required /></label>
-            <label>Peer first name<input asp-for="PeerFirstName" required /></label>
-            <label>Peer last name<input asp-for="PeerLastName" required /></label>
-            <label>Peer UIN<input asp-for="PeerUin" required /></label>
-            <label>
-                Peer workforce type
-                <select asp-for="PeerWorkforceType">
-                    <option value="Employee">Employee</option>
-                    <option value="Contractor">Contractor</option>
-                </select>
-            </label>
+            <a class="btn btn-secondary" asp-page="./Index">Clear</a>
         }
-        else
-        {
-            <label>
-                Responsible manager
-                <select asp-for="ResponsibleManagerWorkforceMemberCode" asp-items="Model.ManagerOptions" required></select>
-            </label>
-        }
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a class="btn btn-secondary" asp-page="/Administration/Index">Back</a>
-        </div>
     </form>
-</section>
 
-<section class="card form-card">
-    <h2>Maintain active workforce member</h2>
-    <p class="hint">Organization, Department, Responsible Manager, and Workforce Type only. Terminated members cannot be reactivated here.</p>
-    @if (Model.ActiveMemberOptions.Count == 0)
-    {
-        <div class="empty-state"><strong>No active workforce members to maintain</strong></div>
-    }
-    else
-    {
-        <form method="post" asp-page-handler="Maintain" class="form-grid">
-            <label>
-                Workforce member
-                <select asp-for="MaintainWorkforceMemberCode" asp-items="Model.ActiveMemberOptions" required></select>
-            </label>
-            <label>Organization code<input asp-for="MaintainOrganizationCode" required /></label>
-            <label>Department code<input asp-for="MaintainDepartmentCode" required /></label>
-            <label>
-                Responsible manager
-                <select asp-for="MaintainResponsibleManagerWorkforceMemberCode" asp-items="Model.ManagerOptions" required></select>
-            </label>
-            <label>
-                Workforce type
-                <select asp-for="MaintainWorkforceType">
-                    <option value="Employee">Employee</option>
-                    <option value="Contractor">Contractor</option>
-                </select>
-            </label>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Save relationship changes</button>
-            </div>
-        </form>
-    }
-</section>
-
-<section class="card form-card">
-    <h2>Terminate workforce member</h2>
-    <form method="post" asp-page-handler="Terminate" class="form-grid">
-        <label>Workforce member code<input asp-for="TerminateWorkforceMemberCode" required /></label>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Terminate</button>
-        </div>
-    </form>
-    @if (Model.Obligations.Count > 0)
-    {
-        <div class="table-shell">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Loan</th>
-                        <th>Key</th>
-                        <th>Party</th>
-                        <th>Due</th>
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach (var item in Model.Obligations)
-                {
-                    <tr>
-                        <td>@item.LoanCode</td>
-                        <td>@item.CatalogKeyCode</td>
-                        <td>@item.BorrowerPartyReference</td>
-                        <td>@item.DueAtUtc.ToString("u")</td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-        </div>
-    }
-</section>
-
-<section class="card">
     @if (Model.Members.Count == 0)
     {
-        <div class="empty-state"><strong>No workforce members</strong></div>
+        <div class="empty-state">
+            <strong>No workforce members</strong>
+            @(string.IsNullOrWhiteSpace(Model.Q)
+                ? "Add a workforce member to begin eligibility setup."
+                : "No members match this search.")
+        </div>
     }
     else
     {
@@ -159,28 +43,31 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Member</th>
-                        <th>Party</th>
+                        <th>Person</th>
+                        <th>UIN</th>
                         <th>Type</th>
                         <th>Organization</th>
                         <th>Department</th>
-                        <th>Manager</th>
+                        <th>Responsible Manager</th>
                         <th>Status</th>
-                        <th></th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                 @foreach (var item in Model.Members)
                 {
                     <tr>
-                        <td>@item.WorkforceMemberCode</td>
-                        <td>@item.PartyCode</td>
+                        <td>@item.FirstName @item.LastName</td>
+                        <td>@item.Uin</td>
                         <td>@item.WorkforceType</td>
                         <td>@item.OrganizationCode</td>
                         <td>@item.DepartmentCode</td>
-                        <td>@item.ResponsibleManagerWorkforceMemberCode</td>
+                        <td>@Model.FormatManager(item.ResponsibleManagerWorkforceMemberCode)</td>
                         <td>@item.Status</td>
-                        <td><a asp-page="/Operations/MemberKeys" asp-route-member="@item.WorkforceMemberCode">Issued keys</a></td>
+                        <td class="table-actions">
+                            <a asp-page="./Details" asp-route-member="@item.WorkforceMemberCode">View/Edit</a>
+                            <a asp-page="/Operations/MemberKeys" asp-route-member="@item.WorkforceMemberCode">Issued Keys</a>
+                        </td>
                     </tr>
                 }
                 </tbody>

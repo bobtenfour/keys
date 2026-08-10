@@ -13,9 +13,18 @@ public sealed record RoomListItem(
     string Description,
     bool IsActive);
 
+public sealed record PartyListItem(
+    string PartyCode,
+    string FirstName,
+    string LastName,
+    string Uin);
+
 public sealed record WorkforceMemberListItem(
     string WorkforceMemberCode,
     string PartyCode,
+    string FirstName,
+    string LastName,
+    string Uin,
     string WorkforceType,
     string OrganizationCode,
     string DepartmentCode,

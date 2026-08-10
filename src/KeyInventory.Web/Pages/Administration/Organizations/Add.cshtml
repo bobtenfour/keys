@@ -1,0 +1,29 @@
+@page
+@model KeyInventory.Web.Pages.Administration.Organizations.AddModel
+@{
+    ViewData["Title"] = "Add Organization";
+    ViewData["NavSection"] = "administration";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Add Organization</h1>
+    <p class="lede">Create an institutional organization for workforce membership.</p>
+</header>
+
+<section class="card form-card admin-task-form">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <form method="post" class="form-grid">
+        <label>
+            Organization code
+            <input asp-for="OrganizationCode" autocomplete="off" required />
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Organization</button>
+            <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
+        </div>
+    </form>
+</section>

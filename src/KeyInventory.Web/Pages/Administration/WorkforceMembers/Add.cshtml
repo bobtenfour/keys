@@ -1,0 +1,81 @@
+@page
+@model KeyInventory.Web.Pages.Administration.WorkforceMembers.AddModel
+@{
+    ViewData["Title"] = Model.IsBootstrap ? "Add initial workforce pair" : "Add Workforce Member";
+    ViewData["NavSection"] = "administration";
+}
+
+<header class="page-header page-header-compact">
+    <h1>@(Model.IsBootstrap ? "Add initial workforce pair" : "Add Workforce Member")</h1>
+    <p class="lede">
+        @(Model.IsBootstrap
+            ? "Create the first two workforce members together. Identifiers are generated automatically."
+            : "Create person identity and workforce membership in one step. Identifiers are generated automatically.")
+    </p>
+</header>
+
+<section class="card form-card admin-task-form">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <form method="post" class="form-grid">
+        <h2 class="form-section-title">@(Model.IsBootstrap ? "First member" : "Person")</h2>
+        <label>First name<input asp-for="FirstName" required autocomplete="given-name" /></label>
+        <label>Last name<input asp-for="LastName" required autocomplete="family-name" /></label>
+        <label>
+            UIN
+            <input asp-for="Uin" required inputmode="numeric" autocomplete="off" />
+            <span class="hint">Exactly nine digits.</span>
+        </label>
+        <label>
+            Workforce type
+            <select asp-for="WorkforceType">
+                <option value="Employee">Employee</option>
+                <option value="Contractor">Contractor</option>
+            </select>
+        </label>
+        <label>
+            Organization
+            <select asp-for="OrganizationCode" asp-items="Model.OrganizationOptions" required>
+                <option value="">Select organization...</option>
+            </select>
+        </label>
+        <label>
+            Department
+            <select asp-for="DepartmentCode" asp-items="Model.DepartmentOptions" required>
+                <option value="">Select department...</option>
+            </select>
+        </label>
+
+        @if (Model.IsBootstrap)
+        {
+            <h2 class="form-section-title">Second member</h2>
+            <label>First name<input asp-for="PeerFirstName" required /></label>
+            <label>Last name<input asp-for="PeerLastName" required /></label>
+            <label>UIN<input asp-for="PeerUin" required inputmode="numeric" /></label>
+            <label>
+                Workforce type
+                <select asp-for="PeerWorkforceType">
+                    <option value="Employee">Employee</option>
+                    <option value="Contractor">Contractor</option>
+                </select>
+            </label>
+        }
+        else
+        {
+            <label>
+                Responsible Manager
+                <select asp-for="ResponsibleManagerWorkforceMemberCode" asp-items="Model.ManagerOptions" required>
+                    <option value="">Select manager...</option>
+                </select>
+            </label>
+        }
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">@(Model.IsBootstrap ? "Create pair" : "Add workforce member")</button>
+            <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
+        </div>
+    </form>
+</section>
