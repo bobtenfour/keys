@@ -69,7 +69,7 @@ public sealed class ClosedXmlReportExcelExporter : IReportExcelExporter
                 break;
             case ReportExportCellKind.DateTimeUtc when cell.DateTimeUtc is DateTimeOffset dateTime:
                 excelCell.Value = dateTime.UtcDateTime;
-                excelCell.Style.DateFormat.Format = "yyyy-mm-dd hh:mm:ss";
+                excelCell.Style.DateFormat.Format = "yyyy-mm-dd hh:mm \"UTC\"";
                 break;
             default:
                 excelCell.Value = cell.Text;

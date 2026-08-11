@@ -111,6 +111,16 @@ public sealed class ReportsBoundaryTests
         Assert.StartsWith("Name,Note\n", csv, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void CsvTimestampFormatterUsesUtcReadableFormatWithoutIsoNoise()
+    {
+        DateTimeOffset sample = new(2026, 8, 9, 15, 30, 0, TimeSpan.Zero);
+        string formatted = ReportCsvFormatter.FormatTimestamp(sample);
+        Assert.Equal("2026-08-09 15:30 UTC", formatted);
+        Assert.DoesNotContain("+00:00", formatted, StringComparison.Ordinal);
+        Assert.DoesNotContain('Z', formatted);
+    }
+
     private static bool ContainsAny(string value, params string[] terms)
     {
         return terms.Any(term => value.Contains(term, StringComparison.OrdinalIgnoreCase));

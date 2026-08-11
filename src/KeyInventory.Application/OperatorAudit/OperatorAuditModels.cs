@@ -23,8 +23,11 @@ public static class OperatorAuditActions
     public const string BuildingActivated = "Building activated";
     public const string BuildingRetired = "Building retired";
     public const string RoomCreated = "Room created";
+    public const string RoomUpdated = "Room updated";
     public const string RoomActivated = "Room activated";
     public const string RoomRetired = "Room retired";
+    public const string PartyNameUpdated = "Party name updated";
+    public const string PartyUinCorrected = "Party UIN corrected";
     public const string KeyTypeCreated = "KeyType created";
     public const string KeyTypeActivated = "KeyType activated";
     public const string KeyTypeRetired = "KeyType retired";
@@ -37,6 +40,7 @@ public static class OperatorAuditSubjects
     public const string Loan = "Loan";
     public const string Return = "Return";
     public const string WorkforceMember = "Workforce Member";
+    public const string Party = "Party";
     public const string WorkAssignment = "Work Assignment";
     public const string Organization = "Organization";
     public const string Department = "Department";

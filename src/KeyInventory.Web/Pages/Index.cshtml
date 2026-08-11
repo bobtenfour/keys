@@ -11,6 +11,11 @@
         <p class="lede">What requires your attention now?</p>
     </header>
 
+    @if (Model.Readiness.IsFirstUse)
+    {
+        <partial name="_OperationalReadiness" model="Model.Readiness" />
+    }
+
     <section class="summary-band" aria-labelledby="summary-title">
         <h2 id="summary-title" class="visually-hidden">Operational summary</h2>
         <div class="summary-grid summary-grid-emphasis">
@@ -29,8 +34,36 @@
         </div>
     </section>
 
+    @if (Model.Readiness.IsFirstUse)
+    {
+        <section class="card card-compact" aria-labelledby="setup-title">
+            <h2 id="setup-title" class="section-title">First-time setup</h2>
+            <p class="lede">Create departments, rooms, and key types in any order. Then add workforce members, work assignments, and register keys before issuing.</p>
+            <div class="quick-actions">
+                <a class="action-card" asp-page="/Administration/Departments/Add">
+                    <span class="action-copy"><strong>Departments</strong><span>Organizational units for members</span></span>
+                </a>
+                <a class="action-card" asp-page="/Administration/Rooms/Add">
+                    <span class="action-copy"><strong>Rooms</strong><span>Places keys may open</span></span>
+                </a>
+                <a class="action-card" asp-page="/Catalog/KeyTypes">
+                    <span class="action-copy"><strong>Key Types</strong><span>Classify physical keys</span></span>
+                </a>
+                <a class="action-card" asp-page="/Administration/WorkforceMembers/Add">
+                    <span class="action-copy"><strong>Workforce Members</strong><span>People eligible for keys</span></span>
+                </a>
+                <a class="action-card" asp-page="/Administration/WorkAssignments/Add">
+                    <span class="action-copy"><strong>Work Assignments</strong><span>Member-to-room links</span></span>
+                </a>
+                <a class="action-card" asp-page="/Catalog/Register">
+                    <span class="action-copy"><strong>Register Key</strong><span>Add keys to the catalog</span></span>
+                </a>
+            </div>
+        </section>
+    }
+
     <section class="card card-compact" aria-labelledby="quick-actions-title">
-        <h2 id="quick-actions-title" class="section-title">Quick Actions</h2>
+        <h2 id="quick-actions-title" class="section-title">Daily custody</h2>
         <div class="quick-actions">
             <a class="action-card" asp-page="/Operations/Issue">
                 <span class="action-icon" aria-hidden="true">
@@ -50,14 +83,8 @@
                     <span>Complete an active issue</span>
                 </span>
             </a>
-            <a class="action-card" asp-page="/Catalog/Register">
-                <span class="action-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-                </span>
-                <span class="action-copy">
-                    <strong>Register Key</strong>
-                    <span>Add a key to the catalog</span>
-                </span>
+            <a class="action-card" asp-page="/Operations/Active">
+                <span class="action-copy"><strong>Active Loans</strong><span>Keys currently issued</span></span>
             </a>
             <a class="action-card" asp-page="/Operations/Find">
                 <span class="action-icon" aria-hidden="true">
@@ -77,9 +104,23 @@
         {
             <div class="empty-state">
                 <strong>No recent activity</strong>
-                Issue your first key to start the operational timeline.
+                @if (Model.Readiness.Snapshot.CanIssueKey)
+                {
+                    <span>Issue your first key to start the operational timeline.</span>
+                }
+                else
+                {
+                    <span>Complete setup above, then issue your first key.</span>
+                }
                 <div class="form-actions">
-                    <a class="btn btn-primary" asp-page="/Operations/Issue">Issue Key</a>
+                    @if (Model.Readiness.Snapshot.CanIssueKey)
+                    {
+                        <a class="btn btn-primary" asp-page="/Operations/Issue">Issue Key</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-primary" asp-page="@Model.Readiness.NextActionPage">@Model.Readiness.NextActionTitle</a>
+                    }
                 </div>
             </div>
         }

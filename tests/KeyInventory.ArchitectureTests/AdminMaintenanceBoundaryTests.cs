@@ -2,7 +2,7 @@ using System.Reflection;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Application.Workflow;
 using KeyInventory.Infrastructure;
-using KeyInventory.Web.Pages.Administration.Organizations;
+using KeyInventory.Web.Pages.Administration.Departments;
 using KeyInventory.Web.Pages.Catalog;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,8 +19,6 @@ public sealed class AdminMaintenanceBoundaryTests
         Type[] pageModels =
         [
             typeof(IndexModel),
-            typeof(KeyInventory.Web.Pages.Administration.Departments.IndexModel),
-            typeof(KeyInventory.Web.Pages.Administration.Buildings.IndexModel),
             typeof(KeyInventory.Web.Pages.Administration.Rooms.IndexModel),
             typeof(KeyInventory.Web.Pages.Administration.WorkforceMembers.IndexModel),
             typeof(KeyInventory.Web.Pages.Administration.WorkAssignments.IndexModel),
@@ -40,7 +38,7 @@ public sealed class AdminMaintenanceBoundaryTests
 
         Assert.Contains(
             typeof(IndexModel).GetConstructors().Single().GetParameters(),
-            parameter => parameter.ParameterType == typeof(IActivateOrganizationUseCase));
+            parameter => parameter.ParameterType == typeof(IActivateDepartmentUseCase));
         Assert.Contains(
             typeof(KeyTypesModel).GetConstructors().Single().GetParameters(),
             parameter => parameter.ParameterType == typeof(IRetireKeyTypeUseCase));
@@ -51,7 +49,7 @@ public sealed class AdminMaintenanceBoundaryTests
     {
         Assembly[] assemblies =
         [
-            typeof(IActivateOrganizationUseCase).Assembly,
+            typeof(IActivateDepartmentUseCase).Assembly,
             typeof(LoanVerticalComposition).Assembly,
             typeof(KeyInventory.Web.Program).Assembly
         ];
@@ -100,13 +98,15 @@ public sealed class AdminMaintenanceBoundaryTests
             builder.Environment);
 
         using ServiceProvider provider = builder.Services.BuildServiceProvider();
-        Assert.NotNull(provider.GetService<IActivateOrganizationUseCase>());
+        Assert.NotNull(provider.GetService<IActivateDepartmentUseCase>());
         Assert.NotNull(provider.GetService<IRetireDepartmentUseCase>());
-        Assert.NotNull(provider.GetService<IActivateBuildingUseCase>());
+        Assert.NotNull(provider.GetService<IUpdateRoomNumberUseCase>());
         Assert.NotNull(provider.GetService<IRetireRoomUseCase>());
         Assert.NotNull(provider.GetService<IActivateKeyTypeUseCase>());
         Assert.NotNull(provider.GetService<IRetireKeyTypeUseCase>());
-        Assert.NotNull(provider.GetService<IUpdateWorkforceMemberOrganizationDepartmentUseCase>());
+        Assert.NotNull(provider.GetService<IUpdateWorkforceMemberDepartmentUseCase>());
+        Assert.NotNull(provider.GetService<IUpdatePartyNameUseCase>());
+        Assert.NotNull(provider.GetService<ICorrectPartyUinUseCase>());
         Assert.NotNull(provider.GetService<IEndWorkAssignmentUseCase>());
         Assert.NotNull(provider.GetService<IMarkWorkAssignmentPrimaryUseCase>());
         Assert.NotNull(provider.GetService<ITerminateWorkforceMemberUseCase>());

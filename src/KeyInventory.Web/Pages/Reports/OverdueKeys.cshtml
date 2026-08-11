@@ -7,7 +7,7 @@
 
 <header class="page-header page-header-compact">
     <h1>Overdue Keys</h1>
-    <p class="lede">Open loans past due, with holder and responsible manager when resolvable.</p>
+    <p class="lede">Open loans past due, with holder identity when resolvable.</p>
 </header>
 
 <section class="card form-card">
@@ -43,7 +43,6 @@
                         <th>Key</th>
                         <th>Holder</th>
                         <th>Workforce Member</th>
-                        <th>Responsible Manager</th>
                         <th>Department</th>
                         <th>Issued</th>
                         <th>Due</th>
@@ -58,7 +57,6 @@
                         <td>@row.CatalogKeyCode</td>
                         <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
                         <td>@(row.WorkforceMemberCode ?? "—")</td>
-                        <td>@(row.ResponsibleManagerWorkforceMemberCode ?? "—")</td>
                         <td>@(row.DepartmentCode ?? "—")</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.IssuedAtUtc)</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.DueAtUtc)</td>

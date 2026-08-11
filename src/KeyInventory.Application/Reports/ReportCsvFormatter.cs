@@ -25,7 +25,7 @@ public static class ReportCsvFormatter
 
     public static string FormatTimestamp(DateTimeOffset value)
     {
-        return value.ToString("u", CultureInfo.InvariantCulture);
+        return value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
     }
 
     public static string Build(IReadOnlyList<string> headers, IEnumerable<IReadOnlyList<string>> rows)

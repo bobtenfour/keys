@@ -8,11 +8,7 @@ public sealed class WorkforceMemberEntity
 
     public string WorkforceType { get; set; } = string.Empty;
 
-    public string OrganizationCode { get; set; } = string.Empty;
-
     public string DepartmentCode { get; set; } = string.Empty;
-
-    public string ResponsibleManagerWorkforceMemberCode { get; set; } = string.Empty;
 
     public string Status { get; set; } = string.Empty;
 

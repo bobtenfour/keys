@@ -5,13 +5,10 @@ public sealed class Role
     private readonly HashSet<string> _permissionCodes = new(StringComparer.Ordinal);
     private readonly List<RolePermission> _permissions = [];
 
-    public Role(string organizationCode, string roleCode)
+    public Role(string roleCode)
     {
-        OrganizationCode = IdentityText.Require(organizationCode, nameof(organizationCode));
         RoleCode = IdentityText.Require(roleCode, nameof(roleCode));
     }
-
-    public string OrganizationCode { get; }
 
     public string RoleCode { get; }
 

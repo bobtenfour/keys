@@ -231,7 +231,6 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
                 "UIN",
                 "Workforce Member",
                 "Department",
-                "Responsible Manager",
                 "Issued At (UTC)",
                 "Due At (UTC)",
                 "Status"
@@ -244,7 +243,6 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
                 ReportExportCell.FromText(row.HolderUin),
                 ReportExportCell.FromText(row.WorkforceMemberCode),
                 ReportExportCell.FromText(row.DepartmentCode),
-                ReportExportCell.FromText(row.ResponsibleManagerWorkforceMemberCode),
                 ReportExportCell.DateTimeUtcValue(row.IssuedAtUtc),
                 ReportExportCell.DateTimeUtcValue(row.DueAtUtc),
                 ReportExportCell.FromText(row.Status)
@@ -300,7 +298,6 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
                 "Holder Last Name",
                 "UIN",
                 "Workforce Member",
-                "Responsible Manager",
                 "Department",
                 "Issued At (UTC)",
                 "Due At (UTC)",
@@ -314,7 +311,6 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
                 ReportExportCell.FromText(row.HolderLastName),
                 ReportExportCell.FromText(row.HolderUin),
                 ReportExportCell.FromText(row.WorkforceMemberCode),
-                ReportExportCell.FromText(row.ResponsibleManagerWorkforceMemberCode),
                 ReportExportCell.FromText(row.DepartmentCode),
                 ReportExportCell.DateTimeUtcValue(row.IssuedAtUtc),
                 ReportExportCell.DateTimeUtcValue(row.DueAtUtc),
@@ -432,7 +428,6 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
                 "Holder Last Name",
                 "UIN",
                 "Department",
-                "Responsible Manager",
                 "Key",
                 "Loan",
                 "Due At (UTC)"
@@ -445,7 +440,6 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
                 ReportExportCell.FromText(row.HolderLastName),
                 ReportExportCell.FromText(row.HolderUin),
                 ReportExportCell.FromText(row.DepartmentCode),
-                ReportExportCell.FromText(row.ResponsibleManagerWorkforceMemberCode),
                 ReportExportCell.FromText(row.CatalogKeyCode),
                 ReportExportCell.FromText(row.LoanCode),
                 ReportExportCell.DateTimeUtcValue(row.DueAtUtc)

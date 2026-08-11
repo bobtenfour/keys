@@ -3,6 +3,7 @@ namespace KeyInventory.Domain.Workforce;
 /// <summary>
 /// Workforce Eligibility boundary — workforce relationship and eligibility authority.
 /// References Party identity; does not own FirstName, LastName, or UIN.
+/// Organization and ResponsibleManager are not active authorities.
 /// </summary>
 public sealed class WorkforceMember
 {
@@ -10,24 +11,12 @@ public sealed class WorkforceMember
         string workforceMemberCode,
         string partyCode,
         WorkforceType workforceType,
-        string organizationCode,
-        string departmentCode,
-        string responsibleManagerWorkforceMemberCode)
+        string departmentCode)
     {
         WorkforceMemberCode = WorkforceText.Require(workforceMemberCode, nameof(workforceMemberCode));
         PartyCode = WorkforceText.Require(partyCode, nameof(partyCode));
         WorkforceType = RequireWorkforceType(workforceType);
-        OrganizationCode = WorkforceText.Require(organizationCode, nameof(organizationCode));
         DepartmentCode = WorkforceText.Require(departmentCode, nameof(departmentCode));
-        ResponsibleManagerWorkforceMemberCode = WorkforceText.Require(
-            responsibleManagerWorkforceMemberCode,
-            nameof(responsibleManagerWorkforceMemberCode));
-
-        if (string.Equals(WorkforceMemberCode, ResponsibleManagerWorkforceMemberCode, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("ResponsibleManager must reference a different WorkforceMember.");
-        }
-
         Status = WorkforceMemberStatus.Active;
     }
 
@@ -37,42 +26,18 @@ public sealed class WorkforceMember
 
     public WorkforceType WorkforceType { get; private set; }
 
-    public string OrganizationCode { get; private set; }
-
     public string DepartmentCode { get; private set; }
-
-    public string ResponsibleManagerWorkforceMemberCode { get; private set; }
 
     public WorkforceMemberStatus Status { get; private set; }
 
-    public void AssignOrganizationAndDepartment(string organizationCode, string departmentCode)
+    public void AssignDepartment(string departmentCode)
     {
         if (Status != WorkforceMemberStatus.Active)
         {
-            throw new InvalidOperationException("Only an Active WorkforceMember may change Organization or Department.");
+            throw new InvalidOperationException("Only an Active WorkforceMember may change Department.");
         }
 
-        OrganizationCode = WorkforceText.Require(organizationCode, nameof(organizationCode));
         DepartmentCode = WorkforceText.Require(departmentCode, nameof(departmentCode));
-    }
-
-    public void AssignResponsibleManager(string responsibleManagerWorkforceMemberCode)
-    {
-        if (Status != WorkforceMemberStatus.Active)
-        {
-            throw new InvalidOperationException("Only an Active WorkforceMember may change ResponsibleManager.");
-        }
-
-        string managerCode = WorkforceText.Require(
-            responsibleManagerWorkforceMemberCode,
-            nameof(responsibleManagerWorkforceMemberCode));
-
-        if (string.Equals(WorkforceMemberCode, managerCode, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("ResponsibleManager must reference a different WorkforceMember.");
-        }
-
-        ResponsibleManagerWorkforceMemberCode = managerCode;
     }
 
     public void ChangeWorkforceType(WorkforceType workforceType)

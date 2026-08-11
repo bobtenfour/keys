@@ -9,7 +9,6 @@ public sealed record CurrentKeyHolderReportRow(
     string HolderUin,
     string? WorkforceMemberCode,
     string? DepartmentCode,
-    string? ResponsibleManagerWorkforceMemberCode,
     DateTimeOffset IssuedAtUtc,
     DateTimeOffset DueAtUtc,
     string Status);
@@ -31,7 +30,6 @@ public sealed record OverdueKeyReportRow(
     string HolderLastName,
     string HolderUin,
     string? WorkforceMemberCode,
-    string? ResponsibleManagerWorkforceMemberCode,
     string? DepartmentCode,
     DateTimeOffset IssuedAtUtc,
     DateTimeOffset DueAtUtc,
@@ -79,7 +77,6 @@ public sealed record OutstandingWorkforceKeyReportRow(
     string HolderLastName,
     string HolderUin,
     string DepartmentCode,
-    string ResponsibleManagerWorkforceMemberCode,
     string CatalogKeyCode,
     string LoanCode,
     DateTimeOffset DueAtUtc);

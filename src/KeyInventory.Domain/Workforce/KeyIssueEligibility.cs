@@ -10,18 +10,14 @@ public static class KeyIssueEligibility
     public static void EnsureEligible(
         WorkforceMember member,
         Party party,
-        Organization organization,
         Department department,
-        WorkforceMember responsibleManager,
         IReadOnlyCollection<WorkAssignment> activeAssignments,
         KeyIssueJustificationKind justificationKind,
         string justificationCode)
     {
         ArgumentNullException.ThrowIfNull(member);
         ArgumentNullException.ThrowIfNull(party);
-        ArgumentNullException.ThrowIfNull(organization);
         ArgumentNullException.ThrowIfNull(department);
-        ArgumentNullException.ThrowIfNull(responsibleManager);
         ArgumentNullException.ThrowIfNull(activeAssignments);
 
         string normalizedJustification = WorkforceText.Require(justificationCode, nameof(justificationCode));
@@ -48,34 +44,10 @@ public static class KeyIssueEligibility
             throw new InvalidOperationException("Party must have FirstName, LastName, and UIN for key issue.");
         }
 
-        if (!organization.IsActive
-            || !string.Equals(organization.OrganizationCode, member.OrganizationCode, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("WorkforceMember Organization must be active and assigned.");
-        }
-
         if (!department.IsActive
-            || !string.Equals(department.DepartmentCode, member.DepartmentCode, StringComparison.Ordinal)
-            || !string.Equals(department.OrganizationCode, member.OrganizationCode, StringComparison.Ordinal))
+            || !string.Equals(department.DepartmentCode, member.DepartmentCode, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("WorkforceMember Department must be active and assigned.");
-        }
-
-        if (responsibleManager.Status != WorkforceMemberStatus.Active
-            || !string.Equals(
-                responsibleManager.WorkforceMemberCode,
-                member.ResponsibleManagerWorkforceMemberCode,
-                StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("ResponsibleManager must be an active assigned WorkforceMember.");
-        }
-
-        if (string.Equals(
-                responsibleManager.WorkforceMemberCode,
-                member.WorkforceMemberCode,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("ResponsibleManager must reference a different WorkforceMember.");
         }
 
         WorkAssignment[] active = activeAssignments.Where(assignment => assignment.IsActive).ToArray();

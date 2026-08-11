@@ -88,9 +88,7 @@
         {
             <div class="subnav">
                 <nav class="shell" aria-label="Administration">
-                    <a asp-page="/Administration/Organizations/Index" class="@(page.Contains("/Administration/Organizations", StringComparison.Ordinal) ? "is-active" : null)">Organizations</a>
                     <a asp-page="/Administration/Departments/Index" class="@(page.Contains("/Administration/Departments", StringComparison.Ordinal) ? "is-active" : null)">Departments</a>
-                    <a asp-page="/Administration/Buildings/Index" class="@(page.Contains("/Administration/Buildings", StringComparison.Ordinal) ? "is-active" : null)">Buildings</a>
                     <a asp-page="/Administration/Rooms/Index" class="@(page.Contains("/Administration/Rooms", StringComparison.Ordinal) ? "is-active" : null)">Rooms</a>
                     <a asp-page="/Administration/WorkforceMembers/Index" class="@(page.Contains("/Administration/WorkforceMembers", StringComparison.Ordinal) ? "is-active" : null)">Workforce Members</a>
                     <a asp-page="/Administration/WorkAssignments/Index" class="@(page.Contains("/Administration/WorkAssignments", StringComparison.Ordinal) ? "is-active" : null)">Work Assignments</a>

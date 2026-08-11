@@ -23,11 +23,7 @@ public sealed class KeyInventoryDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<PartyEntity> Parties => Set<PartyEntity>();
 
-    public DbSet<OrganizationEntity> Organizations => Set<OrganizationEntity>();
-
     public DbSet<DepartmentEntity> Departments => Set<DepartmentEntity>();
-
-    public DbSet<BuildingEntity> Buildings => Set<BuildingEntity>();
 
     public DbSet<RoomEntity> Rooms => Set<RoomEntity>();
 

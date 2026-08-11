@@ -51,7 +51,7 @@ public sealed class WorkforceEligibilityBoundaryTests
     {
         Assembly[] assemblies =
         [
-            typeof(ICreateOrganizationUseCase).Assembly,
+            typeof(ICreateDepartmentUseCase).Assembly,
             typeof(LoanVerticalComposition).Assembly,
             typeof(KeyInventory.Web.Program).Assembly,
             typeof(WorkforceMember).Assembly
@@ -95,8 +95,8 @@ public sealed class WorkforceEligibilityBoundaryTests
             builder.Environment);
 
         using ServiceProvider provider = builder.Services.BuildServiceProvider();
-        Assert.NotNull(provider.GetService<ICreateOrganizationUseCase>());
-        Assert.NotNull(provider.GetService<ICreateWorkforceMemberUseCase>());
+        Assert.NotNull(provider.GetService<ICreateDepartmentUseCase>());
+        Assert.NotNull(provider.GetService<IRegisterWorkforceMemberUseCase>());
         Assert.NotNull(provider.GetService<IListOutstandingReturnObligationsUseCase>());
         Assert.NotNull(provider.GetService<ICreateWorkAssignmentUseCase>());
     }

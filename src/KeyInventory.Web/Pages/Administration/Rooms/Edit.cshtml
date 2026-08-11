@@ -1,0 +1,40 @@
+@page
+@model KeyInventory.Web.Pages.Administration.Rooms.EditModel
+@{
+    ViewData["Title"] = "Edit Room";
+    ViewData["NavSection"] = "administration";
+    var selected = Model.Selected!;
+}
+
+<header class="page-header page-header-compact">
+    <p class="eyebrow"><a asp-page="./Index">Rooms</a></p>
+    <h1>Edit @selected.RoomNumber</h1>
+    <p class="lede">Update room number or description. Room code @selected.RoomCode is immutable.</p>
+</header>
+
+<section class="card form-card admin-task-form">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+    }
+
+    <form method="post" class="form-grid">
+        <input type="hidden" asp-for="Room" />
+        <label>
+            Room number
+            <input asp-for="RoomNumber" autocomplete="off" required />
+        </label>
+        <label>
+            Description
+            <input asp-for="Description" autocomplete="off" />
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save changes</button>
+            <a class="btn btn-secondary" asp-page="./Index">Back to list</a>
+        </div>
+    </form>
+</section>

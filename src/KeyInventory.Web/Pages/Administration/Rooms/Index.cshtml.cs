@@ -28,6 +28,7 @@ public sealed class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        SuccessMessage = TempData["SuccessMessage"] as string;
         Rooms = await _list.ExecuteAsync(cancellationToken).ConfigureAwait(false);
     }
 

@@ -1,5 +1,6 @@
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Workforce;
+using KeyInventory.Web.Presentation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -44,6 +45,7 @@ public sealed class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        SuccessMessage = TempData["SuccessMessage"] as string;
         await LoadAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -107,7 +109,7 @@ public sealed class IndexModel : PageModel
         RoomDisplayByCode = (await _rooms.ExecuteAsync(cancellationToken).ConfigureAwait(false))
             .ToDictionary(
                 item => item.RoomCode,
-                item => $"{item.BuildingCode} / {item.RoomNumber}",
+                item => RoomDisplayFormatter.Format(item),
                 StringComparer.OrdinalIgnoreCase);
     }
 

@@ -53,15 +53,11 @@ public sealed class KeyRoomAssignmentWorkflowTests : IAsyncLifetime
         IListKeyAssetsUseCase listKeys = scope.ServiceProvider.GetRequiredService<IListKeyAssetsUseCase>();
         IOperationalKeyLookupUseCase lookup = scope.ServiceProvider.GetRequiredService<IOperationalKeyLookupUseCase>();
         IOperationalReportsUseCase reports = scope.ServiceProvider.GetRequiredService<IOperationalReportsUseCase>();
-        ICreateBuildingUseCase createBuilding = scope.ServiceProvider.GetRequiredService<ICreateBuildingUseCase>();
         ICreateRoomUseCase createRoom = scope.ServiceProvider.GetRequiredService<ICreateRoomUseCase>();
         KeyInventoryDbContext db = scope.ServiceProvider.GetRequiredService<KeyInventoryDbContext>();
 
-        await createBuilding.ExecuteAsync("kra-bldg", CancellationToken.None).ConfigureAwait(true);
-        await createRoom.ExecuteAsync("kra-room-1", "kra-bldg", "101", "Office", CancellationToken.None)
-            .ConfigureAwait(true);
-        await createRoom.ExecuteAsync("kra-room-2", "kra-bldg", "102", "Lab", CancellationToken.None)
-            .ConfigureAwait(true);
+        string roomCode1 = await createRoom.ExecuteAsync("101", "Office", CancellationToken.None).ConfigureAwait(true);
+        string roomCode2 = await createRoom.ExecuteAsync("102", "Lab", CancellationToken.None).ConfigureAwait(true);
 
         await createKey.ExecuteAsync("KRA-KEY-1", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("KRA-KEY-2", "mechanical", CancellationToken.None).ConfigureAwait(true);
@@ -71,21 +67,20 @@ public sealed class KeyRoomAssignmentWorkflowTests : IAsyncLifetime
             .ConfigureAwait(true);
         Assert.Empty(zero);
 
-        await assignments.AssignRoomAsync("KRA-KEY-1", "kra-room-1", CancellationToken.None).ConfigureAwait(true);
-        await assignments.AssignRoomAsync("KRA-KEY-1", "kra-room-2", CancellationToken.None).ConfigureAwait(true);
-        await assignments.AssignRoomAsync("KRA-KEY-2", "kra-room-1", CancellationToken.None).ConfigureAwait(true);
+        await assignments.AssignRoomAsync("KRA-KEY-1", roomCode1, CancellationToken.None).ConfigureAwait(true);
+        await assignments.AssignRoomAsync("KRA-KEY-1", roomCode2, CancellationToken.None).ConfigureAwait(true);
+        await assignments.AssignRoomAsync("KRA-KEY-2", roomCode1, CancellationToken.None).ConfigureAwait(true);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                assignments.AssignRoomAsync("KRA-KEY-1", "kra-room-1", CancellationToken.None))
+                assignments.AssignRoomAsync("KRA-KEY-1", roomCode1, CancellationToken.None))
             .ConfigureAwait(true);
 
         IReadOnlyList<KeyOpenedRoomItem> forKey1 = await assignments
             .ListOpenedRoomsAsync("KRA-KEY-1", CancellationToken.None)
             .ConfigureAwait(true);
         Assert.Equal(2, forKey1.Count);
-        Assert.All(forKey1, room => Assert.Equal("kra-bldg", room.BuildingCode));
-        Assert.Contains(forKey1, room => room.RoomCode == "kra-room-1" && room.RoomNumber == "101");
-        Assert.Contains(forKey1, room => room.RoomCode == "kra-room-2" && room.RoomNumber == "102");
+        Assert.Contains(forKey1, room => room.RoomCode == roomCode1 && room.RoomNumber == "101");
+        Assert.Contains(forKey1, room => room.RoomCode == roomCode2 && room.RoomNumber == "102");
 
         IReadOnlyList<KeyAssetListItem> catalog = await listKeys.ExecuteAsync(CancellationToken.None)
             .ConfigureAwait(true);
@@ -114,12 +109,12 @@ public sealed class KeyRoomAssignmentWorkflowTests : IAsyncLifetime
         Assert.Contains(roomsDisplay, reportCsv, StringComparison.Ordinal);
         Assert.Equal(reportCsv, reports.FormatKeyCatalogCsv(report));
 
-        await assignments.RemoveRoomAsync("KRA-KEY-1", "kra-room-2", CancellationToken.None).ConfigureAwait(true);
+        await assignments.RemoveRoomAsync("KRA-KEY-1", roomCode2, CancellationToken.None).ConfigureAwait(true);
         IReadOnlyList<KeyOpenedRoomItem> afterRemove = await assignments
             .ListOpenedRoomsAsync("KRA-KEY-1", CancellationToken.None)
             .ConfigureAwait(true);
         Assert.Single(afterRemove);
-        Assert.Equal("kra-room-1", afterRemove[0].RoomCode);
+        Assert.Equal(roomCode1, afterRemove[0].RoomCode);
 
         Assert.Null(typeof(KeyAssetEntity).GetProperty("BuildingCode"));
         Assert.Null(typeof(KeyAssetEntity).GetProperty("Building"));

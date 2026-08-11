@@ -1,6 +1,6 @@
-using System.Globalization;
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Workflow;
+using KeyInventory.Web.Presentation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -25,7 +25,7 @@ public sealed class ReceiveModel : PageModel
     public string IssueReference { get; set; } = string.Empty;
 
     [BindProperty]
-    public string ReceivedAtUtcText { get; set; } = string.Empty;
+    public string ReceivedLocalText { get; set; } = string.Empty;
 
     public IReadOnlyList<SelectListItem> ActiveIssueOptions { get; private set; } = [];
 
@@ -41,7 +41,7 @@ public sealed class ReceiveModel : PageModel
         }
 
         await LoadActiveIssuesAsync(cancellationToken).ConfigureAwait(false);
-        ReceivedAtUtcText = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture);
+        ReceivedLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow);
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
@@ -50,9 +50,9 @@ public sealed class ReceiveModel : PageModel
 
         try
         {
-            if (!DateTimeOffset.TryParse(ReceivedAtUtcText, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset receivedAtUtc))
+            if (!OperatorLocalTimestamp.TryParseToUtc(ReceivedLocalText, out DateTimeOffset receivedAtUtc, out string? receivedError))
             {
-                throw new InvalidOperationException("Receive time must be a valid UTC timestamp.");
+                throw new InvalidOperationException(receivedError ?? "Receive time is invalid.");
             }
 
             await _completeReturn.ExecuteAsync(ReceiveReference, IssueReference, receivedAtUtc, cancellationToken)
@@ -60,6 +60,9 @@ public sealed class ReceiveModel : PageModel
 
             SuccessMessage = $"Key receive completed for issue {IssueReference}.";
             ReceiveReference = string.Empty;
+            IssueReference = string.Empty;
+            ReceivedLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow);
+            ModelState.Clear();
             await LoadActiveIssuesAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)

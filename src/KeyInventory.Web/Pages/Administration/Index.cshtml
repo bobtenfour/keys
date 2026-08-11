@@ -7,17 +7,28 @@
 
 <header class="page-header">
     <h1>Administration</h1>
-    <p class="lede">Manage organizations, places, workforce members, and work assignments.</p>
+    <p class="lede">Set up departments, rooms, workforce members, and work assignments before daily key custody.</p>
 </header>
 
+<partial name="_OperationalReadiness" model="Model.Readiness" />
+
 <section class="card">
+    <h2 class="section-title">Setup tasks</h2>
     <div class="toolbar">
-        <a class="btn btn-primary" asp-page="/Administration/Organizations/Index">Organizations</a>
-        <a class="btn btn-secondary" asp-page="/Administration/Departments/Index">Departments</a>
-        <a class="btn btn-secondary" asp-page="/Administration/Buildings/Index">Buildings</a>
+        <a class="btn btn-primary" asp-page="/Administration/Departments/Index">Departments</a>
         <a class="btn btn-secondary" asp-page="/Administration/Rooms/Index">Rooms</a>
         <a class="btn btn-secondary" asp-page="/Administration/WorkforceMembers/Index">Workforce Members</a>
         <a class="btn btn-secondary" asp-page="/Administration/WorkAssignments/Index">Work Assignments</a>
         <a class="btn btn-secondary" asp-page="/Administration/AuditTrail">Audit Trail</a>
+    </div>
+</section>
+
+<section class="card">
+    <h2 class="section-title">Parallel first steps</h2>
+    <p class="lede">Department, Room, and Key Type do not depend on each other. Create them in any order, then continue with workforce members and work assignments.</p>
+    <div class="toolbar">
+        <a class="btn btn-secondary" asp-page="/Administration/Departments/Add">Add department</a>
+        <a class="btn btn-secondary" asp-page="/Administration/Rooms/Add">Add room</a>
+        <a class="btn btn-secondary" asp-page="/Catalog/KeyTypes">Key types</a>
     </div>
 </section>

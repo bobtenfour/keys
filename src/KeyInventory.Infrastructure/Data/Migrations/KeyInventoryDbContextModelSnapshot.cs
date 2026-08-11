@@ -22,26 +22,8 @@ namespace KeyInventory.Infrastructure.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("KeyInventory.Infrastructure.Data.BuildingEntity", b =>
-                {
-                    b.Property<string>("BuildingCode")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.HasKey("BuildingCode");
-
-                    b.ToTable("Buildings", (string)null);
-                });
-
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.DepartmentEntity", b =>
                 {
-                    b.Property<string>("OrganizationCode")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
                     b.Property<string>("DepartmentCode")
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
@@ -49,7 +31,7 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.HasKey("OrganizationCode", "DepartmentCode");
+                    b.HasKey("DepartmentCode");
 
                     b.ToTable("Departments", (string)null);
                 });
@@ -187,20 +169,6 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                     b.ToTable("OperatorAuditRecords", (string)null);
                 });
 
-            modelBuilder.Entity("KeyInventory.Infrastructure.Data.OrganizationEntity", b =>
-                {
-                    b.Property<string>("OrganizationCode")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.HasKey("OrganizationCode");
-
-                    b.ToTable("Organizations", (string)null);
-                });
-
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.PartyEntity", b =>
                 {
                     b.Property<string>("PartyCode")
@@ -261,11 +229,6 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<string>("BuildingCode")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -281,7 +244,7 @@ namespace KeyInventory.Infrastructure.Data.Migrations
 
                     b.HasKey("RoomCode");
 
-                    b.HasIndex("BuildingCode", "RoomNumber")
+                    b.HasIndex("RoomNumber")
                         .IsUnique();
 
                     b.ToTable("Rooms", (string)null);
@@ -329,17 +292,7 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<string>("OrganizationCode")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
                     b.Property<string>("PartyCode")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<string>("ResponsibleManagerWorkforceMemberCode")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
@@ -561,17 +514,6 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("KeyInventory.Infrastructure.Data.DepartmentEntity", b =>
-                {
-                    b.HasOne("KeyInventory.Infrastructure.Data.OrganizationEntity", "Organization")
-                        .WithMany()
-                        .HasForeignKey("OrganizationCode")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Organization");
-                });
-
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAssetEntity", b =>
                 {
                     b.HasOne("KeyInventory.Infrastructure.Data.KeyTypeEntity", "KeyType")
@@ -622,17 +564,6 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Loan");
-                });
-
-            modelBuilder.Entity("KeyInventory.Infrastructure.Data.RoomEntity", b =>
-                {
-                    b.HasOne("KeyInventory.Infrastructure.Data.BuildingEntity", "Building")
-                        .WithMany()
-                        .HasForeignKey("BuildingCode")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Building");
                 });
 
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.WorkforceMemberEntity", b =>

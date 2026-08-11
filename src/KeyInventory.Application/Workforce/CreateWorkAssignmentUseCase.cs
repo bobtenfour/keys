@@ -55,13 +55,6 @@ public sealed class CreateWorkAssignmentUseCase : ICreateWorkAssignmentUseCase
             throw new InvalidOperationException("WorkAssignment requires an active Room.");
         }
 
-        Building? building = await _workforce.FindBuildingAsync(room.BuildingCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (building is null || !building.IsActive)
-        {
-            throw new InvalidOperationException("WorkAssignment requires an active Building for the Room.");
-        }
-
         if (isPrimary)
         {
             await _workforce.ClearPrimaryAssignmentsAsync(member.WorkforceMemberCode, cancellationToken)

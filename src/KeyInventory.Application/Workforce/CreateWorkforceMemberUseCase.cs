@@ -10,22 +10,6 @@ public interface ICreateWorkforceMemberUseCase
         string workforceMemberCode,
         string partyCode,
         string workforceType,
-        string organizationCode,
-        string departmentCode,
-        string responsibleManagerWorkforceMemberCode,
-        CancellationToken cancellationToken);
-}
-
-public interface ICreateBootstrapWorkforcePairUseCase
-{
-    Task ExecuteAsync(
-        string firstWorkforceMemberCode,
-        string firstPartyCode,
-        string firstWorkforceType,
-        string secondWorkforceMemberCode,
-        string secondPartyCode,
-        string secondWorkforceType,
-        string organizationCode,
         string departmentCode,
         CancellationToken cancellationToken);
 }
@@ -55,34 +39,21 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
         string workforceMemberCode,
         string partyCode,
         string workforceType,
-        string organizationCode,
         string departmentCode,
-        string responsibleManagerWorkforceMemberCode,
         CancellationToken cancellationToken)
     {
         Party party = await EnsureMemberPrerequisitesAsync(
                 workforceMemberCode,
                 partyCode,
-                organizationCode,
                 departmentCode,
                 cancellationToken)
             .ConfigureAwait(false);
-
-        WorkforceMember? manager = await _workforce
-            .FindWorkforceMemberAsync(responsibleManagerWorkforceMemberCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (manager is null || manager.Status != WorkforceMemberStatus.Active)
-        {
-            throw new InvalidOperationException("ResponsibleManager must be an existing Active WorkforceMember.");
-        }
 
         WorkforceMember member = new(
             workforceMemberCode,
             partyCode,
             ParseWorkforceType(workforceType),
-            organizationCode,
-            departmentCode,
-            responsibleManagerWorkforceMemberCode);
+            departmentCode);
 
         _audit.Stage(
             OperatorAuditActions.WorkforceMemberCreated,
@@ -95,7 +66,6 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
     private async Task<Party> EnsureMemberPrerequisitesAsync(
         string workforceMemberCode,
         string partyCode,
-        string organizationCode,
         string departmentCode,
         CancellationToken cancellationToken)
     {
@@ -116,15 +86,7 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
             throw new InvalidOperationException("A Party may have at most one Active WorkforceMember.");
         }
 
-        Organization? organization = await _workforce.FindOrganizationAsync(organizationCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (organization is null || !organization.IsActive)
-        {
-            throw new InvalidOperationException("The organization was not found or is inactive.");
-        }
-
-        Department? department = await _workforce
-            .FindDepartmentAsync(organization.OrganizationCode, departmentCode, cancellationToken)
+        Department? department = await _workforce.FindDepartmentAsync(departmentCode, cancellationToken)
             .ConfigureAwait(false);
         if (department is null || !department.IsActive)
         {
@@ -143,97 +105,6 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
         }
 
         return parsed;
-    }
-}
-
-public sealed class CreateBootstrapWorkforcePairUseCase : ICreateBootstrapWorkforcePairUseCase
-{
-    private readonly IWorkforcePersistencePort _workforce;
-    private readonly IOperatorAuditRecorder _audit;
-
-    public CreateBootstrapWorkforcePairUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
-    {
-        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
-        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
-    }
-
-    public async Task ExecuteAsync(
-        string firstWorkforceMemberCode,
-        string firstPartyCode,
-        string firstWorkforceType,
-        string secondWorkforceMemberCode,
-        string secondPartyCode,
-        string secondWorkforceType,
-        string organizationCode,
-        string departmentCode,
-        CancellationToken cancellationToken)
-    {
-        if (await _workforce.CountWorkforceMembersAsync(cancellationToken).ConfigureAwait(false) != 0)
-        {
-            throw new InvalidOperationException(
-                "Bootstrap workforce pair may be created only when no WorkforceMember records exist.");
-        }
-
-        Party firstParty = await ValidatePartyAsync(firstPartyCode, cancellationToken).ConfigureAwait(false);
-        Party secondParty = await ValidatePartyAsync(secondPartyCode, cancellationToken).ConfigureAwait(false);
-
-        if (string.Equals(firstPartyCode, secondPartyCode, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("Bootstrap workforce pair requires two different Party records.");
-        }
-
-        Organization? organization = await _workforce.FindOrganizationAsync(organizationCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (organization is null || !organization.IsActive)
-        {
-            throw new InvalidOperationException("The organization was not found or is inactive.");
-        }
-
-        Department? department = await _workforce
-            .FindDepartmentAsync(organization.OrganizationCode, departmentCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (department is null || !department.IsActive)
-        {
-            throw new InvalidOperationException("The department was not found or is inactive.");
-        }
-
-        WorkforceMember first = new(
-            firstWorkforceMemberCode,
-            firstPartyCode,
-            CreateWorkforceMemberUseCase.ParseWorkforceType(firstWorkforceType),
-            organization.OrganizationCode,
-            department.DepartmentCode,
-            secondWorkforceMemberCode);
-        WorkforceMember second = new(
-            secondWorkforceMemberCode,
-            secondPartyCode,
-            CreateWorkforceMemberUseCase.ParseWorkforceType(secondWorkforceType),
-            organization.OrganizationCode,
-            department.DepartmentCode,
-            firstWorkforceMemberCode);
-
-        _audit.Stage(
-            OperatorAuditActions.WorkforceMemberCreated,
-            OperatorAuditSubjects.WorkforceMember,
-            first.WorkforceMemberCode,
-            $"FirstName={firstParty.FirstName}; LastName={firstParty.LastName}; UIN={firstParty.Uin}");
-        _audit.Stage(
-            OperatorAuditActions.WorkforceMemberCreated,
-            OperatorAuditSubjects.WorkforceMember,
-            second.WorkforceMemberCode,
-            $"FirstName={secondParty.FirstName}; LastName={secondParty.LastName}; UIN={secondParty.Uin}");
-        await _workforce.AddWorkforceMembersAsync([first, second], cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task<Party> ValidatePartyAsync(string partyCode, CancellationToken cancellationToken)
-    {
-        Party? party = await _workforce.FindPartyAsync(partyCode, cancellationToken).ConfigureAwait(false);
-        if (party is null || !party.IsActive)
-        {
-            throw new InvalidOperationException($"Party '{partyCode}' was not found or is inactive.");
-        }
-
-        return party;
     }
 }
 

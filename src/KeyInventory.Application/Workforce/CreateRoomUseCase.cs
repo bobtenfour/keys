@@ -5,9 +5,10 @@ namespace KeyInventory.Application.Workforce;
 
 public interface ICreateRoomUseCase
 {
-    Task ExecuteAsync(
-        string roomCode,
-        string buildingCode,
+    /// <summary>
+    /// Creates a Room with a system-generated RoomCode. Returns the generated RoomCode.
+    /// </summary>
+    Task<string> ExecuteAsync(
         string roomNumber,
         string? description,
         CancellationToken cancellationToken);
@@ -29,42 +30,26 @@ public sealed class CreateRoomUseCase : ICreateRoomUseCase
         _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
-    public async Task ExecuteAsync(
-        string roomCode,
-        string buildingCode,
+    public async Task<string> ExecuteAsync(
         string roomNumber,
         string? description,
         CancellationToken cancellationToken)
     {
-        if (await _workforce.RoomExistsAsync(roomCode, cancellationToken).ConfigureAwait(false))
-        {
-            throw new InvalidOperationException("A room with this room code already exists.");
-        }
+        string roomCode = WorkforceIdentityCodes.NewRoomCode();
+        Room room = new(roomCode, roomNumber, description);
 
-        Building? building = await _workforce.FindBuildingAsync(buildingCode, cancellationToken).ConfigureAwait(false);
-        if (building is null)
+        if (await _workforce.RoomNumberExistsAsync(room.RoomNumber, cancellationToken).ConfigureAwait(false))
         {
-            throw new InvalidOperationException("The building was not found.");
-        }
-
-        if (!building.IsActive)
-        {
-            throw new InvalidOperationException("Room cannot reference an inactive Building.");
-        }
-
-        Room room = new(roomCode, building, roomNumber, description);
-        if (await _workforce.RoomNumberExistsInBuildingAsync(building.BuildingCode, room.RoomNumber, cancellationToken)
-                .ConfigureAwait(false))
-        {
-            throw new InvalidOperationException("RoomNumber must be unique within the Building.");
+            throw new InvalidOperationException("RoomNumber must be globally unique.");
         }
 
         _audit.Stage(
             OperatorAuditActions.RoomCreated,
             OperatorAuditSubjects.Room,
             room.RoomCode,
-            $"Building={building.BuildingCode}; RoomNumber={room.RoomNumber}");
+            $"RoomNumber={room.RoomNumber}");
         await _workforce.AddRoomAsync(room, cancellationToken).ConfigureAwait(false);
+        return roomCode;
     }
 }
 

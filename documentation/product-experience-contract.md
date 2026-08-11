@@ -26,7 +26,7 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 - Issue Key must present an operator workflow (Key, Issue to, For, Issued, Due) rather than implementation-oriented codes or raw UTC ISO strings as the normal UI.
 - Operator-facing person selectors use FirstName LastName and UIN; internal WorkforceMemberCode/PartyCode remain submitted values when required and are not normal operator typing targets when selectors exist.
 - Administration list/create/maintain surfaces use list-first index pages with a primary Add action and dedicated create/detail task pages; do not present a wall of independent form cards as the primary administration pattern.
-- Workforce Members index shows person identity (FirstName LastName, UIN), Type, Organization, Department, Responsible Manager, Status, and actions; PartyCode and WorkforceMemberCode are not primary operator-facing columns; Add and Detail/Edit are dedicated routes; Terminate lives on the selected member detail page with deliberate confirmation.
+- Workforce Members index shows person identity (FirstName LastName, UIN), Type, Department, Status, and actions (Organization and Responsible Manager columns removed by OPERATOR-EXPERIENCE-1); PartyCode and WorkforceMemberCode are not primary operator-facing columns; Add and Detail/Edit are dedicated routes; Terminate lives on the selected member detail page with deliberate confirmation.
 - Prefer authoritative selectors over manually typed foreign-reference codes when Application list authorities already expose the choices.
 
 ## OPERATOR-AUDIT-1 Product Experience
@@ -34,6 +34,16 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 - Prefer operator-readable action and subject labels; authenticated operator display uses the existing KeyInventory user identity name.
 - Practical filters (date range, operator, action, subject/reference) are presentation over Application trail query results.
 - Do not turn normal operations pages into audit dashboards; optional subject links to filtered history are allowed when simple.
+
+## OPERATOR-EXPERIENCE-1 Product Experience
+- Product is single-site: no Organization or Building administration, selectors, columns, or prerequisites.
+- Workforce Members show person identity, Type, Department, Status, and actions; no Organization or Responsible Manager fields.
+- Navigation is task-oriented: Setup/Administration (Departments, Rooms, Workforce Members, Work Assignments, Audit Trail); Key/Catalog; Daily custody; Lookup; Reporting.
+- First-use readiness and prerequisite-aware empty states use Application-owned readiness/eligibility signals; Web must not duplicate Domain eligibility formulas.
+- Major tasks explain purpose, missing prerequisites, why required, where to create them, and what becomes possible next.
+- One shared human-readable date/time presentation authority covers Home, Administration, Issue/Receive, Active Loans, History, member details, Audit Trail, Reports, and CSV/XLSX/PDF; raw SQL/ISO/UTC serialization is forbidden in normal operator UI; persisted UTC is unchanged.
+- Successful create uses server-side lifecycle: success confirmation, clean form state, logical next action; failed validation retains input; no field-by-field JavaScript clearing.
+- User Guide in `documentation/operator/` supplements the UI after runtime finalization and must present the same dependency model as the UI (including WorkAssignment as mandatory for Issue Key).
 
 ## Applies When
 This document is required only for slices that create or modify UI, navigation, user workflows, messages, or product-facing behavior.

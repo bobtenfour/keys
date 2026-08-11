@@ -35,6 +35,14 @@ public sealed class Party
         LastName = PartyText.Require(lastName, nameof(lastName));
     }
 
+    /// <summary>
+    /// Corrects UIN on the same Party. Does not replace Party identity or relationships.
+    /// </summary>
+    public void CorrectUin(string newUin)
+    {
+        Uin = RequireUin(newUin);
+    }
+
     public void Activate()
     {
         IsActive = true;

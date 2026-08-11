@@ -7,12 +7,13 @@ This document is the technical architecture boundary authority.
 Define layer responsibilities, dependency direction, ownership, and forbidden coupling.
 
 ## Product Scope Boundary
-Architecture serves one building and a small operational workforce.
+Architecture serves a single-site KeyInventory installation and a small operational workforce.
 Do not introduce abstractions solely for hypothetical multi-campus, multi-building-enterprise, multi-tenant, large-scale, cross-organization, distributed, or future-platform requirements.
+Do not reintroduce Organization or Building as active configurable business concepts, and do not replace them with Tenant, Site, Facility, Campus, LocationRoot, or hierarchy abstractions.
 Do not introduce policy engines, generalized authorization engines, workflow engines, event platforms, or extensibility frameworks unless a concrete KeyInventory business requirement later proves they are necessary.
 Workforce Eligibility evaluates legitimate active-worker key issue eligibility; it is not a generalized access-control or key-authorization policy engine.
-Building and Room must not be expanded into Campus or enterprise location hierarchies without a future explicit business requirement.
-Key Catalog owns current KeyAsset-to-Room opening assignments; Location owns Building and Room identity; Building for a key is derived only through Room.
+Room must not be expanded into Campus or enterprise location hierarchies without a future explicit business requirement.
+Key Catalog owns current KeyAsset-to-Room opening assignments; Location owns Room identity; keys associate to places only through Rooms.
 Key-to-Room Assignment is the operational authority for which Rooms a physical key opens; Lock must not be required or used as an intermediate room-opening authority.
 Master/sub-master hierarchy is out of scope; multiple Rooms are represented by multiple current assignments.
 
@@ -101,20 +102,23 @@ Runtime composition belongs to the application host. Service registration must n
 - The concrete exception type is intentionally left unspecified by UTC-1.
 
 ## Workforce Eligibility Boundary Contract
-- Party boundary owns persistent person and organization business identity, including person FirstName, LastName, and UIN.
-- Workforce Eligibility boundary owns Organization, Department, WorkforceMember as the workforce relationship and eligibility authority, ResponsibleManager relationship rules, WorkAssignment, key-issue eligibility evaluation, and termination return-obligation signaling.
+- Party boundary owns persistent person business identity, including person FirstName, LastName, and UIN.
+- Workforce Eligibility boundary owns Department, WorkforceMember as the workforce relationship and eligibility authority, WorkAssignment, key-issue eligibility evaluation, and termination return-obligation signaling.
+- Organization and ResponsibleManager are not active Workforce Eligibility authorities (OPERATOR-EXPERIENCE-1). Historical OperatorAuditRecord rows may still mention them.
 - WorkforceMember is the workforce relationship, not person identity.
 - Employment is not a separate aggregate; relationship authority must not be duplicated under an Employment entity.
-- Location boundary owns Building and Room place authority, including required RoomNumber uniqueness within one Building.
+- Location boundary owns Room place authority, including required global RoomNumber uniqueness. Building is not an active place authority.
 - WorkforceMember references Party and must not own or duplicate Party person-identity attributes.
 - Borrower remains a workflow role only; a Borrower aggregate, temporary borrower fields, and duplicate identity authority are forbidden.
 - Workforce Eligibility must not own Loan workflow mutation, Return workflow mutation, custody, lifecycle, audit emission, authentication, authorization runtime, HR integration, persistence implementation, or UI.
-- WorkforceMember termination, rehire, Department change, Organization change, and Employee or Contractor WorkforceType transition are relationship changes and must not rewrite Party person identity.
+- WorkforceMember termination, rehire, Department change, and Employee or Contractor WorkforceType transition are relationship changes and must not rewrite Party person identity.
 - WorkforceMember termination may forbid new key issues and signal a mandatory return obligation; it must not automatically mutate Loan, Return, custody, lifecycle, or audit authority.
 - Required key returns after termination complete only through the existing Return workflow.
-- Application owns one atomic Create Workforce Member operation that creates Party identity and an Active WorkforceMember relationship from one operator request (FirstName, LastName, UIN, WorkforceType, Organization, Department, ResponsibleManager) inside one SQL Server transaction; partial Party persistence is forbidden when WorkforceMember persistence fails; Web must call that single Application authority and must not orchestrate separate Party and WorkforceMember writes.
+- Application owns one atomic Create Workforce Member operation that creates Party identity and an Active WorkforceMember relationship from one operator request (FirstName, LastName, UIN, WorkforceType, Department) inside one SQL Server transaction; partial Party persistence is forbidden when WorkforceMember persistence fails; Web must call that single Application authority and must not orchestrate separate Party and WorkforceMember writes.
+- The first WorkforceMember may be created when no other WorkforceMember exists; bootstrap mutual-manager pairs and ResponsibleManager requirements are forbidden.
 - PartyCode and WorkforceMemberCode are internal system identifiers generated once on the Application/Domain creation path as opaque values with stable prefixes (`PARTY-{GUID}`, `WM-{GUID}`), persisted immutably, available for internal references/diagnostics, and not required as normal operator UI inputs; sequences, counters, configurable code-generation engines, database-specific generators, and user-configurable formats are forbidden for these identifiers.
-- WORKFORCE-ELIGIBILITY-1 is structural preparation and Approved slice specification only until Phase 1 close prerequisites are Accepted; implementation of this boundary is forbidden until the slice is authorized to start.
+- Key-issue eligibility retains the requirement for at least one active WorkAssignment after Organization/ResponsibleManager removal unless a later human decision changes that rule.
+- OPERATOR-EXPERIENCE-1 owns active single-site and first-use experience authority for this boundary.
 
 ## Operator Audit Boundary Contract
 - OPERATOR-AUDIT-1 authorizes one append-only operational audit authority (`OperatorAuditRecord`) persisted on the existing SQL Server `KeyInventoryDbContext`.

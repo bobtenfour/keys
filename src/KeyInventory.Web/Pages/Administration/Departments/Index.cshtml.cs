@@ -28,17 +28,15 @@ public sealed class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        SuccessMessage = TempData["SuccessMessage"] as string;
         Departments = await _list.ExecuteAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IActionResult> OnPostActivateAsync(
-        string organizationCode,
-        string departmentCode,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostActivateAsync(string departmentCode, CancellationToken cancellationToken)
     {
         try
         {
-            await _activate.ExecuteAsync(organizationCode, departmentCode, cancellationToken).ConfigureAwait(false);
+            await _activate.ExecuteAsync(departmentCode, cancellationToken).ConfigureAwait(false);
             SuccessMessage = $"Department {departmentCode} was activated.";
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
@@ -50,14 +48,11 @@ public sealed class IndexModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostRetireAsync(
-        string organizationCode,
-        string departmentCode,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostRetireAsync(string departmentCode, CancellationToken cancellationToken)
     {
         try
         {
-            await _retire.ExecuteAsync(organizationCode, departmentCode, cancellationToken).ConfigureAwait(false);
+            await _retire.ExecuteAsync(departmentCode, cancellationToken).ConfigureAwait(false);
             SuccessMessage = $"Department {departmentCode} was retired.";
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)

@@ -71,27 +71,12 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
             throw new InvalidOperationException("The party for the workforce member was not found.");
         }
 
-        Organization? organization = await _workforce.FindOrganizationAsync(member.OrganizationCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (organization is null)
-        {
-            throw new InvalidOperationException("The organization for the workforce member was not found.");
-        }
-
         Department? department = await _workforce
-            .FindDepartmentAsync(member.OrganizationCode, member.DepartmentCode, cancellationToken)
+            .FindDepartmentAsync(member.DepartmentCode, cancellationToken)
             .ConfigureAwait(false);
         if (department is null)
         {
             throw new InvalidOperationException("The department for the workforce member was not found.");
-        }
-
-        WorkforceMember? responsibleManager = await _workforce
-            .FindWorkforceMemberAsync(member.ResponsibleManagerWorkforceMemberCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (responsibleManager is null)
-        {
-            throw new InvalidOperationException("The responsible manager was not found.");
         }
 
         IReadOnlyList<WorkAssignment> activeAssignments = await _workforce
@@ -101,9 +86,7 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
         KeyIssueEligibility.EnsureEligible(
             member,
             party,
-            organization,
             department,
-            responsibleManager,
             activeAssignments,
             kind,
             justificationCode);

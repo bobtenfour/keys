@@ -1,6 +1,7 @@
 using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Application.Workflow;
+using KeyInventory.Web.Presentation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -96,10 +97,9 @@ public sealed class KeyRoomsModel : PageModel
         HashSet<string> assigned = OpenedRooms.Select(room => room.RoomCode).ToHashSet(StringComparer.Ordinal);
         RoomOptions = (await _listRooms.ExecuteAsync(cancellationToken).ConfigureAwait(false))
             .Where(room => room.IsActive && !assigned.Contains(room.RoomCode))
-            .OrderBy(room => room.BuildingCode, StringComparer.Ordinal)
-            .ThenBy(room => room.RoomNumber, StringComparer.Ordinal)
+            .OrderBy(room => room.RoomNumber, StringComparer.Ordinal)
             .Select(room => new SelectListItem(
-                $"{room.BuildingCode}/{room.RoomNumber} ({room.RoomCode})",
+                $"{RoomDisplayFormatter.Format(room)} ({room.RoomCode})",
                 room.RoomCode))
             .ToArray();
     }

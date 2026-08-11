@@ -33,6 +33,13 @@
     {
         <form method="post" asp-page-handler="Maintain" class="form-grid">
             <input type="hidden" asp-for="Member" />
+            <label>First name<input asp-for="FirstName" required autocomplete="given-name" /></label>
+            <label>Last name<input asp-for="LastName" required autocomplete="family-name" /></label>
+            <label>
+                UIN
+                <input asp-for="Uin" required inputmode="numeric" autocomplete="off" />
+                <span class="hint">Exactly nine digits.</span>
+            </label>
             <label>
                 Workforce type
                 <select asp-for="WorkforceType">
@@ -41,16 +48,8 @@
                 </select>
             </label>
             <label>
-                Organization
-                <select asp-for="OrganizationCode" asp-items="Model.OrganizationOptions" required></select>
-            </label>
-            <label>
                 Department
                 <select asp-for="DepartmentCode" asp-items="Model.DepartmentOptions" required></select>
-            </label>
-            <label>
-                Responsible Manager
-                <select asp-for="ResponsibleManagerWorkforceMemberCode" asp-items="Model.ManagerOptions" required></select>
             </label>
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Save changes</button>
@@ -62,10 +61,10 @@
     else
     {
         <dl class="detail-list">
+            <div><dt>Name</dt><dd>@selected.FirstName @selected.LastName</dd></div>
+            <div><dt>UIN</dt><dd>@selected.Uin</dd></div>
             <div><dt>Workforce type</dt><dd>@selected.WorkforceType</dd></div>
-            <div><dt>Organization</dt><dd>@selected.OrganizationCode</dd></div>
             <div><dt>Department</dt><dd>@selected.DepartmentCode</dd></div>
-            <div><dt>Responsible Manager</dt><dd>@Model.ManagerDisplay</dd></div>
         </dl>
         <p class="hint">Terminated members cannot be reactivated or edited.</p>
         <div class="form-actions">
@@ -87,7 +86,6 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Building</th>
                         <th>Room</th>
                         <th>Description</th>
                         <th>Primary</th>
@@ -97,7 +95,6 @@
                 @foreach (var item in Model.WorkAssignments)
                 {
                     <tr>
-                        <td>@(string.IsNullOrEmpty(item.BuildingCode) ? "—" : item.BuildingCode)</td>
                         <td>@item.RoomNumber</td>
                         <td>@(string.IsNullOrEmpty(item.Description) ? "—" : item.Description)</td>
                         <td>@(item.IsPrimary ? "Yes" : "No")</td>

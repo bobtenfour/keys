@@ -43,16 +43,20 @@ Prevent duplicated authority.
 | Role assignments | security-capability-contract.md |
 | Party persistent person identity | key-inventory-domain-contract.md |
 | Person FirstName LastName and UIN | key-inventory-domain-contract.md |
-| Building place authority | key-inventory-domain-contract.md |
-| Room place authority and RoomNumber uniqueness within Building | key-inventory-domain-contract.md |
+| Building place authority | Removed from active model; key-inventory-domain-contract.md |
+| Room place authority and global RoomNumber uniqueness | key-inventory-domain-contract.md |
 | Workforce eligibility boundary | key-inventory-domain-contract.md |
-| Organization | key-inventory-domain-contract.md |
-| Department membership for workforce | key-inventory-domain-contract.md |
+| Organization | Removed from active model; key-inventory-domain-contract.md |
+| Department membership for workforce (global DepartmentCode) | key-inventory-domain-contract.md |
 | WorkforceMember workforce relationship and eligibility | key-inventory-domain-contract.md |
 | WorkforceType Employee and Contractor | key-inventory-domain-contract.md |
-| ResponsibleManager relationship | key-inventory-domain-contract.md |
+| ResponsibleManager relationship | Removed from active model; key-inventory-domain-contract.md |
 | WorkAssignment to Room | key-inventory-domain-contract.md |
 | Key issue eligibility for WorkforceMember | key-inventory-domain-contract.md |
+| Single-site operator experience / first-use readiness | documentation/slices/OPERATOR-EXPERIENCE-1.md |
+| Human-readable operator date/time presentation | product-experience-contract.md |
+| Post-create form lifecycle | product-experience-contract.md |
+| Operator User Guide | documentation/slices/OPERATOR-EXPERIENCE-1.md |
 | WorkforceMember termination return obligation | key-inventory-domain-contract.md |
 | Employment as separate aggregate | Forbidden; authority belongs to WorkforceMember in key-inventory-domain-contract.md |
 | Borrower workflow role definition | key-inventory-domain-contract.md |

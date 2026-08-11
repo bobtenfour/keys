@@ -48,20 +48,15 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
     public async Task RegisterCreatesPartyAndWorkforceMemberAtomicallyWithGeneratedCodes()
     {
         using IServiceScope scope = CreateScope();
-        await SeedOrgDeptAsync(scope.ServiceProvider, "reg1").ConfigureAwait(true);
+        await SeedDepartmentAsync(scope.ServiceProvider, "reg1").ConfigureAwait(true);
 
-        IRegisterBootstrapWorkforcePairUseCase bootstrap =
-            scope.ServiceProvider.GetRequiredService<IRegisterBootstrapWorkforcePairUseCase>();
-        await bootstrap.ExecuteAsync(
+        string firstCode = await scope.ServiceProvider
+            .GetRequiredService<IRegisterWorkforceMemberUseCase>()
+            .ExecuteAsync(
                 "Ada",
                 "Lovelace",
                 UniqueUin("reg1", 1),
                 "Employee",
-                "Alan",
-                "Turing",
-                UniqueUin("reg1", 2),
-                "Employee",
-                "reg1-org",
                 "reg1-dept",
                 CancellationToken.None)
             .ConfigureAwait(true);
@@ -70,38 +65,30 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
             .GetRequiredService<IListWorkforceMembersUseCase>()
             .ExecuteAsync(CancellationToken.None)
             .ConfigureAwait(true);
-        Assert.Equal(2, members.Count);
-        Assert.All(members, item =>
-        {
-            Assert.StartsWith("WM-", item.WorkforceMemberCode, StringComparison.Ordinal);
-            Assert.StartsWith("PARTY-", item.PartyCode, StringComparison.Ordinal);
-            Assert.False(string.IsNullOrWhiteSpace(item.WorkforceMemberCode));
-            Assert.False(string.IsNullOrWhiteSpace(item.PartyCode));
-            Assert.Equal("Active", item.Status);
-        });
-        Assert.Equal(2, members.Select(item => item.WorkforceMemberCode).Distinct(StringComparer.Ordinal).Count());
-        Assert.Equal(2, members.Select(item => item.PartyCode).Distinct(StringComparer.Ordinal).Count());
+        Assert.Single(members);
+        WorkforceMemberListItem first = members[0];
+        Assert.Equal(firstCode, first.WorkforceMemberCode);
+        Assert.StartsWith("WM-", first.WorkforceMemberCode, StringComparison.Ordinal);
+        Assert.StartsWith("PARTY-", first.PartyCode, StringComparison.Ordinal);
+        Assert.Equal("Active", first.Status);
 
-        string managerCode = members.First(item => item.FirstName == "Ada").WorkforceMemberCode;
-        string registeredCode = await scope.ServiceProvider
+        string secondCode = await scope.ServiceProvider
             .GetRequiredService<IRegisterWorkforceMemberUseCase>()
             .ExecuteAsync(
                 "Grace",
                 "Hopper",
                 UniqueUin("reg1", 3),
                 "Contractor",
-                "reg1-org",
                 "reg1-dept",
-                managerCode,
                 CancellationToken.None)
             .ConfigureAwait(true);
 
-        Assert.StartsWith("WM-", registeredCode, StringComparison.Ordinal);
+        Assert.StartsWith("WM-", secondCode, StringComparison.Ordinal);
         WorkforceMemberListItem registered = (await scope.ServiceProvider
                 .GetRequiredService<IListWorkforceMembersUseCase>()
                 .ExecuteAsync(CancellationToken.None)
                 .ConfigureAwait(true))
-            .Single(item => item.WorkforceMemberCode == registeredCode);
+            .Single(item => item.WorkforceMemberCode == secondCode);
         Assert.Equal("Grace", registered.FirstName);
         Assert.Equal("Hopper", registered.LastName);
         Assert.StartsWith("PARTY-", registered.PartyCode, StringComparison.Ordinal);
@@ -112,20 +99,15 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
     public async Task AddPartyAndWorkforceMemberRollsBackPartyWhenMemberPersistFails()
     {
         using IServiceScope scope = CreateScope();
-        await SeedOrgDeptAsync(scope.ServiceProvider, "rb1").ConfigureAwait(true);
+        await SeedDepartmentAsync(scope.ServiceProvider, "rb1").ConfigureAwait(true);
 
-        IRegisterBootstrapWorkforcePairUseCase bootstrap =
-            scope.ServiceProvider.GetRequiredService<IRegisterBootstrapWorkforcePairUseCase>();
-        await bootstrap.ExecuteAsync(
+        string existingCode = await scope.ServiceProvider
+            .GetRequiredService<IRegisterWorkforceMemberUseCase>()
+            .ExecuteAsync(
                 "Ada",
                 "Lovelace",
                 UniqueUin("rb1", 1),
                 "Employee",
-                "Alan",
-                "Turing",
-                UniqueUin("rb1", 2),
-                "Employee",
-                "rb1-org",
                 "rb1-dept",
                 CancellationToken.None)
             .ConfigureAwait(true);
@@ -135,7 +117,7 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
                 .ExecuteAsync(CancellationToken.None)
                 .ConfigureAwait(true);
         Assert.NotEmpty(existingMembers);
-        WorkforceMemberListItem existing = existingMembers[0];
+        WorkforceMemberListItem existing = existingMembers.Single(item => item.WorkforceMemberCode == existingCode);
 
         IWorkforcePersistencePort port = scope.ServiceProvider.GetRequiredService<IWorkforcePersistencePort>();
         string orphanPartyCode = $"PARTY-{Guid.NewGuid():D}";
@@ -144,9 +126,7 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
             existing.WorkforceMemberCode,
             orphanPartyCode,
             WorkforceType.Employee,
-            "rb1-org",
-            "rb1-dept",
-            existing.ResponsibleManagerWorkforceMemberCode);
+            "rb1-dept");
 
         await Assert.ThrowsAnyAsync<Exception>(() =>
                 port.AddPartyAndWorkforceMemberAsync(party, conflicting, CancellationToken.None))
@@ -154,8 +134,8 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
 
         KeyInventoryDbContext db = scope.ServiceProvider.GetRequiredService<KeyInventoryDbContext>();
         Assert.False(await db.Parties.AnyAsync(entity => entity.PartyCode == orphanPartyCode).ConfigureAwait(true));
-        Assert.Equal(2, await db.Parties.CountAsync().ConfigureAwait(true));
-        Assert.Equal(2, await db.WorkforceMembers.CountAsync().ConfigureAwait(true));
+        Assert.Equal(1, await db.Parties.CountAsync().ConfigureAwait(true));
+        Assert.Equal(1, await db.WorkforceMembers.CountAsync().ConfigureAwait(true));
     }
 
     [Fact]
@@ -212,13 +192,10 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
         Assert.Single(after);
     }
 
-    private static async Task SeedOrgDeptAsync(IServiceProvider services, string prefix)
+    private static async Task SeedDepartmentAsync(IServiceProvider services, string prefix)
     {
-        await services.GetRequiredService<ICreateOrganizationUseCase>()
-            .ExecuteAsync($"{prefix}-org", CancellationToken.None)
-            .ConfigureAwait(true);
         await services.GetRequiredService<ICreateDepartmentUseCase>()
-            .ExecuteAsync($"{prefix}-org", $"{prefix}-dept", CancellationToken.None)
+            .ExecuteAsync($"{prefix}-dept", CancellationToken.None)
             .ConfigureAwait(true);
     }
 

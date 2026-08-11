@@ -23,6 +23,9 @@ public sealed class MigrationBoundaryTests
             .ToArray();
 
         Assert.NotEmpty(migrationTypes);
+        Assert.Contains(
+            migrationTypes,
+            type => string.Equals(type.Name, "OperatorExperience1SingleSite", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -86,14 +89,14 @@ public sealed class MigrationBoundaryTests
         Assert.Contains("Loans", tableNames);
         Assert.Contains("Returns", tableNames);
         Assert.Contains("Parties", tableNames);
-        Assert.Contains("Organizations", tableNames);
         Assert.Contains("Departments", tableNames);
-        Assert.Contains("Buildings", tableNames);
         Assert.Contains("Rooms", tableNames);
         Assert.Contains("WorkforceMembers", tableNames);
         Assert.Contains("WorkAssignments", tableNames);
         Assert.Contains("KeyRoomAssignments", tableNames);
         Assert.Contains("AspNetUsers", tableNames);
+        Assert.DoesNotContain("Organizations", tableNames);
+        Assert.DoesNotContain("Buildings", tableNames);
 
         Type[] clrTypes = model.GetEntityTypes().Select(entityType => entityType.ClrType).ToArray();
         Assert.Contains(typeof(KeyTypeEntity), clrTypes);
@@ -102,18 +105,45 @@ public sealed class MigrationBoundaryTests
         Assert.Contains(typeof(LoanEntity), clrTypes);
         Assert.Contains(typeof(ReturnEntity), clrTypes);
         Assert.Contains(typeof(PartyEntity), clrTypes);
-        Assert.Contains(typeof(OrganizationEntity), clrTypes);
         Assert.Contains(typeof(DepartmentEntity), clrTypes);
-        Assert.Contains(typeof(BuildingEntity), clrTypes);
         Assert.Contains(typeof(RoomEntity), clrTypes);
         Assert.Contains(typeof(WorkforceMemberEntity), clrTypes);
         Assert.Contains(typeof(WorkAssignmentEntity), clrTypes);
         Assert.Contains(typeof(KeyInventory.Infrastructure.Identity.ApplicationUser), clrTypes);
+        Assert.DoesNotContain(clrTypes, type => string.Equals(type.Name, "OrganizationEntity", StringComparison.Ordinal));
+        Assert.DoesNotContain(clrTypes, type => string.Equals(type.Name, "BuildingEntity", StringComparison.Ordinal));
         Assert.DoesNotContain(typeof(KeyInventory.Domain.Catalog.KeySeries), clrTypes);
         Assert.DoesNotContain(typeof(KeyInventory.Domain.Catalog.Lock), clrTypes);
         Assert.DoesNotContain(typeof(KeyInventory.Domain.Catalog.Location), clrTypes);
         Assert.DoesNotContain(typeof(KeyInventory.Domain.Identity.SecurityPrincipal), clrTypes);
         Assert.DoesNotContain(typeof(KeyInventory.Domain.Audit.AuditEvent), clrTypes);
+    }
+
+    [Fact]
+    public void SingleSiteModelUsesDepartmentPrimaryKeyAndUniqueRoomNumber()
+    {
+        using KeyInventoryDbContext context = CreateContext();
+        IModel model = context.Model;
+
+        IEntityType departmentEntity = model.FindEntityType(typeof(DepartmentEntity))
+            ?? throw new InvalidOperationException("DepartmentEntity was not found.");
+        Assert.Equal(["DepartmentCode"], departmentEntity.FindPrimaryKey()!.Properties.Select(property => property.Name));
+
+        IEntityType roomEntity = model.FindEntityType(typeof(RoomEntity))
+            ?? throw new InvalidOperationException("RoomEntity was not found.");
+        IIndex? roomNumberIndex = roomEntity.GetIndexes()
+            .SingleOrDefault(index => index.Properties.Count == 1
+                && index.Properties[0].Name == nameof(RoomEntity.RoomNumber));
+        Assert.NotNull(roomNumberIndex);
+        Assert.True(roomNumberIndex!.IsUnique);
+
+        IEntityType workforceMemberEntity = model.FindEntityType(typeof(WorkforceMemberEntity))
+            ?? throw new InvalidOperationException("WorkforceMemberEntity was not found.");
+        string[] workforceMemberProperties = workforceMemberEntity.GetProperties()
+            .Select(property => property.Name)
+            .ToArray();
+        Assert.DoesNotContain("OrganizationCode", workforceMemberProperties);
+        Assert.DoesNotContain("ResponsibleManagerWorkforceMemberCode", workforceMemberProperties);
     }
 
     [Fact]

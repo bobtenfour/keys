@@ -30,39 +30,18 @@ internal static class DomainWorkforceMapper
         return party;
     }
 
-    internal static OrganizationEntity ToEntity(Organization organization)
-    {
-        return new OrganizationEntity
-        {
-            OrganizationCode = organization.OrganizationCode,
-            IsActive = organization.IsActive
-        };
-    }
-
-    internal static Organization ToDomain(OrganizationEntity entity)
-    {
-        Organization organization = new(entity.OrganizationCode);
-        if (!entity.IsActive)
-        {
-            organization.Retire();
-        }
-
-        return organization;
-    }
-
     internal static DepartmentEntity ToEntity(Department department)
     {
         return new DepartmentEntity
         {
-            OrganizationCode = department.OrganizationCode,
             DepartmentCode = department.DepartmentCode,
             IsActive = department.IsActive
         };
     }
 
-    internal static Department ToDomain(DepartmentEntity entity, Organization organization)
+    internal static Department ToDomain(DepartmentEntity entity)
     {
-        Department department = new(entity.DepartmentCode, organization);
+        Department department = new(entity.DepartmentCode);
         if (!entity.IsActive)
         {
             department.Retire();
@@ -71,41 +50,20 @@ internal static class DomainWorkforceMapper
         return department;
     }
 
-    internal static BuildingEntity ToEntity(Building building)
-    {
-        return new BuildingEntity
-        {
-            BuildingCode = building.BuildingCode,
-            IsActive = building.IsActive
-        };
-    }
-
-    internal static Building ToDomain(BuildingEntity entity)
-    {
-        Building building = new(entity.BuildingCode);
-        if (!entity.IsActive)
-        {
-            building.Retire();
-        }
-
-        return building;
-    }
-
     internal static RoomEntity ToEntity(Room room)
     {
         return new RoomEntity
         {
             RoomCode = room.RoomCode,
-            BuildingCode = room.BuildingCode,
             RoomNumber = room.RoomNumber,
             Description = room.Description,
             IsActive = room.IsActive
         };
     }
 
-    internal static Room ToDomain(RoomEntity entity, Building building)
+    internal static Room ToDomain(RoomEntity entity)
     {
-        Room room = new(entity.RoomCode, building, entity.RoomNumber, entity.Description);
+        Room room = new(entity.RoomCode, entity.RoomNumber, entity.Description);
         if (!entity.IsActive)
         {
             room.Retire();
@@ -121,9 +79,7 @@ internal static class DomainWorkforceMapper
             WorkforceMemberCode = member.WorkforceMemberCode,
             PartyCode = member.PartyCode,
             WorkforceType = member.WorkforceType.ToString(),
-            OrganizationCode = member.OrganizationCode,
             DepartmentCode = member.DepartmentCode,
-            ResponsibleManagerWorkforceMemberCode = member.ResponsibleManagerWorkforceMemberCode,
             Status = member.Status.ToString()
         };
     }
@@ -135,9 +91,7 @@ internal static class DomainWorkforceMapper
             entity.WorkforceMemberCode,
             entity.PartyCode,
             workforceType,
-            entity.OrganizationCode,
-            entity.DepartmentCode,
-            entity.ResponsibleManagerWorkforceMemberCode);
+            entity.DepartmentCode);
 
         if (string.Equals(entity.Status, nameof(WorkforceMemberStatus.Terminated), StringComparison.Ordinal))
         {

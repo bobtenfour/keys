@@ -54,13 +54,13 @@ Define the logical entities and relationships required by the domain. It is not 
 | KeyType | Key Catalog classification | key-inventory-domain-contract.md | Authoritative classification | Current baseline |
 | Lock | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative | Current baseline |
 | Location | Location boundary | key-inventory-domain-contract.md | Authoritative | Current baseline |
-| Building | Location boundary | key-inventory-domain-contract.md | Authoritative | WORKFORCE-ELIGIBILITY-1 |
-| Room | Location boundary | key-inventory-domain-contract.md | Authoritative | WORKFORCE-ELIGIBILITY-1 |
+| Building | Location boundary | key-inventory-domain-contract.md | Removed from active model (historical audit may reference) | OPERATOR-EXPERIENCE-1 |
+| Room | Location boundary | key-inventory-domain-contract.md | Authoritative; no Building; global RoomNumber | OPERATOR-EXPERIENCE-1 |
 | Party | Party boundary | key-inventory-domain-contract.md | Authoritative | Current baseline |
-| Organization | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative | WORKFORCE-ELIGIBILITY-1 |
-| Department | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative | WORKFORCE-ELIGIBILITY-1 |
-| WorkforceMember | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative | WORKFORCE-ELIGIBILITY-1 |
-| WorkAssignment | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative | WORKFORCE-ELIGIBILITY-1 |
+| Organization | Workforce Eligibility boundary | key-inventory-domain-contract.md | Removed from active model (historical audit may reference) | OPERATOR-EXPERIENCE-1 |
+| Department | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative; no Organization; global DepartmentCode | OPERATOR-EXPERIENCE-1 |
+| WorkforceMember | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative; no Organization/ResponsibleManager | OPERATOR-EXPERIENCE-1 |
+| WorkAssignment | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative WM↔Room | OPERATOR-EXPERIENCE-1 |
 | SecurityPrincipal | Identity boundary | security-capability-contract.md | Authoritative | IDENTITY-1 |
 | SecurityPrincipalType | Identity boundary | security-capability-contract.md | Authoritative vocabulary | IDENTITY-1 |
 | Role | Authorization boundary | security-capability-contract.md | Authoritative | IDENTITY-1 |
@@ -112,8 +112,8 @@ Define the logical entities and relationships required by the domain. It is not 
 - Required relationships: references exactly one KeyAsset; references exactly one Room.
 - Cardinalities: one KeyAsset to zero or more KeyRoomAssignment records; one Room to zero or more KeyRoomAssignment records.
 - Required uniqueness: the pair (KeyAsset, Room) is unique among current assignments.
-- Required integrity constraints: KeyAsset and Room references are required; active operational assignment requires an active Room in an active Building; assignment history is not required; KeyType does not participate.
-- Prohibited authority: must not own Building independently; must not require Lock as an intermediate authority; must not invent assignment history as a second source of truth; must not authorize REPORTS-2 or new report families.
+- Required integrity constraints: KeyAsset and Room references are required; active operational assignment requires an active Room; assignment history is not required; KeyType does not participate.
+- Prohibited authority: must not own Building or site abstractions independently; must not require Lock as an intermediate authority; must not invent assignment history as a second source of truth; must not authorize REPORTS-2 or new report families.
 
 ### KeySeries
 - Purpose: authoritative catalog classification for an organizational keying system, pattern, or managed series.
@@ -156,70 +156,62 @@ Define the logical entities and relationships required by the domain. It is not 
 - Prohibited authority: must not own Organization, Department, WorkforceMember, WorkAssignment, Loan, Return, custody, audit, authentication, or UI authority; a second independent place model outside Location boundary is forbidden.
 
 ### Building
-- Purpose: physical building place that contains Rooms.
-- Owning aggregate or boundary: Location boundary.
-- Authoritative or derived: Authoritative.
-- Required relationships: may contain zero or more Room records.
-- Cardinalities: one Building to zero or more Room records.
-- Required uniqueness: BuildingCode is unique across Building records.
-- Required integrity constraints: BuildingCode is required; only an active Building may contain active Rooms used for WorkAssignment or Room-based key-issue justification.
-- Prohibited authority: must not own WorkforceMember, WorkAssignment, Loan, Return, custody, audit, authentication, or UI.
-- Lifecycle phase: WORKFORCE-ELIGIBILITY-1.
+- Purpose: formerly physical building place; removed from the active logical model by OPERATOR-EXPERIENCE-1.
+- Owning aggregate or boundary: none active.
+- Authoritative or derived: Not active; historical OperatorAuditRecord references may remain.
+- Prohibited authority: must not be reintroduced as Tenant/Site/Facility/Campus/LocationRoot without a new human business decision.
+- Lifecycle phase: OPERATOR-EXPERIENCE-1 (removal).
 
 ### Room
-- Purpose: physical room within one Building used for WorkAssignment, Room-based key-issue justification, and Key-to-Room opening associations.
+- Purpose: physical room for this installation used for WorkAssignment, Room-based key-issue justification, and Key-to-Room opening associations.
 - Owning aggregate or boundary: Location boundary.
 - Authoritative or derived: Authoritative for Room identity; Key Catalog owns KeyRoomAssignment references to Room.
-- Required relationships: references exactly one Building; may be referenced by zero or more WorkAssignment records; may be referenced by zero or more KeyRoomAssignment records.
-- Cardinalities: one Building to zero or more Room records; one Room to zero or more WorkAssignment records; one Room to zero or more KeyRoomAssignment records.
-- Required uniqueness: RoomCode is unique across Room records; RoomNumber is unique within one Building.
-- Required integrity constraints: RoomNumber is required as the operator-facing room identifier; Room must reference exactly one Building; only an active Room in an active Building may be used for active WorkAssignment, Room-based key-issue justification, or active KeyRoomAssignment.
-- Prohibited authority: must not own WorkforceMember eligibility decisions, Organization, Department, Loan, Return, custody, audit, authentication, Key Catalog identity, Key-to-Room assignment ownership, or UI; Room must not exist outside Location boundary place authority.
-- Lifecycle phase: WORKFORCE-ELIGIBILITY-1.
+- Required relationships: may be referenced by zero or more WorkAssignment records; may be referenced by zero or more KeyRoomAssignment records; does not reference Building.
+- Cardinalities: one Room to zero or more WorkAssignment records; one Room to zero or more KeyRoomAssignment records.
+- Required uniqueness: RoomCode is unique across Room records; RoomNumber is unique across all Room records.
+- Required integrity constraints: RoomNumber is required as the operator-facing room identifier; RoomCode is immutable technical identity; only an active Room may be used for active WorkAssignment, Room-based key-issue justification, or active KeyRoomAssignment.
+- Prohibited authority: must not own WorkforceMember eligibility decisions, Department, Loan, Return, custody, audit, authentication, Key Catalog identity, Key-to-Room assignment ownership, or UI; Room must not exist outside Location boundary place authority.
+- Lifecycle phase: OPERATOR-EXPERIENCE-1.
 
 ## Workforce Eligibility Logical Contract
 ### Party
-- Purpose: persistent business identity for persons or organizations; sole person-identity authority.
+- Purpose: persistent business identity for persons; sole person-identity authority.
 - Owning aggregate or boundary: Party boundary.
 - Authoritative or derived: Authoritative.
 - Required relationships: may be referenced by zero or more WorkforceMember records over time; may be referenced by zero or more Loan records as borrower.
 - Cardinalities: one Party to zero or more WorkforceMember records; one Party to at most one Active WorkforceMember at a time in this workforce scope; one Party to zero or more Loan records.
 - Required uniqueness: UIN is unique across Party records that carry UIN.
 - Required integrity constraints: for a human Party used as a workforce key recipient, FirstName, LastName, and UIN are required; UIN is exactly nine numeric digits; Party remains independent of WorkforceMember Status; Loan borrower is a Party reference, not a Borrower entity.
-- Prohibited authority: must not own Organization, Department, WorkforceType, ResponsibleManager hierarchy, WorkAssignment, key-issue eligibility decisions, Loan/Return mutation, custody, lifecycle, audit emission, authentication, or UI.
+- Prohibited authority: must not own Department, WorkforceType, WorkAssignment, key-issue eligibility decisions, Loan/Return mutation, custody, lifecycle, audit emission, authentication, or UI.
 
 ### Organization
-- Purpose: institutional organization that owns Departments and workforce membership for key eligibility.
-- Owning aggregate or boundary: Workforce Eligibility boundary.
-- Authoritative or derived: Authoritative.
-- Required relationships: may own zero or more Department records; may be referenced by zero or more WorkforceMember records.
-- Cardinalities: one Organization to zero or more Department records; one Organization to zero or more WorkforceMember records.
-- Required uniqueness: OrganizationCode is unique across Organization records.
-- Required integrity constraints: OrganizationCode is required; only an active Organization may own active Departments or active WorkforceMember membership.
-- Prohibited authority: must not own Party, Location, Building, Room, Loan, Return, custody, audit, authentication, or UI.
-- Lifecycle phase: WORKFORCE-ELIGIBILITY-1.
+- Purpose: formerly institutional organization; removed from the active logical model by OPERATOR-EXPERIENCE-1.
+- Owning aggregate or boundary: none active.
+- Authoritative or derived: Not active; historical OperatorAuditRecord references may remain.
+- Prohibited authority: must not be reintroduced as Tenant/Site or another scoping abstraction without a new human business decision.
+- Lifecycle phase: OPERATOR-EXPERIENCE-1 (removal).
 
 ### Department
-- Purpose: organizational unit within one Organization for WorkforceMember membership and Department-based key-issue justification.
+- Purpose: organizational unit for WorkforceMember membership and Department-based key-issue justification.
 - Owning aggregate or boundary: Workforce Eligibility boundary.
 - Authoritative or derived: Authoritative.
-- Required relationships: references exactly one Organization; may be referenced by zero or more WorkforceMember records.
-- Cardinalities: one Organization to zero or more Department records; one Department to zero or more WorkforceMember records.
-- Required uniqueness: DepartmentCode is unique within one Organization.
-- Required integrity constraints: DepartmentCode is required; only an active Department in an active Organization may be used for active WorkforceMember membership or Department-based issue justification.
-- Prohibited authority: must not own Party, Location, Building, Room, Loan, Return, custody, audit, authentication, or UI.
-- Lifecycle phase: WORKFORCE-ELIGIBILITY-1.
+- Required relationships: may be referenced by zero or more WorkforceMember records; does not reference Organization.
+- Cardinalities: one Department to zero or more WorkforceMember records.
+- Required uniqueness: DepartmentCode is unique across all Department records.
+- Required integrity constraints: DepartmentCode is required; only an active Department may be used for active WorkforceMember membership or Department-based issue justification.
+- Prohibited authority: must not own Party, Location, Room, Loan, Return, custody, audit, authentication, or UI.
+- Lifecycle phase: OPERATOR-EXPERIENCE-1.
 
 ### WorkforceMember
 - Purpose: workforce relationship and key-eligibility record for WorkforceType Employee or Contractor; not person identity. Employment is not a separate entity.
 - Owning aggregate or boundary: Workforce Eligibility boundary.
 - Authoritative or derived: Authoritative.
-- Required relationships: references exactly one Party; references exactly one Organization; references exactly one Department belonging to that Organization; references exactly one ResponsibleManager WorkforceMember different from itself; may have zero or more WorkAssignment records; may be referenced as ResponsibleManager by zero or more WorkforceMember records.
-- Cardinalities: one Party to zero or more WorkforceMember records; one Party to at most one Active WorkforceMember at a time; one Organization to zero or more WorkforceMember records; one Department to zero or more WorkforceMember records; one ResponsibleManager WorkforceMember to zero or more managed WorkforceMember records; one WorkforceMember to zero or more WorkAssignment records.
+- Required relationships: references exactly one Party; references exactly one Department; may have zero or more WorkAssignment records; does not reference Organization or ResponsibleManager.
+- Cardinalities: one Party to zero or more WorkforceMember records; one Party to at most one Active WorkforceMember at a time; one Department to zero or more WorkforceMember records; one WorkforceMember to zero or more WorkAssignment records.
 - Required uniqueness: WorkforceMemberCode is unique across WorkforceMember records.
-- Required integrity constraints: WorkforceType, Organization, Department, ResponsibleManager, and Status are required; WorkforceType is Employee or Contractor; Status is Active or Terminated; ResponsibleManager must reference an active authorized WorkforceMember; termination, rehire, Department change, Organization change, and WorkforceType transition must not rewrite Party person identity; termination must not auto-mutate Loan, Return, custody, lifecycle, or audit records.
-- Prohibited authority: must not own FirstName, LastName, UIN, Party lifecycle, Borrower aggregate, Employment aggregate, Loan/Return mutation, custody, lifecycle, audit emission, authentication, authorization decisions, or UI.
-- Lifecycle phase: WORKFORCE-ELIGIBILITY-1.
+- Required integrity constraints: WorkforceType, Department, and Status are required; WorkforceType is Employee or Contractor; Status is Active or Terminated; first WorkforceMember may exist without any other WorkforceMember; termination, rehire, Department change, and WorkforceType transition must not rewrite Party person identity; termination must not auto-mutate Loan, Return, custody, lifecycle, or audit records.
+- Prohibited authority: must not own FirstName, LastName, UIN, Party lifecycle, Borrower aggregate, Employment aggregate, ResponsibleManager hierarchy, Loan/Return mutation, custody, lifecycle, audit emission, authentication, authorization decisions, or UI.
+- Lifecycle phase: OPERATOR-EXPERIENCE-1.
 
 ### WorkAssignment
 - Purpose: assign a WorkforceMember to a Room for authorized work and Room-based key-issue justification.
@@ -228,9 +220,9 @@ Define the logical entities and relationships required by the domain. It is not 
 - Required relationships: references exactly one WorkforceMember; references exactly one Room.
 - Cardinalities: one WorkforceMember to zero or more WorkAssignment records; one Room to zero or more WorkAssignment records.
 - Required uniqueness: a WorkforceMember must not have overlapping active assignments to the same Room; at most one active WorkAssignment per WorkforceMember may be marked primary.
-- Required integrity constraints: referenced Room must be active and belong to an active Building for an active assignment.
-- Prohibited authority: must not own Location hierarchy, Building, RoomNumber uniqueness, WorkforceMember termination processing, Loan/Return mutation, custody, audit, or UI.
-- Lifecycle phase: WORKFORCE-ELIGIBILITY-1.
+- Required integrity constraints: referenced Room must be active for an active assignment.
+- Prohibited authority: must not own Location hierarchy, RoomNumber uniqueness, WorkforceMember termination processing, Loan/Return mutation, custody, audit, or UI.
+- Lifecycle phase: OPERATOR-EXPERIENCE-1.
 
 ## Identity and RBAC Logical Contract
 ### SecurityPrincipal
@@ -254,7 +246,7 @@ Define the logical entities and relationships required by the domain. It is not 
 - Owning aggregate or boundary: Authorization boundary.
 - Authoritative or derived: Authoritative.
 - Required relationships: may have RolePermission records; may have PrincipalRoleAssignment records.
-- Required invariants: RoleCode is unique within Organization; must not own authentication credentials, Party lifecycle, policy evaluation, audit history, or business workflow state.
+- Required invariants: RoleCode is unique across Role records for this installation (no OrganizationCode scoping); must not own authentication credentials, Party lifecycle, policy evaluation, audit history, or business workflow state.
 - Lifecycle phase: IDENTITY-1.
 
 ### Permission

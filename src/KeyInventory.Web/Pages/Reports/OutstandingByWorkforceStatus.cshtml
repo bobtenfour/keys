@@ -44,7 +44,6 @@
                         <th>Status</th>
                         <th>Holder</th>
                         <th>Department</th>
-                        <th>Responsible Manager</th>
                         <th>Key</th>
                         <th>Loan</th>
                         <th>Due</th>
@@ -58,7 +57,6 @@
                         <td>@row.WorkforceMemberStatus</td>
                         <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
                         <td>@row.DepartmentCode</td>
-                        <td>@row.ResponsibleManagerWorkforceMemberCode</td>
                         <td>@row.CatalogKeyCode</td>
                         <td>@row.LoanCode</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.DueAtUtc)</td>

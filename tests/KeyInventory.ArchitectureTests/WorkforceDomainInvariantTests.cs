@@ -19,23 +19,17 @@ public sealed class WorkforceDomainInvariantTests
     [Fact]
     public void RoomNumberAndDescriptionAreOwnedByRoom()
     {
-        Building building = new("b1");
-        Room room = new("r1", building, "101", "Lab A");
+        Room room = new("r1", "101", "Lab A");
         Assert.Equal("101", room.RoomNumber);
         Assert.Equal("Lab A", room.Description);
     }
 
     [Fact]
-    public void WorkforceMemberRejectsSelfManagerAndOwnsRelationshipFields()
+    public void WorkforceMemberOwnsDepartmentRelationshipFields()
     {
-        Assert.Throws<InvalidOperationException>(() =>
-            new WorkforceMember("wm1", "p1", WorkforceType.Employee, "org", "dept", "wm1"));
-
-        WorkforceMember member = new("wm1", "p1", WorkforceType.Contractor, "org", "dept", "wm2");
+        WorkforceMember member = new("wm1", "p1", WorkforceType.Contractor, "dept");
         Assert.Equal(WorkforceType.Contractor, member.WorkforceType);
-        Assert.Equal("org", member.OrganizationCode);
         Assert.Equal("dept", member.DepartmentCode);
-        Assert.Equal("wm2", member.ResponsibleManagerWorkforceMemberCode);
         Assert.Equal(WorkforceMemberStatus.Active, member.Status);
     }
 
@@ -53,18 +47,14 @@ public sealed class WorkforceDomainInvariantTests
     public void EligibilityAcceptsAuthorizedDepartmentAndRejectsTerminated()
     {
         Party party = new("p1", "Ada", "Lovelace", "123456789");
-        Organization organization = new("org");
-        Department department = new("dept", organization);
-        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, "org", "dept", "wm2");
-        WorkforceMember manager = new("wm2", "p2", WorkforceType.Employee, "org", "dept", "wm1");
+        Department department = new("dept");
+        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, "dept");
         WorkAssignment[] assignments = [new("wa1", "wm1", "r1", isPrimary: true)];
 
         KeyIssueEligibility.EnsureEligible(
             member,
             party,
-            organization,
             department,
-            manager,
             assignments,
             KeyIssueJustificationKind.Department,
             "dept");
@@ -74,9 +64,7 @@ public sealed class WorkforceDomainInvariantTests
             KeyIssueEligibility.EnsureEligible(
                 member,
                 party,
-                organization,
                 department,
-                manager,
                 assignments,
                 KeyIssueJustificationKind.Department,
                 "dept"));
@@ -86,18 +74,14 @@ public sealed class WorkforceDomainInvariantTests
     public void EligibilityRejectsMissingAssignmentAndUnauthorizedRoom()
     {
         Party party = new("p1", "Ada", "Lovelace", "123456789");
-        Organization organization = new("org");
-        Department department = new("dept", organization);
-        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, "org", "dept", "wm2");
-        WorkforceMember manager = new("wm2", "p2", WorkforceType.Employee, "org", "dept", "wm1");
+        Department department = new("dept");
+        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, "dept");
 
         Assert.Throws<InvalidOperationException>(() =>
             KeyIssueEligibility.EnsureEligible(
                 member,
                 party,
-                organization,
                 department,
-                manager,
                 [],
                 KeyIssueJustificationKind.Department,
                 "dept"));
@@ -107,9 +91,7 @@ public sealed class WorkforceDomainInvariantTests
             KeyIssueEligibility.EnsureEligible(
                 member,
                 party,
-                organization,
                 department,
-                manager,
                 assignments,
                 KeyIssueJustificationKind.Room,
                 "r-other"));
@@ -118,7 +100,7 @@ public sealed class WorkforceDomainInvariantTests
     [Fact]
     public void TerminationDoesNotMutateLoanReturnAuditCustodyOrLifecycleTypes()
     {
-        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, "org", "dept", "wm2");
+        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, "dept");
         member.Terminate();
         Assert.Equal(WorkforceMemberStatus.Terminated, member.Status);
         Assert.Null(typeof(WorkforceMember).GetMethod("AutoReturn"));

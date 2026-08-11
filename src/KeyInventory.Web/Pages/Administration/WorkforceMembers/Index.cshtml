@@ -16,10 +16,15 @@
 </div>
 
 <section class="card admin-list-panel">
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+    }
+
     <form method="get" class="toolbar admin-filter-bar" role="search">
         <label class="admin-filter-field">
             <span class="visually-hidden">Search workforce members</span>
-            <input type="search" name="Q" value="@Model.Q" placeholder="Search name, UIN, organization…" />
+            <input type="search" name="Q" value="@Model.Q" placeholder="Search name, UIN, department…" />
         </label>
         <button type="submit" class="btn btn-secondary">Search</button>
         @if (!string.IsNullOrWhiteSpace(Model.Q))
@@ -43,12 +48,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Person</th>
+                        <th>Name</th>
                         <th>UIN</th>
                         <th>Type</th>
-                        <th>Organization</th>
                         <th>Department</th>
-                        <th>Responsible Manager</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -60,9 +63,7 @@
                         <td>@item.FirstName @item.LastName</td>
                         <td>@item.Uin</td>
                         <td>@item.WorkforceType</td>
-                        <td>@item.OrganizationCode</td>
                         <td>@item.DepartmentCode</td>
-                        <td>@Model.FormatManager(item.ResponsibleManagerWorkforceMemberCode)</td>
                         <td>@item.Status</td>
                         <td class="table-actions">
                             <a asp-page="./Details" asp-route-member="@item.WorkforceMemberCode">View/Edit</a>

@@ -7,27 +7,28 @@ This document is the sole authority for business concepts and aggregate boundari
 Define the business model without implementation details.
 
 ## Product Scope Alignment
-This domain model serves one building, a small workforce, employees and regular contractors, rooms and keys, day-to-day issue/return, accountability, and straightforward administration/audit.
-Organization exists only to support the real employee/contractor distinction and responsible organization where required.
-Building and Room are real operational place concepts; Campus and enterprise location hierarchies are out of scope unless a future explicit business requirement adds them.
+This domain model serves a single-site KeyInventory installation (one organization and one building as fixed product scope, not as configurable multi-organization or multi-building entities), a small workforce, employees and regular contractors, rooms and keys, day-to-day issue/return, accountability, and straightforward administration/audit.
+Organization and Building are not active Domain business concepts. Do not replace them with Tenant, Site, Facility, Campus, LocationRoot, or another hierarchy abstraction.
+Room is the active place concept for duties, justification, and Key-to-Room openings; Campus and enterprise location hierarchies remain out of scope unless a future explicit business requirement adds them.
 Workforce Eligibility ensures keys are issued to legitimate active workers and must not become a generalized access-control or key-authorization policy engine.
+OPERATOR-EXPERIENCE-1 owns the active single-site simplification authority that supersedes prior Organization, Building, and ResponsibleManager active-model requirements.
 
 ## Core Business Concepts
 - Key: controlled physical key asset.
 - Key Catalog: authoritative list of controlled keys.
 - Key-to-Room Assignment: current authoritative association of a physical KeyAsset to a Room that the key opens; owned by Key Catalog.
-- Location: physical place where a key, lock, or custody action is relevant.
-- Building: physical building place owned by Location boundary.
-- Room: physical room within one Building; operator-facing identity uses RoomNumber unique within that Building.
-- Party: persistent person or organization business identity; sole person-identity authority.
-- Organization: organization that owns Departments and workforce membership for key eligibility.
-- Department: organizational unit within one Organization.
+- Location: physical place where a key, lock, or custody action is relevant (foundation hierarchy; not a substitute Organization/Building business model).
+- Room: physical room for this installation; operator-facing identity uses RoomNumber unique across all Room records; internal RoomCode remains immutable technical identity.
+- Party: persistent person business identity; sole person-identity authority.
+- Department: organizational unit for WorkforceMember membership and Department-based key-issue justification; DepartmentCode unique across all Department records.
 - WorkforceMember: workforce relationship and key-eligibility record for WorkforceType Employee or Contractor; not person identity.
 - WorkforceType: Employee or Contractor.
-- ResponsibleManager: reference from a WorkforceMember to another active authorized WorkforceMember.
 - WorkAssignment: assignment of a WorkforceMember to a Room where duties are performed; one assignment may be primary.
 - Employment: not a separate aggregate; workforce relationship authority belongs solely to WorkforceMember.
 - Borrower: a workflow role only; fulfilled by an eligible active WorkforceMember; not a separate aggregate.
+- Organization (removed from active model): historical OperatorAuditRecord references may remain; not an active aggregate.
+- Building (removed from active model): historical OperatorAuditRecord references may remain; not an active aggregate.
+- ResponsibleManager (removed from active model): historical facts/audit may remain; not an active WorkforceMember authority.
 - Loan: controlled issuance of a key to a party.
 - Return: controlled completion of a loaned key back into organizational control.
 - Custody Event: immutable record of possession transfer or custody-relevant change.
@@ -70,7 +71,7 @@ Invariants:
 - A KeyAsset may be registered with zero Room assignments.
 - A KeyAsset may have zero, one, or multiple current Room assignments representing the Rooms that physical key opens.
 - A KeyAsset that opens multiple Rooms is represented only by multiple current Room assignments; master/sub-master hierarchy is not part of this product.
-- Building for a KeyAsset is derived exclusively through assigned Rooms; KeyAsset must not independently own Building.
+- KeyAsset place association is exclusively through assigned Rooms; KeyAsset must not independently own Building or any Organization/Building substitute.
 - A KeyAsset must not reference an inactive KeyType or inactive KeySeries for new catalog assignment.
 - A retired KeyAsset remains catalog-identifiable and must not be reused as a different physical key.
 
@@ -84,12 +85,12 @@ Allowed lifecycle-neutral behavior:
 Prohibited authority:
 - KeyAsset must not store authoritative possession, current custodian, loan state, return state, lifecycle state, audit history, maintenance workflow state, policy decision state, authentication data, authorization data, or UI state.
 - KeyAsset must not use Lock or Location hierarchy as the authority for which Rooms the key opens.
-- KeyAsset must not own Building independently of Room.
+- KeyAsset must not own Building or any site abstraction independently of Room.
 
 ### Key-to-Room Assignment
 Purpose: define the current authoritative association between one physical KeyAsset and one Room that the key opens.
 
-Ownership: Key Catalog owns current Key-to-Room assignments. Location boundary continues to own Building and Room identity.
+Ownership: Key Catalog owns current Key-to-Room assignments. Location boundary owns Room identity (Building is not an active place authority).
 
 Cardinality:
 - One KeyAsset may open zero, one, or multiple Rooms.
@@ -106,7 +107,7 @@ Authority rules:
 
 Invariants:
 - A Key-to-Room assignment must reference an existing KeyAsset and an existing Room.
-- An active Key-to-Room assignment used for operational display must reference an active Room in an active Building.
+- An active Key-to-Room assignment used for operational display must reference an active Room.
 - Duplicate active assignment of the same KeyAsset to the same Room is forbidden.
 
 ### KeySeries
@@ -188,36 +189,29 @@ Activation rules:
 - Retiring a Location does not retire existing Lock or KeyAsset records.
 
 ### Building
-Purpose: define one physical building place used to contain Rooms.
-
-Ownership: Location boundary owns Building creation, activation, and retirement.
-
-Identity: Building is identified by one building code that is unique across all Building records.
-
-Invariants:
-- A Building must have a non-empty building code.
-- Only an active Building may contain active Rooms used for WorkAssignment or Room-based key-issue justification.
+Status: removed from the active Domain model by OPERATOR-EXPERIENCE-1.
+Building is not an active aggregate, selector, or prerequisite. Historical OperatorAuditRecord rows that reference Building remain immutable and readable. Do not replace Building with Tenant, Site, Facility, Campus, LocationRoot, or another abstraction.
 
 ### Room
-Purpose: define one physical room within a Building where workforce duties, key-issue justification, and Key-to-Room opening associations occur.
+Purpose: define one physical room for this installation where workforce duties, key-issue justification, and Key-to-Room opening associations occur.
 
-Ownership: Location boundary owns Room creation, activation, retirement, and RoomNumber uniqueness within Building. Key Catalog owns Key-to-Room assignments that reference Room.
+Ownership: Location boundary owns Room creation, activation, retirement, RoomNumber mutation under authorized Application commands, and global RoomNumber uniqueness. Key Catalog owns Key-to-Room assignments that reference Room.
 
-Identity: Room is identified by one room code that is unique across all Room records.
+Identity: Room is identified by one room code (RoomCode) that is unique across all Room records and is an immutable technical identity generated by the system. Operators use RoomNumber; they must not be required to invent RoomCode.
 
 Required attributes:
-- RoomNumber is required and is the operator-facing room identifier within its Building.
-- Room must reference exactly one Building.
+- RoomNumber is required and is the operator-facing room identifier for the installation.
 
 Uniqueness rules:
-- RoomNumber is unique within one Building.
-- The same RoomNumber may exist in different Buildings.
+- RoomNumber is unique across all Room records within KeyInventory.
+- RoomCode is unique across all Room records.
 
 Relationships:
 - A Room may be opened by zero, one, or multiple KeyAssets through current Key-to-Room assignments.
+- A Room does not reference Building.
 
 Invariants:
-- Only an active Room in an active Building may be used for active WorkAssignment, Room-based key-issue justification, or active Key-to-Room assignment.
+- Only an active Room may be used for active WorkAssignment, Room-based key-issue justification, or active Key-to-Room assignment.
 - Room must not exist outside Location boundary place authority; a second independent place model is forbidden.
 - Room must not own Key Catalog identity or Key-to-Room assignment authority.
 
@@ -244,15 +238,15 @@ Catalog authority may never store:
 - Maintenance workflow authority belongs to future maintenance slices.
 - Persistence foundation for KeyType, KeyAsset, Loan, and Return belongs to MIGRATION-1; Application port adapters, workflow DI, and LOAN-VERTICAL-1 UI belong to LOAN-VERTICAL-1.
 - UI behavior outside LOAN-VERTICAL-1 belongs to future product experience or UI slices.
-- Workforce eligibility, Organization, Department, WorkforceMember, ResponsibleManager, WorkAssignment, Building, and RoomNumber authority alignments belong to WORKFORCE-ELIGIBILITY-1 and later authorized slices.
+- Workforce eligibility single-site authority (Department, Room without Building, WorkforceMember without Organization/ResponsibleManager, WorkAssignment, global RoomNumber) belongs to OPERATOR-EXPERIENCE-1 for active model changes; WORKFORCE-ELIGIBILITY-1 remains historical Accepted foundation.
 - Runtime implementation of Key-to-Room Assignment belongs to a later explicitly prepared slice; governing Key-to-Room authority is established by this contract and must not be invented at implementation time.
 
 ## Party and Workforce Eligibility Contract
 ### Boundary Ownership
-- Party boundary owns persistent person and organization business identity, including person FirstName, LastName, and UIN, and Party lifecycle.
-- Location boundary owns Building and Room place authority, including RoomNumber uniqueness within Building.
-- Workforce Eligibility boundary owns Organization, Department, WorkforceMember as the workforce relationship and eligibility authority, ResponsibleManager relationship rules, WorkAssignment, key-issue eligibility evaluation, and termination return-obligation signaling.
-- Employment is not a separate aggregate and has no independent authority; relationship periods, eligibility status, Organization, Department, WorkforceType, ResponsibleManager, and WorkAssignment belong to WorkforceMember.
+- Party boundary owns persistent person business identity, including person FirstName, LastName, and UIN, and Party lifecycle.
+- Location boundary owns Room place authority, including global RoomNumber uniqueness. Building is not an active Location business authority.
+- Workforce Eligibility boundary owns Department, WorkforceMember as the workforce relationship and eligibility authority, WorkAssignment, key-issue eligibility evaluation, and termination return-obligation signaling. Organization and ResponsibleManager are not active authorities.
+- Employment is not a separate aggregate and has no independent authority; relationship periods, eligibility status, Department, WorkforceType, and WorkAssignment belong to WorkforceMember.
 - Workforce Eligibility must not own Party identity attributes, Location hierarchy, Loan workflow mutation, Return workflow mutation, custody, lifecycle, audit emission, authentication, authorization runtime, HR integration, or UI.
 - Workforce Eligibility must not expand into a generalized access-control engine, key-authorization policy engine, or Campus/enterprise location hierarchy.
 
@@ -269,6 +263,7 @@ Required person-identity attributes for a human Party used as a workforce key re
 UIN rules:
 - UIN is exactly nine numeric digits.
 - UIN is unique across all Party records that carry UIN.
+- UIN is a mutable business identifier corrected through a governed Application Correct Party UIN operation on the same Party (PartyCode remains stable); collision with another Party is rejected; relationships, Loans/Returns, and historical OperatorAuditRecords are preserved; the correction emits new OperatorAuditRecord evidence with old and new UIN and must not rewrite historical audit rows.
 
 Relationships:
 - A WorkforceMember must reference exactly one Party.
@@ -277,32 +272,25 @@ Relationships:
 - Loan continues to reference the borrowing Party; Borrower is not a Party subtype and not a separate aggregate.
 
 Prohibited authority:
-- Party must not own WorkforceMember Status, Organization, Department, WorkforceType, ResponsibleManager hierarchy, WorkAssignment, key-issue eligibility decisions, Loan/Return workflow, custody, lifecycle, audit, authentication, or UI.
+- Party must not own WorkforceMember Status, Department, WorkforceType, WorkAssignment, key-issue eligibility decisions, Loan/Return workflow, custody, lifecycle, audit, authentication, or UI.
 
 ### Organization
-Purpose: organization that owns Departments and workforce membership for key eligibility; not an enterprise multi-organization hierarchy authority.
-
-Identity: Organization is identified by one organization code that is unique across all Organization records.
-
-Ownership: Workforce Eligibility boundary owns Organization creation, activation, and retirement for this scope.
-
-Invariants:
-- An Organization must have a non-empty organization code.
-- Only an active Organization may own active Departments or active WorkforceMember membership.
+Status: removed from the active Domain model by OPERATOR-EXPERIENCE-1.
+Organization is not an active aggregate, selector, membership owner, or eligibility prerequisite. Historical OperatorAuditRecord rows that reference Organization remain immutable and readable. Do not replace Organization with Tenant, Site, or another scoping abstraction.
 
 ### Department
-Purpose: organizational unit within one Organization used for WorkforceMember membership and key-issue justification.
+Purpose: organizational unit used for WorkforceMember membership and key-issue justification within this single-site installation.
 
-Identity: Department is identified by one department code that is unique within its Organization.
+Identity: Department is identified by one department code that is unique across all Department records.
 
 Ownership: Workforce Eligibility boundary owns Department creation, activation, and retirement for this scope.
 
 Relationships:
-- A Department must reference exactly one Organization.
+- A Department does not reference Organization.
 
 Invariants:
 - A Department must have a non-empty department code.
-- Only an active Department in an active Organization may be used for active WorkforceMember membership or Department-based key-issue justification.
+- Only an active Department may be used for active WorkforceMember membership or Department-based key-issue justification.
 
 ### WorkforceMember
 Purpose: workforce relationship and key-eligibility record for WorkforceType Employee or Contractor. WorkforceMember is not person identity.
@@ -313,9 +301,7 @@ Ownership: Workforce Eligibility boundary owns WorkforceMember as the sole workf
 
 Required attributes:
 - WorkforceType.
-- Organization.
 - Department.
-- ResponsibleManager.
 - Status.
 - Reference to exactly one Party.
 
@@ -329,23 +315,22 @@ Status values:
 
 Relationships:
 - A WorkforceMember must reference exactly one Party.
-- A WorkforceMember must reference exactly one Organization.
-- A WorkforceMember must reference exactly one Department belonging to that Organization.
-- A WorkforceMember must reference exactly one ResponsibleManager WorkforceMember.
+- A WorkforceMember must reference exactly one Department.
 - A WorkforceMember may have zero or more WorkAssignment records.
-- ResponsibleManager must reference a different WorkforceMember from the subject WorkforceMember.
-- ResponsibleManager must reference an active authorized WorkforceMember.
+- A WorkforceMember must not require Organization or ResponsibleManager.
 
 Relationship lifecycle rules:
-- Termination, rehire, Department change, Organization change, and Employee or Contractor WorkforceType transition are workforce relationship changes owned by WorkforceMember.
+- Termination, rehire, Department change, and Employee or Contractor WorkforceType transition are workforce relationship changes owned by WorkforceMember.
 - These relationship changes must not rewrite or replace Party person identity.
 - Rehire after termination creates a new Active WorkforceMember for the same Party; it must not reactivate a Terminated WorkforceMember by mutating person identity.
+- The first WorkforceMember may be created when no other WorkforceMember exists.
 
 Prohibited authority:
 - WorkforceMember must not own FirstName, LastName, UIN, or other Party person-identity attributes.
 - WorkforceMember must not own Party lifecycle, Loan/Return mutation, custody, lifecycle, audit emission, authentication credentials, authorization decisions, or UI.
 - A Borrower aggregate must not be created; Borrower remains a workflow role fulfilled by an eligible active WorkforceMember.
 - A separate Employment aggregate must not be created.
+- ResponsibleManager, bootstrap mutual-manager pairs, self-manager, sole-member manager exceptions, and placeholder managers are forbidden as active authority.
 
 ### WorkAssignment
 Purpose: assign a WorkforceMember to a Room where the member is authorized to work for key-issue justification.
@@ -355,7 +340,7 @@ Ownership: Workforce Eligibility boundary owns active and ended WorkAssignment r
 Relationships:
 - A WorkAssignment must reference exactly one WorkforceMember.
 - A WorkAssignment must reference exactly one Room.
-- Referenced Room must be active and belong to an active Building for an active assignment.
+- Referenced Room must be active for an active assignment.
 - A WorkforceMember may have multiple Room assignments.
 - At most one active WorkAssignment for a WorkforceMember may be marked primary.
 
@@ -368,11 +353,10 @@ A key may be issued to a WorkforceMember only when all of the following are true
 - WorkforceMember Status is Active.
 - Referenced Party has valid FirstName, LastName, and UIN.
 - UIN satisfies the nine-digit uniqueness rules on Party.
-- WorkforceType, Organization, Department, and ResponsibleManager are present and valid on the WorkforceMember.
-- Department is active and belongs to the WorkforceMember's Organization.
-- ResponsibleManager references another active authorized WorkforceMember.
-- The WorkforceMember has at least one active WorkAssignment to a Room relevant to the key being issued.
-- The key issue is justified only by the Department or Room where the WorkforceMember is authorized to work.
+- WorkforceType and Department are present and valid on the WorkforceMember.
+- Department is active and matches the WorkforceMember's Department.
+- The WorkforceMember has at least one active WorkAssignment (verified retained requirement; Issue Key does not require Organization or ResponsibleManager).
+- The key issue is justified only by the Department or by a Room on an active WorkAssignment for that WorkforceMember.
 - The borrowing Party on the Loan is the Party referenced by that eligible WorkforceMember.
 
 Prohibited eligibility authority:
@@ -412,7 +396,7 @@ Invariants:
 - A Loan must reference a cataloged KeyAsset.
 - A Loan must reference a Party borrower without owning Party profile or lifecycle.
 - When Workforce Eligibility is in force for issue authorization, the borrowing Party must be the Party of a WorkforceMember that satisfies Key Issue Eligibility Rules at issue time.
-- When Workforce Eligibility is in force, issue justification must reference the authorizing Department or Room and the ResponsibleManager without transferring ownership of those authorities into Loan.
+- When Workforce Eligibility is in force, issue justification must reference the authorizing Department or Room without transferring ownership of those authorities into Loan.
 - A Loan issue timestamp is required.
 - A Loan due timestamp is required and must be later than the issue timestamp.
 - A Loan may be Open, Returned, or Cancelled.

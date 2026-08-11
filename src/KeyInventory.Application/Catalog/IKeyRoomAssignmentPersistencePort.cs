@@ -8,6 +8,8 @@ public interface IKeyRoomAssignmentPersistencePort
 
     Task<bool> ExistsAsync(string catalogKeyCode, string roomCode, CancellationToken cancellationToken);
 
+    Task<bool> HasAnyAssignmentAsync(CancellationToken cancellationToken);
+
     Task<IReadOnlyList<KeyOpenedRoomItem>> ListForKeyAsync(
         string catalogKeyCode,
         CancellationToken cancellationToken);

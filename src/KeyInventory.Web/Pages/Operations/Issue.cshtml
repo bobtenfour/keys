@@ -10,6 +10,11 @@
     <p class="lede">Hand a controlled key to an eligible workforce member.</p>
 </header>
 
+@if (!Model.Readiness.Snapshot.CanIssueKey && string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <partial name="_OperationalReadiness" model="Model.Readiness" />
+}
+
 <section class="card form-card form-card-operator">
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {

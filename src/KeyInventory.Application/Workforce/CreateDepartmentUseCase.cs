@@ -5,7 +5,7 @@ namespace KeyInventory.Application.Workforce;
 
 public interface ICreateDepartmentUseCase
 {
-    Task ExecuteAsync(string organizationCode, string departmentCode, CancellationToken cancellationToken);
+    Task ExecuteAsync(string departmentCode, CancellationToken cancellationToken);
 }
 
 public interface IListDepartmentsUseCase
@@ -24,34 +24,19 @@ public sealed class CreateDepartmentUseCase : ICreateDepartmentUseCase
         _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
-    public async Task ExecuteAsync(string organizationCode, string departmentCode, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(string departmentCode, CancellationToken cancellationToken)
     {
-        Organization? organization = await _workforce.FindOrganizationAsync(organizationCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (organization is null)
+        if (await _workforce.DepartmentExistsAsync(departmentCode, cancellationToken).ConfigureAwait(false))
         {
-            throw new InvalidOperationException("The organization was not found.");
+            throw new InvalidOperationException("A department with this code already exists.");
         }
 
-        if (!organization.IsActive)
-        {
-            throw new InvalidOperationException("Department cannot reference an inactive Organization.");
-        }
-
-        if (await _workforce.DepartmentExistsAsync(organization.OrganizationCode, departmentCode, cancellationToken)
-                .ConfigureAwait(false))
-        {
-            throw new InvalidOperationException("A department with this code already exists in the organization.");
-        }
-
-        Department department = new(departmentCode, organization);
+        Department department = new(departmentCode);
         _audit.Stage(
             OperatorAuditActions.DepartmentCreated,
             OperatorAuditSubjects.Department,
-            $"{organization.OrganizationCode}/{department.DepartmentCode}",
-            $"Organization={organization.OrganizationCode}; Department={department.DepartmentCode}");
-        await _workforce.AddDepartmentAsync(department, cancellationToken)
-            .ConfigureAwait(false);
+            department.DepartmentCode);
+        await _workforce.AddDepartmentAsync(department, cancellationToken).ConfigureAwait(false);
     }
 }
 

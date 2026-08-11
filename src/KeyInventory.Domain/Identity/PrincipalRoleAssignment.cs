@@ -54,7 +54,6 @@ public sealed class PrincipalRoleAssignment
 
         return Principal.PrincipalName == principal.PrincipalName
             && Role.RoleCode == role.RoleCode
-            && Role.OrganizationCode == role.OrganizationCode
             && ScopeType == scopeType
             && string.Equals(ScopeCode, scopeCode, StringComparison.Ordinal);
     }

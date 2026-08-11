@@ -45,22 +45,18 @@ public sealed class WorkforceEligibilityWorkflowTests : IAsyncLifetime
     public async Task PersistenceRoundTripsWorkforceEntitiesAndRoomNumberUniqueness()
     {
         using IServiceScope scope = CreateScope();
-        ICreateOrganizationUseCase createOrg = scope.ServiceProvider.GetRequiredService<ICreateOrganizationUseCase>();
         ICreateDepartmentUseCase createDept = scope.ServiceProvider.GetRequiredService<ICreateDepartmentUseCase>();
-        ICreateBuildingUseCase createBuilding = scope.ServiceProvider.GetRequiredService<ICreateBuildingUseCase>();
         ICreateRoomUseCase createRoom = scope.ServiceProvider.GetRequiredService<ICreateRoomUseCase>();
         IListRoomsUseCase listRooms = scope.ServiceProvider.GetRequiredService<IListRoomsUseCase>();
 
-        await createOrg.ExecuteAsync("org-p", CancellationToken.None).ConfigureAwait(true);
-        await createDept.ExecuteAsync("org-p", "dept-p", CancellationToken.None).ConfigureAwait(true);
-        await createBuilding.ExecuteAsync("bldg-p", CancellationToken.None).ConfigureAwait(true);
-        await createRoom.ExecuteAsync("room-p1", "bldg-p", "101", "One", CancellationToken.None).ConfigureAwait(true);
+        await createDept.ExecuteAsync("dept-p", CancellationToken.None).ConfigureAwait(true);
+        string roomCode = await createRoom.ExecuteAsync("101", "One", CancellationToken.None).ConfigureAwait(true);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            createRoom.ExecuteAsync("room-p2", "bldg-p", "101", "Dup", CancellationToken.None));
+            createRoom.ExecuteAsync("101", "Dup", CancellationToken.None));
 
         IReadOnlyList<RoomListItem> rooms = await listRooms.ExecuteAsync(CancellationToken.None).ConfigureAwait(true);
-        Assert.Contains(rooms, room => room.RoomCode == "room-p1" && room.RoomNumber == "101");
+        Assert.Contains(rooms, room => room.RoomCode == roomCode && room.RoomNumber == "101");
     }
 
     [Fact]

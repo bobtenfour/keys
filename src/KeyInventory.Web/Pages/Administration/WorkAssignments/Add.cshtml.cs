@@ -1,5 +1,6 @@
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Workforce;
+using KeyInventory.Web.Presentation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -56,6 +57,7 @@ public sealed class AddModel : PageModel
                     IsPrimary,
                     cancellationToken)
                 .ConfigureAwait(false);
+            TempData["SuccessMessage"] = "Work assignment was created.";
             return RedirectToPage("./Index");
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
@@ -79,7 +81,7 @@ public sealed class AddModel : PageModel
         RoomOptions = (await _rooms.ExecuteAsync(cancellationToken).ConfigureAwait(false))
             .Where(item => item.IsActive)
             .Select(item => new SelectListItem(
-                $"{item.BuildingCode} / {item.RoomNumber}",
+                RoomDisplayFormatter.Format(item),
                 item.RoomCode,
                 string.Equals(item.RoomCode, RoomCode, StringComparison.OrdinalIgnoreCase)))
             .ToArray();

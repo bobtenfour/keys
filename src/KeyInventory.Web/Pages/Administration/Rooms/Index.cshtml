@@ -8,7 +8,7 @@
 <div class="page-header-row">
     <header class="page-header page-header-compact">
         <h1>Rooms</h1>
-        <p class="lede">Rooms within a building. Room number must be unique inside its building.</p>
+        <p class="lede">Rooms are places workforce members work and keys may open. Room number is globally unique.</p>
     </header>
     <div class="page-header-actions">
         <a class="btn btn-primary" asp-page="./Add">+ Add room</a>
@@ -27,7 +27,13 @@
 
     @if (Model.Rooms.Count == 0)
     {
-        <div class="empty-state"><strong>No rooms</strong></div>
+        <div class="empty-state">
+            <strong>No rooms</strong>
+            Create a room before work assignments or room-based issue justification.
+            <div class="form-actions">
+                <a class="btn btn-primary" asp-page="./Add">Add room</a>
+            </div>
+        </div>
     }
     else
     {
@@ -35,8 +41,6 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Room</th>
-                        <th>Building</th>
                         <th>Room number</th>
                         <th>Description</th>
                         <th>Status</th>
@@ -47,12 +51,11 @@
                 @foreach (var item in Model.Rooms)
                 {
                     <tr>
-                        <td>@item.RoomCode</td>
-                        <td>@item.BuildingCode</td>
                         <td>@item.RoomNumber</td>
-                        <td>@item.Description</td>
+                        <td>@(string.IsNullOrWhiteSpace(item.Description) ? "—" : item.Description)</td>
                         <td>@(item.IsActive ? "Active" : "Retired")</td>
-                        <td>
+                        <td class="table-actions">
+                            <a asp-page="./Edit" asp-route-room="@item.RoomCode">Edit</a>
                             @if (item.IsActive)
                             {
                                 <form method="post" asp-page-handler="Retire" style="display:inline">

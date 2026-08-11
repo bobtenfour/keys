@@ -81,15 +81,15 @@ public sealed class OperatorUxBoundaryTests
         string code = Read("src/KeyInventory.Web/Pages/Administration/WorkforceMembers/Index.cshtml.cs");
         Assert.Contains("+ Add workforce member", view, StringComparison.Ordinal);
         Assert.Contains("asp-page=\"./Add\"", view, StringComparison.Ordinal);
-        Assert.Contains("<th>Person</th>", view, StringComparison.Ordinal);
+        Assert.Contains("<th>Name</th>", view, StringComparison.Ordinal);
         Assert.Contains("<th>UIN</th>", view, StringComparison.Ordinal);
-        Assert.Contains("<th>Responsible Manager</th>", view, StringComparison.Ordinal);
         Assert.Contains("View/Edit", view, StringComparison.Ordinal);
         Assert.Contains("Issued Keys", view, StringComparison.Ordinal);
         Assert.DoesNotContain("Create party", view, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Terminate workforce member", view, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<th>Party", view, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<th>Workforce", view, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Responsible Manager", view, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("admin-task-grid", view, StringComparison.Ordinal);
         Assert.Contains("IListWorkforceMembersUseCase", code, StringComparison.Ordinal);
         Assert.DoesNotContain("ICreatePartyUseCase", code, StringComparison.Ordinal);
@@ -106,13 +106,13 @@ public sealed class OperatorUxBoundaryTests
         Assert.Contains("First name", view, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Last name", view, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("UIN", view, StringComparison.Ordinal);
-        Assert.Contains("Responsible Manager", view, StringComparison.Ordinal);
         Assert.DoesNotContain("Party code", view, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Workforce member code", view, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Responsible Manager", view, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("asp-for=\"PartyCode\"", view, StringComparison.Ordinal);
         Assert.DoesNotContain("asp-for=\"WorkforceMemberCode\"", view, StringComparison.Ordinal);
         Assert.Contains("IRegisterWorkforceMemberUseCase", code, StringComparison.Ordinal);
-        Assert.Contains("IRegisterBootstrapWorkforcePairUseCase", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("IRegisterBootstrapWorkforcePairUseCase", code, StringComparison.Ordinal);
         Assert.DoesNotContain("ICreatePartyUseCase", code, StringComparison.Ordinal);
         Assert.DoesNotContain("ICreateWorkforceMemberUseCase", code, StringComparison.Ordinal);
         Assert.DoesNotContain("KeyInventoryDbContext", code, StringComparison.Ordinal);
@@ -123,6 +123,7 @@ public sealed class OperatorUxBoundaryTests
         Assert.DoesNotContain(registerParameters, parameter => parameter.Name is "partyCode" or "workforceMemberCode");
         Assert.Contains(registerParameters, parameter => parameter.Name == "firstName");
         Assert.Contains(registerParameters, parameter => parameter.Name == "uin");
+        Assert.Equal(6, registerParameters.Length);
     }
 
     [Fact]
@@ -135,7 +136,7 @@ public sealed class OperatorUxBoundaryTests
         Assert.Contains("Work Assignments / Rooms", view, StringComparison.Ordinal);
         Assert.Contains("Currently issued keys", view, StringComparison.Ordinal);
         Assert.Contains("ITerminateWorkforceMemberUseCase", code, StringComparison.Ordinal);
-        Assert.Contains("IUpdateWorkforceMemberOrganizationDepartmentUseCase", code, StringComparison.Ordinal);
+        Assert.Contains("IUpdateWorkforceMemberDepartmentUseCase", code, StringComparison.Ordinal);
         Assert.Contains("IOperationalKeyLookupUseCase", code, StringComparison.Ordinal);
         Assert.DoesNotContain("KeyInventoryDbContext", code, StringComparison.Ordinal);
         Assert.Equal("KeyInventory.Web.Pages.Administration.WorkforceMembers", typeof(DetailsModel).Namespace);
@@ -144,15 +145,15 @@ public sealed class OperatorUxBoundaryTests
     }
 
     [Fact]
-    public void AdministrationListFirstUsesDedicatedAddPages()
+    public void AdministrationListFirstUsesDedicatedAddPagesWithoutOrganizations()
     {
-        Assert.Contains("+ Add organization", Read("src/KeyInventory.Web/Pages/Administration/Organizations/Index.cshtml"), StringComparison.Ordinal);
-        Assert.Contains("asp-page=\"./Add\"", Read("src/KeyInventory.Web/Pages/Administration/Organizations/Index.cshtml"), StringComparison.Ordinal);
-        Assert.DoesNotContain("admin-task-grid", Read("src/KeyInventory.Web/Pages/Administration/Organizations/Index.cshtml"), StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Organizations/Add.cshtml")));
+        Assert.False(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Organizations/Index.cshtml")));
+        Assert.False(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Buildings/Add.cshtml")));
         Assert.True(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Departments/Add.cshtml")));
-        Assert.True(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Buildings/Add.cshtml")));
         Assert.True(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Rooms/Add.cshtml")));
         Assert.True(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/WorkAssignments/Add.cshtml")));
+        Assert.Contains("+ Add department", Read("src/KeyInventory.Web/Pages/Administration/Departments/Index.cshtml"), StringComparison.Ordinal);
     }
 
     [Fact]

@@ -23,12 +23,13 @@ Prevent hidden coupling, documentation drift, authority duplication, and operati
 - Party is the sole persistent person-identity authority and owns FirstName, LastName, and UIN for human workforce recipients; UIN is exactly nine numeric digits and unique on Party.
 - WorkforceMember is the sole workforce relationship and eligibility authority and must not own FirstName, LastName, UIN, or other Party person-identity attributes.
 - Employment is not a separate aggregate and must not duplicate WorkforceMember relationship authority.
-- RoomNumber is required and unique within one Building; Room place authority remains inside the Location boundary.
-- Current KeyAsset-to-Room opening assignments are owned by Key Catalog; Location owns Building and Room identity; Building for a key is derived only through Room; KeyAsset must not independently own Building.
+- RoomNumber is required and unique across all Room records; Room place authority remains inside the Location boundary; Building is not an active place authority.
+- Current KeyAsset-to-Room opening assignments are owned by Key Catalog; Location owns Room identity; KeyAsset must not independently own Building or site abstractions.
 - Key-to-Room Assignment is the sole operational authority for which Rooms a physical key opens; Lock must not mediate or duplicate that authority; KeyType must not own Room assignments; assignment history is not required; master/sub-master hierarchy is forbidden for this product.
-- Key issue eligibility for a WorkforceMember requires Active status, Party person identity with valid UIN, Department, ResponsibleManager, and at least one active Room WorkAssignment relevant to the key being issued.
+- Key issue eligibility for a WorkforceMember requires Active status, Party person identity with valid UIN, Department, and at least one active Room WorkAssignment; Organization and ResponsibleManager are not eligibility requirements.
 - Keys may be issued only for the Department or Room where the WorkforceMember is authorized to work.
-- WorkforceMember termination, rehire, Department change, Organization change, and Employee or Contractor WorkforceType transition must not rewrite Party person identity.
+- WorkforceMember termination, rehire, Department change, and Employee or Contractor WorkforceType transition must not rewrite Party person identity.
+- Organization, Building, and ResponsibleManager must not remain active business authorities after OPERATOR-EXPERIENCE-1; historical OperatorAuditRecord rows remain immutable.
 - WorkforceMember termination for Employee or Contractor forbids new key issues and creates a mandatory return obligation for currently issued keys without automatically mutating Loan, Return, custody, lifecycle, or audit authority; returns use the existing Return workflow.
 
 ## Required Checks

@@ -27,7 +27,13 @@
 
     @if (Model.Departments.Count == 0)
     {
-        <div class="empty-state"><strong>No departments</strong></div>
+        <div class="empty-state">
+            <strong>No departments</strong>
+            Create a department to support workforce members and issue justification.
+            <div class="form-actions">
+                <a class="btn btn-primary" asp-page="./Add">Add department</a>
+            </div>
+        </div>
     }
     else
     {
@@ -35,7 +41,6 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Organization</th>
                         <th>Department</th>
                         <th>Status</th>
                         <th></th>
@@ -45,14 +50,12 @@
                 @foreach (var item in Model.Departments)
                 {
                     <tr>
-                        <td>@item.OrganizationCode</td>
                         <td>@item.DepartmentCode</td>
                         <td>@(item.IsActive ? "Active" : "Retired")</td>
                         <td>
                             @if (item.IsActive)
                             {
                                 <form method="post" asp-page-handler="Retire" style="display:inline">
-                                    <input type="hidden" name="organizationCode" value="@item.OrganizationCode" />
                                     <input type="hidden" name="departmentCode" value="@item.DepartmentCode" />
                                     <button type="submit" class="btn btn-secondary">Retire</button>
                                 </form>
@@ -60,7 +63,6 @@
                             else
                             {
                                 <form method="post" asp-page-handler="Activate" style="display:inline">
-                                    <input type="hidden" name="organizationCode" value="@item.OrganizationCode" />
                                     <input type="hidden" name="departmentCode" value="@item.DepartmentCode" />
                                     <button type="submit" class="btn btn-secondary">Activate</button>
                                 </form>

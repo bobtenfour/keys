@@ -59,6 +59,11 @@ public sealed class KeyRoomAssignmentPersistenceAdapter : IKeyRoomAssignmentPers
             cancellationToken);
     }
 
+    public Task<bool> HasAnyAssignmentAsync(CancellationToken cancellationToken)
+    {
+        return _dbContext.KeyRoomAssignments.AnyAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<KeyOpenedRoomItem>> ListForKeyAsync(
         string catalogKeyCode,
         CancellationToken cancellationToken)
@@ -68,8 +73,8 @@ public sealed class KeyRoomAssignmentPersistenceAdapter : IKeyRoomAssignmentPers
                 from assignment in _dbContext.KeyRoomAssignments.AsNoTracking()
                 join room in _dbContext.Rooms.AsNoTracking() on assignment.RoomCode equals room.RoomCode
                 where assignment.CatalogKeyCode == catalogKeyCode.Trim()
-                orderby room.BuildingCode, room.RoomNumber
-                select new KeyOpenedRoomItem(room.RoomCode, room.BuildingCode, room.RoomNumber))
+                orderby room.RoomNumber
+                select new KeyOpenedRoomItem(room.RoomCode, room.RoomNumber, room.Description))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -95,12 +100,12 @@ public sealed class KeyRoomAssignmentPersistenceAdapter : IKeyRoomAssignmentPers
                 from assignment in _dbContext.KeyRoomAssignments.AsNoTracking()
                 join room in _dbContext.Rooms.AsNoTracking() on assignment.RoomCode equals room.RoomCode
                 where codes.Contains(assignment.CatalogKeyCode)
-                orderby assignment.CatalogKeyCode, room.BuildingCode, room.RoomNumber
+                orderby assignment.CatalogKeyCode, room.RoomNumber
                 select new KeyOpenedRoomItemRow(
                     assignment.CatalogKeyCode,
                     room.RoomCode,
-                    room.BuildingCode,
-                    room.RoomNumber))
+                    room.RoomNumber,
+                    room.Description))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -114,7 +119,7 @@ public sealed class KeyRoomAssignmentPersistenceAdapter : IKeyRoomAssignmentPers
                      StringComparer.Ordinal))
         {
             map[group.Key] = group
-                .Select(row => new KeyOpenedRoomItem(row.RoomCode, row.BuildingCode, row.RoomNumber))
+                .Select(row => new KeyOpenedRoomItem(row.RoomCode, row.RoomNumber, row.Description))
                 .ToArray();
         }
 
@@ -124,6 +129,6 @@ public sealed class KeyRoomAssignmentPersistenceAdapter : IKeyRoomAssignmentPers
     private sealed record KeyOpenedRoomItemRow(
         string CatalogKeyCode,
         string RoomCode,
-        string BuildingCode,
-        string RoomNumber);
+        string RoomNumber,
+        string Description);
 }

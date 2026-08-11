@@ -1,37 +1,18 @@
 using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Domain.Locations;
+using KeyInventory.Domain.Parties;
 using KeyInventory.Domain.Workforce;
 
 namespace KeyInventory.Application.Workforce;
 
-public interface IActivateOrganizationUseCase
-{
-    Task ExecuteAsync(string organizationCode, CancellationToken cancellationToken);
-}
-
-public interface IRetireOrganizationUseCase
-{
-    Task ExecuteAsync(string organizationCode, CancellationToken cancellationToken);
-}
-
 public interface IActivateDepartmentUseCase
 {
-    Task ExecuteAsync(string organizationCode, string departmentCode, CancellationToken cancellationToken);
+    Task ExecuteAsync(string departmentCode, CancellationToken cancellationToken);
 }
 
 public interface IRetireDepartmentUseCase
 {
-    Task ExecuteAsync(string organizationCode, string departmentCode, CancellationToken cancellationToken);
-}
-
-public interface IActivateBuildingUseCase
-{
-    Task ExecuteAsync(string buildingCode, CancellationToken cancellationToken);
-}
-
-public interface IRetireBuildingUseCase
-{
-    Task ExecuteAsync(string buildingCode, CancellationToken cancellationToken);
+    Task ExecuteAsync(string departmentCode, CancellationToken cancellationToken);
 }
 
 public interface IActivateRoomUseCase
@@ -44,20 +25,11 @@ public interface IRetireRoomUseCase
     Task ExecuteAsync(string roomCode, CancellationToken cancellationToken);
 }
 
-public interface IUpdateWorkforceMemberOrganizationDepartmentUseCase
+public interface IUpdateWorkforceMemberDepartmentUseCase
 {
     Task ExecuteAsync(
         string workforceMemberCode,
-        string organizationCode,
         string departmentCode,
-        CancellationToken cancellationToken);
-}
-
-public interface IUpdateWorkforceMemberResponsibleManagerUseCase
-{
-    Task ExecuteAsync(
-        string workforceMemberCode,
-        string responsibleManagerWorkforceMemberCode,
         CancellationToken cancellationToken);
 }
 
@@ -67,6 +39,30 @@ public interface IUpdateWorkforceMemberWorkforceTypeUseCase
         string workforceMemberCode,
         string workforceType,
         CancellationToken cancellationToken);
+}
+
+public interface IUpdateRoomNumberUseCase
+{
+    Task ExecuteAsync(string roomCode, string roomNumber, CancellationToken cancellationToken);
+}
+
+public interface IUpdateRoomDescriptionUseCase
+{
+    Task ExecuteAsync(string roomCode, string? description, CancellationToken cancellationToken);
+}
+
+public interface IUpdatePartyNameUseCase
+{
+    Task ExecuteAsync(
+        string partyCode,
+        string firstName,
+        string lastName,
+        CancellationToken cancellationToken);
+}
+
+public interface ICorrectPartyUinUseCase
+{
+    Task ExecuteAsync(string partyCode, string newUin, CancellationToken cancellationToken);
 }
 
 public interface IEndWorkAssignmentUseCase
@@ -84,68 +80,6 @@ public interface IClearWorkAssignmentPrimaryUseCase
     Task ExecuteAsync(string workAssignmentCode, CancellationToken cancellationToken);
 }
 
-public sealed class ActivateOrganizationUseCase : IActivateOrganizationUseCase
-{
-    private readonly IWorkforcePersistencePort _workforce;
-    private readonly IOperatorAuditRecorder _audit;
-
-    public ActivateOrganizationUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
-    {
-        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
-        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
-    }
-
-    public async Task ExecuteAsync(string organizationCode, CancellationToken cancellationToken)
-    {
-        Organization organization = await RequireOrganizationAsync(organizationCode, cancellationToken)
-            .ConfigureAwait(false);
-        organization.Activate();
-        _audit.Stage(
-            OperatorAuditActions.OrganizationActivated,
-            OperatorAuditSubjects.Organization,
-            organization.OrganizationCode);
-        await _workforce.UpdateOrganizationAsync(organization, cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task<Organization> RequireOrganizationAsync(string organizationCode, CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(organizationCode);
-        Organization? organization = await _workforce.FindOrganizationAsync(organizationCode.Trim(), cancellationToken)
-            .ConfigureAwait(false);
-        return organization ?? throw new InvalidOperationException("The organization was not found.");
-    }
-}
-
-public sealed class RetireOrganizationUseCase : IRetireOrganizationUseCase
-{
-    private readonly IWorkforcePersistencePort _workforce;
-    private readonly IOperatorAuditRecorder _audit;
-
-    public RetireOrganizationUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
-    {
-        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
-        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
-    }
-
-    public async Task ExecuteAsync(string organizationCode, CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(organizationCode);
-        Organization? organization = await _workforce.FindOrganizationAsync(organizationCode.Trim(), cancellationToken)
-            .ConfigureAwait(false);
-        if (organization is null)
-        {
-            throw new InvalidOperationException("The organization was not found.");
-        }
-
-        organization.Retire();
-        _audit.Stage(
-            OperatorAuditActions.OrganizationRetired,
-            OperatorAuditSubjects.Organization,
-            organization.OrganizationCode);
-        await _workforce.UpdateOrganizationAsync(organization, cancellationToken).ConfigureAwait(false);
-    }
-}
-
 public sealed class ActivateDepartmentUseCase : IActivateDepartmentUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
@@ -157,35 +91,22 @@ public sealed class ActivateDepartmentUseCase : IActivateDepartmentUseCase
         _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
-    public async Task ExecuteAsync(
-        string organizationCode,
-        string departmentCode,
-        CancellationToken cancellationToken)
+    public async Task ExecuteAsync(string departmentCode, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(organizationCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(departmentCode);
 
-        Organization? organization = await _workforce.FindOrganizationAsync(organizationCode.Trim(), cancellationToken)
-            .ConfigureAwait(false);
-        if (organization is null)
-        {
-            throw new InvalidOperationException("The organization was not found.");
-        }
-
-        Department? department = await _workforce
-            .FindDepartmentAsync(organizationCode.Trim(), departmentCode.Trim(), cancellationToken)
+        Department? department = await _workforce.FindDepartmentAsync(departmentCode.Trim(), cancellationToken)
             .ConfigureAwait(false);
         if (department is null)
         {
             throw new InvalidOperationException("The department was not found.");
         }
 
-        department.Activate(organization);
+        department.Activate();
         _audit.Stage(
             OperatorAuditActions.DepartmentActivated,
             OperatorAuditSubjects.Department,
-            $"{department.OrganizationCode}/{department.DepartmentCode}",
-            $"Organization={department.OrganizationCode}; Department={department.DepartmentCode}");
+            department.DepartmentCode);
         await _workforce.UpdateDepartmentAsync(department, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -201,16 +122,12 @@ public sealed class RetireDepartmentUseCase : IRetireDepartmentUseCase
         _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
-    public async Task ExecuteAsync(
-        string organizationCode,
-        string departmentCode,
-        CancellationToken cancellationToken)
+    public async Task ExecuteAsync(string departmentCode, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(organizationCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(departmentCode);
 
         Department? department = await _workforce
-            .FindDepartmentAsync(organizationCode.Trim(), departmentCode.Trim(), cancellationToken)
+            .FindDepartmentAsync(departmentCode.Trim(), cancellationToken)
             .ConfigureAwait(false);
         if (department is null)
         {
@@ -221,69 +138,8 @@ public sealed class RetireDepartmentUseCase : IRetireDepartmentUseCase
         _audit.Stage(
             OperatorAuditActions.DepartmentRetired,
             OperatorAuditSubjects.Department,
-            $"{department.OrganizationCode}/{department.DepartmentCode}",
-            $"Organization={department.OrganizationCode}; Department={department.DepartmentCode}");
+            department.DepartmentCode);
         await _workforce.UpdateDepartmentAsync(department, cancellationToken).ConfigureAwait(false);
-    }
-}
-
-public sealed class ActivateBuildingUseCase : IActivateBuildingUseCase
-{
-    private readonly IWorkforcePersistencePort _workforce;
-    private readonly IOperatorAuditRecorder _audit;
-
-    public ActivateBuildingUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
-    {
-        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
-        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
-    }
-
-    public async Task ExecuteAsync(string buildingCode, CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(buildingCode);
-        Building? building = await _workforce.FindBuildingAsync(buildingCode.Trim(), cancellationToken)
-            .ConfigureAwait(false);
-        if (building is null)
-        {
-            throw new InvalidOperationException("The building was not found.");
-        }
-
-        building.Activate();
-        _audit.Stage(
-            OperatorAuditActions.BuildingActivated,
-            OperatorAuditSubjects.Building,
-            building.BuildingCode);
-        await _workforce.UpdateBuildingAsync(building, cancellationToken).ConfigureAwait(false);
-    }
-}
-
-public sealed class RetireBuildingUseCase : IRetireBuildingUseCase
-{
-    private readonly IWorkforcePersistencePort _workforce;
-    private readonly IOperatorAuditRecorder _audit;
-
-    public RetireBuildingUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
-    {
-        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
-        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
-    }
-
-    public async Task ExecuteAsync(string buildingCode, CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(buildingCode);
-        Building? building = await _workforce.FindBuildingAsync(buildingCode.Trim(), cancellationToken)
-            .ConfigureAwait(false);
-        if (building is null)
-        {
-            throw new InvalidOperationException("The building was not found.");
-        }
-
-        building.Retire();
-        _audit.Stage(
-            OperatorAuditActions.BuildingRetired,
-            OperatorAuditSubjects.Building,
-            building.BuildingCode);
-        await _workforce.UpdateBuildingAsync(building, cancellationToken).ConfigureAwait(false);
     }
 }
 
@@ -307,14 +163,7 @@ public sealed class ActivateRoomUseCase : IActivateRoomUseCase
             throw new InvalidOperationException("The room was not found.");
         }
 
-        Building? building = await _workforce.FindBuildingAsync(room.BuildingCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (building is null)
-        {
-            throw new InvalidOperationException("The building for the room was not found.");
-        }
-
-        room.Activate(building);
+        room.Activate();
         _audit.Stage(
             OperatorAuditActions.RoomActivated,
             OperatorAuditSubjects.Room,
@@ -352,13 +201,12 @@ public sealed class RetireRoomUseCase : IRetireRoomUseCase
     }
 }
 
-public sealed class UpdateWorkforceMemberOrganizationDepartmentUseCase
-    : IUpdateWorkforceMemberOrganizationDepartmentUseCase
+public sealed class UpdateWorkforceMemberDepartmentUseCase : IUpdateWorkforceMemberDepartmentUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
     private readonly IOperatorAuditRecorder _audit;
 
-    public UpdateWorkforceMemberOrganizationDepartmentUseCase(
+    public UpdateWorkforceMemberDepartmentUseCase(
         IWorkforcePersistencePort workforce,
         IOperatorAuditRecorder audit)
     {
@@ -368,38 +216,28 @@ public sealed class UpdateWorkforceMemberOrganizationDepartmentUseCase
 
     public async Task ExecuteAsync(
         string workforceMemberCode,
-        string organizationCode,
         string departmentCode,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workforceMemberCode);
-        ArgumentException.ThrowIfNullOrWhiteSpace(organizationCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(departmentCode);
 
         WorkforceMember member = await RequireActiveMemberAsync(workforceMemberCode.Trim(), cancellationToken)
             .ConfigureAwait(false);
 
-        Organization? organization = await _workforce.FindOrganizationAsync(organizationCode.Trim(), cancellationToken)
-            .ConfigureAwait(false);
-        if (organization is null || !organization.IsActive)
-        {
-            throw new InvalidOperationException("Organization must exist and be active.");
-        }
-
-        Department? department = await _workforce
-            .FindDepartmentAsync(organizationCode.Trim(), departmentCode.Trim(), cancellationToken)
+        Department? department = await _workforce.FindDepartmentAsync(departmentCode.Trim(), cancellationToken)
             .ConfigureAwait(false);
         if (department is null || !department.IsActive)
         {
-            throw new InvalidOperationException("Department must exist and be active in the organization.");
+            throw new InvalidOperationException("Department must exist and be active.");
         }
 
-        member.AssignOrganizationAndDepartment(organization.OrganizationCode, department.DepartmentCode);
+        member.AssignDepartment(department.DepartmentCode);
         _audit.Stage(
             OperatorAuditActions.WorkforceMemberMaintained,
             OperatorAuditSubjects.WorkforceMember,
             member.WorkforceMemberCode,
-            $"Organization={organization.OrganizationCode}; Department={department.DepartmentCode}");
+            $"Department={department.DepartmentCode}");
         await _workforce.UpdateWorkforceMemberAsync(member, cancellationToken).ConfigureAwait(false);
     }
 
@@ -416,62 +254,10 @@ public sealed class UpdateWorkforceMemberOrganizationDepartmentUseCase
 
         if (member.Status != WorkforceMemberStatus.Active)
         {
-            throw new InvalidOperationException("Only an Active WorkforceMember may change Organization or Department.");
+            throw new InvalidOperationException("Only an Active WorkforceMember may change Department.");
         }
 
         return member;
-    }
-}
-
-public sealed class UpdateWorkforceMemberResponsibleManagerUseCase
-    : IUpdateWorkforceMemberResponsibleManagerUseCase
-{
-    private readonly IWorkforcePersistencePort _workforce;
-    private readonly IOperatorAuditRecorder _audit;
-
-    public UpdateWorkforceMemberResponsibleManagerUseCase(
-        IWorkforcePersistencePort workforce,
-        IOperatorAuditRecorder audit)
-    {
-        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
-        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
-    }
-
-    public async Task ExecuteAsync(
-        string workforceMemberCode,
-        string responsibleManagerWorkforceMemberCode,
-        CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(workforceMemberCode);
-        ArgumentException.ThrowIfNullOrWhiteSpace(responsibleManagerWorkforceMemberCode);
-
-        WorkforceMember? member = await _workforce.FindWorkforceMemberAsync(workforceMemberCode.Trim(), cancellationToken)
-            .ConfigureAwait(false);
-        if (member is null)
-        {
-            throw new InvalidOperationException("The workforce member was not found.");
-        }
-
-        if (member.Status != WorkforceMemberStatus.Active)
-        {
-            throw new InvalidOperationException("Only an Active WorkforceMember may change ResponsibleManager.");
-        }
-
-        WorkforceMember? manager = await _workforce
-            .FindWorkforceMemberAsync(responsibleManagerWorkforceMemberCode.Trim(), cancellationToken)
-            .ConfigureAwait(false);
-        if (manager is null || manager.Status != WorkforceMemberStatus.Active)
-        {
-            throw new InvalidOperationException("ResponsibleManager must be an active WorkforceMember.");
-        }
-
-        member.AssignResponsibleManager(manager.WorkforceMemberCode);
-        _audit.Stage(
-            OperatorAuditActions.WorkforceMemberMaintained,
-            OperatorAuditSubjects.WorkforceMember,
-            member.WorkforceMemberCode,
-            $"ResponsibleManager={manager.WorkforceMemberCode}");
-        await _workforce.UpdateWorkforceMemberAsync(member, cancellationToken).ConfigureAwait(false);
     }
 }
 
@@ -521,6 +307,156 @@ public sealed class UpdateWorkforceMemberWorkforceTypeUseCase : IUpdateWorkforce
             member.WorkforceMemberCode,
             $"WorkforceType={parsed}");
         await _workforce.UpdateWorkforceMemberAsync(member, cancellationToken).ConfigureAwait(false);
+    }
+}
+
+public sealed class UpdateRoomNumberUseCase : IUpdateRoomNumberUseCase
+{
+    private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
+
+    public UpdateRoomNumberUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
+    {
+        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
+    }
+
+    public async Task ExecuteAsync(string roomCode, string roomNumber, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(roomCode);
+        ArgumentException.ThrowIfNullOrWhiteSpace(roomNumber);
+
+        Room? room = await _workforce.FindRoomAsync(roomCode.Trim(), cancellationToken).ConfigureAwait(false);
+        if (room is null)
+        {
+            throw new InvalidOperationException("The room was not found.");
+        }
+
+        string trimmedNumber = roomNumber.Trim();
+        if (!string.Equals(room.RoomNumber, trimmedNumber, StringComparison.Ordinal)
+            && await _workforce.RoomNumberExistsAsync(trimmedNumber, cancellationToken).ConfigureAwait(false))
+        {
+            throw new InvalidOperationException("RoomNumber must be globally unique.");
+        }
+
+        string oldRoomNumber = room.RoomNumber;
+        room.UpdateRoomNumber(trimmedNumber);
+        _audit.Stage(
+            OperatorAuditActions.RoomUpdated,
+            OperatorAuditSubjects.Room,
+            room.RoomCode,
+            $"RoomNumber={oldRoomNumber}→{room.RoomNumber}");
+        await _workforce.UpdateRoomAsync(room, cancellationToken).ConfigureAwait(false);
+    }
+}
+
+public sealed class UpdateRoomDescriptionUseCase : IUpdateRoomDescriptionUseCase
+{
+    private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
+
+    public UpdateRoomDescriptionUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
+    {
+        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
+    }
+
+    public async Task ExecuteAsync(string roomCode, string? description, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(roomCode);
+
+        Room? room = await _workforce.FindRoomAsync(roomCode.Trim(), cancellationToken).ConfigureAwait(false);
+        if (room is null)
+        {
+            throw new InvalidOperationException("The room was not found.");
+        }
+
+        string oldDescription = room.Description;
+        room.UpdateDescription(description);
+        _audit.Stage(
+            OperatorAuditActions.RoomUpdated,
+            OperatorAuditSubjects.Room,
+            room.RoomCode,
+            $"Description={oldDescription}→{room.Description}");
+        await _workforce.UpdateRoomAsync(room, cancellationToken).ConfigureAwait(false);
+    }
+}
+
+public sealed class UpdatePartyNameUseCase : IUpdatePartyNameUseCase
+{
+    private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
+
+    public UpdatePartyNameUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
+    {
+        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
+    }
+
+    public async Task ExecuteAsync(
+        string partyCode,
+        string firstName,
+        string lastName,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(partyCode);
+
+        Party? party = await _workforce.FindPartyAsync(partyCode.Trim(), cancellationToken).ConfigureAwait(false);
+        if (party is null)
+        {
+            throw new InvalidOperationException("The party was not found.");
+        }
+
+        string oldFirstName = party.FirstName;
+        string oldLastName = party.LastName;
+        party.Rename(firstName, lastName);
+        _audit.Stage(
+            OperatorAuditActions.PartyNameUpdated,
+            OperatorAuditSubjects.Party,
+            party.PartyCode,
+            $"FirstName={oldFirstName}→{party.FirstName}; LastName={oldLastName}→{party.LastName}");
+        await _workforce.UpdatePartyAsync(party, cancellationToken).ConfigureAwait(false);
+    }
+}
+
+public sealed class CorrectPartyUinUseCase : ICorrectPartyUinUseCase
+{
+    private readonly IWorkforcePersistencePort _workforce;
+    private readonly IOperatorAuditRecorder _audit;
+
+    public CorrectPartyUinUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
+    {
+        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
+    }
+
+    public async Task ExecuteAsync(string partyCode, string newUin, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(partyCode);
+        ArgumentException.ThrowIfNullOrWhiteSpace(newUin);
+
+        Party? party = await _workforce.FindPartyAsync(partyCode.Trim(), cancellationToken).ConfigureAwait(false);
+        if (party is null)
+        {
+            throw new InvalidOperationException("The party was not found.");
+        }
+
+        Party? existingWithUin = await _workforce.FindPartyByUinAsync(newUin.Trim(), cancellationToken)
+            .ConfigureAwait(false);
+        if (existingWithUin is not null
+            && !string.Equals(existingWithUin.PartyCode, party.PartyCode, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("A party with this UIN already exists.");
+        }
+
+        string oldUin = party.Uin;
+        party.CorrectUin(newUin);
+        _audit.Stage(
+            OperatorAuditActions.PartyUinCorrected,
+            OperatorAuditSubjects.Party,
+            party.PartyCode,
+            $"UIN={oldUin}→{party.Uin}");
+        await _workforce.UpdatePartyAsync(party, cancellationToken).ConfigureAwait(false);
     }
 }
 

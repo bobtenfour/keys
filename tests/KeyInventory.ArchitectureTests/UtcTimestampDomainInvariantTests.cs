@@ -144,12 +144,12 @@ public sealed class UtcTimestampDomainInvariantTests
         DateTimeOffset? effectiveToUtc)
     {
         SecurityPrincipal principal = CreatePrincipal();
-        Role role = new("org-1", "security-admin");
+        Role role = new("security-admin");
         return new PrincipalRoleAssignment(
             principal,
             role,
-            AuthorizationScopeType.Organization,
-            "org-1",
+            AuthorizationScopeType.Global,
+            "global",
             effectiveFromUtc,
             effectiveToUtc);
     }

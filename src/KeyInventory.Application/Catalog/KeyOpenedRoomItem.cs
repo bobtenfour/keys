@@ -1,12 +1,12 @@
 namespace KeyInventory.Application.Catalog;
 
 /// <summary>
-/// Current Room opened by a KeyAsset. Building is derived through Room only.
+/// Current Room opened by a KeyAsset.
 /// </summary>
 public sealed record KeyOpenedRoomItem(
     string RoomCode,
-    string BuildingCode,
-    string RoomNumber);
+    string RoomNumber,
+    string Description);
 
 public static class KeyOpenedRoomDisplayFormatter
 {
@@ -21,8 +21,19 @@ public static class KeyOpenedRoomDisplayFormatter
         return string.Join(
             "; ",
             rooms
-                .OrderBy(room => room.BuildingCode, StringComparer.Ordinal)
-                .ThenBy(room => room.RoomNumber, StringComparer.Ordinal)
-                .Select(room => $"{room.BuildingCode}/{room.RoomNumber}"));
+                .OrderBy(room => room.RoomNumber, StringComparer.Ordinal)
+                .ThenBy(room => room.RoomCode, StringComparer.Ordinal)
+                .Select(FormatRoom));
+    }
+
+    public static string FormatRoom(KeyOpenedRoomItem room)
+    {
+        ArgumentNullException.ThrowIfNull(room);
+        if (string.IsNullOrWhiteSpace(room.Description))
+        {
+            return room.RoomNumber;
+        }
+
+        return $"{room.RoomNumber} ({room.Description})";
     }
 }

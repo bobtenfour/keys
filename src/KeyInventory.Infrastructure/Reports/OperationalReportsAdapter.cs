@@ -42,7 +42,6 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                     loan.Uin,
                     member?.WorkforceMemberCode,
                     member?.DepartmentCode,
-                    member?.ResponsibleManagerWorkforceMemberCode,
                     loan.IssuedAtUtc,
                     loan.DueAtUtc,
                     loan.Status);
@@ -103,7 +102,6 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                     loan.LastName,
                     loan.Uin,
                     member?.WorkforceMemberCode,
-                    member?.ResponsibleManagerWorkforceMemberCode,
                     member?.DepartmentCode,
                     loan.IssuedAtUtc,
                     loan.DueAtUtc,
@@ -254,7 +252,6 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                     party.LastName,
                     party.Uin,
                     member.DepartmentCode,
-                    member.ResponsibleManagerWorkforceMemberCode,
                     loan.CatalogKeyCode,
                     loan.LoanCode,
                     loan.DueAtUtc))

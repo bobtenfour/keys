@@ -33,6 +33,24 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task UpdatePartyAsync(Party party, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(party);
+        PartyEntity? entity = await _dbContext.Parties
+            .FirstOrDefaultAsync(item => item.PartyCode == party.PartyCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The party was not found in persistence.");
+        }
+
+        entity.FirstName = party.FirstName;
+        entity.LastName = party.LastName;
+        entity.Uin = party.Uin;
+        entity.IsActive = party.IsActive;
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task AddPartyAndWorkforceMemberAsync(
         Party party,
         WorkforceMember member,
@@ -47,40 +65,6 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         {
             _dbContext.Parties.Add(DomainWorkforceMapper.ToEntity(party));
             _dbContext.WorkforceMembers.Add(DomainWorkforceMapper.ToEntity(member));
-            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-            throw;
-        }
-        finally
-        {
-            await transaction.DisposeAsync().ConfigureAwait(false);
-        }
-    }
-
-    public async Task AddBootstrapPartiesAndWorkforceMembersAsync(
-        Party firstParty,
-        Party secondParty,
-        WorkforceMember firstMember,
-        WorkforceMember secondMember,
-        CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(firstParty);
-        ArgumentNullException.ThrowIfNull(secondParty);
-        ArgumentNullException.ThrowIfNull(firstMember);
-        ArgumentNullException.ThrowIfNull(secondMember);
-
-        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction =
-            await _dbContext.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            _dbContext.Parties.Add(DomainWorkforceMapper.ToEntity(firstParty));
-            _dbContext.Parties.Add(DomainWorkforceMapper.ToEntity(secondParty));
-            _dbContext.WorkforceMembers.Add(DomainWorkforceMapper.ToEntity(firstMember));
-            _dbContext.WorkforceMembers.Add(DomainWorkforceMapper.ToEntity(secondMember));
             await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -118,58 +102,17 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         return entity is null ? null : DomainWorkforceMapper.ToDomain(entity);
     }
 
-    public Task<bool> OrganizationExistsAsync(string organizationCode, CancellationToken cancellationToken)
+    public async Task<Party?> FindPartyByUinAsync(string uin, CancellationToken cancellationToken)
     {
-        return _dbContext.Organizations.AnyAsync(entity => entity.OrganizationCode == organizationCode, cancellationToken);
-    }
-
-    public async Task AddOrganizationAsync(Organization organization, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(organization);
-        _dbContext.Organizations.Add(DomainWorkforceMapper.ToEntity(organization));
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task UpdateOrganizationAsync(Organization organization, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(organization);
-        OrganizationEntity? entity = await _dbContext.Organizations
-            .FirstOrDefaultAsync(item => item.OrganizationCode == organization.OrganizationCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (entity is null)
-        {
-            throw new InvalidOperationException("The organization was not found in persistence.");
-        }
-
-        entity.IsActive = organization.IsActive;
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task<Organization?> FindOrganizationAsync(string organizationCode, CancellationToken cancellationToken)
-    {
-        OrganizationEntity? entity = await _dbContext.Organizations.AsNoTracking()
-            .FirstOrDefaultAsync(item => item.OrganizationCode == organizationCode, cancellationToken)
+        PartyEntity? entity = await _dbContext.Parties.AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Uin == uin, cancellationToken)
             .ConfigureAwait(false);
         return entity is null ? null : DomainWorkforceMapper.ToDomain(entity);
     }
 
-    public async Task<IReadOnlyList<OrganizationListItem>> ListOrganizationsAsync(CancellationToken cancellationToken)
+    public Task<bool> DepartmentExistsAsync(string departmentCode, CancellationToken cancellationToken)
     {
-        return await _dbContext.Organizations.AsNoTracking()
-            .OrderBy(entity => entity.OrganizationCode)
-            .Select(entity => new OrganizationListItem(entity.OrganizationCode, entity.IsActive))
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    public Task<bool> DepartmentExistsAsync(
-        string organizationCode,
-        string departmentCode,
-        CancellationToken cancellationToken)
-    {
-        return _dbContext.Departments.AnyAsync(
-            entity => entity.OrganizationCode == organizationCode && entity.DepartmentCode == departmentCode,
-            cancellationToken);
+        return _dbContext.Departments.AnyAsync(entity => entity.DepartmentCode == departmentCode, cancellationToken);
     }
 
     public async Task AddDepartmentAsync(Department department, CancellationToken cancellationToken)
@@ -183,10 +126,7 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
     {
         ArgumentNullException.ThrowIfNull(department);
         DepartmentEntity? entity = await _dbContext.Departments
-            .FirstOrDefaultAsync(
-                item => item.OrganizationCode == department.OrganizationCode
-                    && item.DepartmentCode == department.DepartmentCode,
-                cancellationToken)
+            .FirstOrDefaultAsync(item => item.DepartmentCode == department.DepartmentCode, cancellationToken)
             .ConfigureAwait(false);
         if (entity is null)
         {
@@ -197,76 +137,19 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<Department?> FindDepartmentAsync(
-        string organizationCode,
-        string departmentCode,
-        CancellationToken cancellationToken)
+    public async Task<Department?> FindDepartmentAsync(string departmentCode, CancellationToken cancellationToken)
     {
         DepartmentEntity? entity = await _dbContext.Departments.AsNoTracking()
-            .FirstOrDefaultAsync(
-                item => item.OrganizationCode == organizationCode && item.DepartmentCode == departmentCode,
-                cancellationToken)
+            .FirstOrDefaultAsync(item => item.DepartmentCode == departmentCode, cancellationToken)
             .ConfigureAwait(false);
-        if (entity is null)
-        {
-            return null;
-        }
-
-        Organization? organization = await FindOrganizationAsync(entity.OrganizationCode, cancellationToken)
-            .ConfigureAwait(false);
-        return organization is null ? null : DomainWorkforceMapper.ToDomain(entity, organization);
+        return entity is null ? null : DomainWorkforceMapper.ToDomain(entity);
     }
 
     public async Task<IReadOnlyList<DepartmentListItem>> ListDepartmentsAsync(CancellationToken cancellationToken)
     {
         return await _dbContext.Departments.AsNoTracking()
-            .OrderBy(entity => entity.OrganizationCode)
-            .ThenBy(entity => entity.DepartmentCode)
-            .Select(entity => new DepartmentListItem(entity.OrganizationCode, entity.DepartmentCode, entity.IsActive))
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    public Task<bool> BuildingExistsAsync(string buildingCode, CancellationToken cancellationToken)
-    {
-        return _dbContext.Buildings.AnyAsync(entity => entity.BuildingCode == buildingCode, cancellationToken);
-    }
-
-    public async Task AddBuildingAsync(Building building, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(building);
-        _dbContext.Buildings.Add(DomainWorkforceMapper.ToEntity(building));
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task UpdateBuildingAsync(Building building, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(building);
-        BuildingEntity? entity = await _dbContext.Buildings
-            .FirstOrDefaultAsync(item => item.BuildingCode == building.BuildingCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (entity is null)
-        {
-            throw new InvalidOperationException("The building was not found in persistence.");
-        }
-
-        entity.IsActive = building.IsActive;
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task<Building?> FindBuildingAsync(string buildingCode, CancellationToken cancellationToken)
-    {
-        BuildingEntity? entity = await _dbContext.Buildings.AsNoTracking()
-            .FirstOrDefaultAsync(item => item.BuildingCode == buildingCode, cancellationToken)
-            .ConfigureAwait(false);
-        return entity is null ? null : DomainWorkforceMapper.ToDomain(entity);
-    }
-
-    public async Task<IReadOnlyList<BuildingListItem>> ListBuildingsAsync(CancellationToken cancellationToken)
-    {
-        return await _dbContext.Buildings.AsNoTracking()
-            .OrderBy(entity => entity.BuildingCode)
-            .Select(entity => new BuildingListItem(entity.BuildingCode, entity.IsActive))
+            .OrderBy(entity => entity.DepartmentCode)
+            .Select(entity => new DepartmentListItem(entity.DepartmentCode, entity.IsActive))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
@@ -276,14 +159,9 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         return _dbContext.Rooms.AnyAsync(entity => entity.RoomCode == roomCode, cancellationToken);
     }
 
-    public Task<bool> RoomNumberExistsInBuildingAsync(
-        string buildingCode,
-        string roomNumber,
-        CancellationToken cancellationToken)
+    public Task<bool> RoomNumberExistsAsync(string roomNumber, CancellationToken cancellationToken)
     {
-        return _dbContext.Rooms.AnyAsync(
-            entity => entity.BuildingCode == buildingCode && entity.RoomNumber == roomNumber,
-            cancellationToken);
+        return _dbContext.Rooms.AnyAsync(entity => entity.RoomNumber == roomNumber, cancellationToken);
     }
 
     public async Task AddRoomAsync(Room room, CancellationToken cancellationToken)
@@ -304,6 +182,8 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
             throw new InvalidOperationException("The room was not found in persistence.");
         }
 
+        entity.RoomNumber = room.RoomNumber;
+        entity.Description = room.Description;
         entity.IsActive = room.IsActive;
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -313,23 +193,16 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         RoomEntity? entity = await _dbContext.Rooms.AsNoTracking()
             .FirstOrDefaultAsync(item => item.RoomCode == roomCode, cancellationToken)
             .ConfigureAwait(false);
-        if (entity is null)
-        {
-            return null;
-        }
-
-        Building? building = await FindBuildingAsync(entity.BuildingCode, cancellationToken).ConfigureAwait(false);
-        return building is null ? null : DomainWorkforceMapper.ToDomain(entity, building);
+        return entity is null ? null : DomainWorkforceMapper.ToDomain(entity);
     }
 
     public async Task<IReadOnlyList<RoomListItem>> ListRoomsAsync(CancellationToken cancellationToken)
     {
         return await _dbContext.Rooms.AsNoTracking()
-            .OrderBy(entity => entity.BuildingCode)
-            .ThenBy(entity => entity.RoomNumber)
+            .OrderBy(entity => entity.RoomNumber)
+            .ThenBy(entity => entity.RoomCode)
             .Select(entity => new RoomListItem(
                 entity.RoomCode,
-                entity.BuildingCode,
                 entity.RoomNumber,
                 entity.Description,
                 entity.IsActive))
@@ -375,17 +248,8 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         }
 
         entity.WorkforceType = member.WorkforceType.ToString();
-        entity.OrganizationCode = member.OrganizationCode;
         entity.DepartmentCode = member.DepartmentCode;
-        entity.ResponsibleManagerWorkforceMemberCode = member.ResponsibleManagerWorkforceMemberCode;
         entity.Status = member.Status.ToString();
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task AddWorkforceMembersAsync(IReadOnlyList<WorkforceMember> members, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(members);
-        _dbContext.WorkforceMembers.AddRange(members.Select(DomainWorkforceMapper.ToEntity));
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -413,9 +277,7 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
                     party.LastName,
                     party.Uin,
                     member.WorkforceType,
-                    member.OrganizationCode,
                     member.DepartmentCode,
-                    member.ResponsibleManagerWorkforceMemberCode,
                     member.Status))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);

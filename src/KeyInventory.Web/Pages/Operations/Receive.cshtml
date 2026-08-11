@@ -48,9 +48,8 @@
                 <select asp-for="IssueReference" asp-items="Model.ActiveIssueOptions" required></select>
             </label>
             <label>
-                Received at (UTC)
-                <input asp-for="ReceivedAtUtcText" autocomplete="off" required />
-                <span class="hint">Example: 2026-08-03T15:30:00+00:00</span>
+                Received
+                <input asp-for="ReceivedLocalText" type="datetime-local" required />
             </label>
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Receive Key</button>

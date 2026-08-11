@@ -20,11 +20,14 @@ Separate authentication, authorization, policy, audit, and digital trust respons
 - Authentication proves a principal identity.
 - Authorization determines whether an authenticated principal may perform an action.
 - RBAC owns Role, Permission, RolePermission, and PrincipalRoleAssignment.
+- Role identity is scoped to the KeyInventory installation: RoleCode is unique across Role records; Role must not carry OrganizationCode or Organization business scoping. Organization was removed as an active business authority by OPERATOR-EXPERIENCE-1; do not replace Role organization scoping with Tenant/Site/Facility abstractions.
+- PrincipalRoleAssignment continues to relate SecurityPrincipal, Role, and AuthorizationScopeType without requiring Organization business identity.
 - Policy may refine authorization decisions in a future phase but does not own basic RBAC.
 - Audit capability covers immutable evidence of relevant actions; AuditEvent aggregate ownership and invariants are defined by key-inventory-domain-contract.md; operational mutation accountability via OperatorAuditRecord is authorized by OPERATOR-AUDIT-1 and must not invent a second Operator/User identity model.
 - Digital Trust owns integrity, acceptance, and non-repudiation concepts.
 - Party is business identity and is not owned by Identity, Authentication, Authorization, RBAC, Policy, Audit, or Digital Trust.
 - SecurityPrincipal may reference Party for human principals but must not duplicate Party profile or business data.
+- ASP.NET Identity application authentication remains the runtime login authority already delivered; Domain Role OrganizationCode removal reconciles foundation RBAC with the single-site product model and must not invent a second user model.
 
 ## IDENTITY-1 Service Contract Boundary
 IDENTITY-1 may define:

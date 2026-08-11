@@ -34,6 +34,7 @@ public sealed class RegisterModel : PageModel
             SuccessMessage = $"Key {CatalogKeyCode} was registered.";
             CatalogKeyCode = string.Empty;
             TypeCode = string.Empty;
+            ModelState.Clear();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {

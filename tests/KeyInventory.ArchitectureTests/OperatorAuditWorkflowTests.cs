@@ -108,14 +108,14 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
         await scope.ServiceProvider.GetRequiredService<IEndWorkAssignmentUseCase>()
             .ExecuteAsync("aud2-wa-1", CancellationToken.None)
             .ConfigureAwait(true);
-        await scope.ServiceProvider.GetRequiredService<ICreateBuildingUseCase>()
-            .ExecuteAsync("aud2-extra-bldg", CancellationToken.None)
+        await scope.ServiceProvider.GetRequiredService<IUpdateRoomNumberUseCase>()
+            .ExecuteAsync(seeded.RoomCode, "999", CancellationToken.None)
             .ConfigureAwait(true);
-        await scope.ServiceProvider.GetRequiredService<IRetireBuildingUseCase>()
-            .ExecuteAsync("aud2-extra-bldg", CancellationToken.None)
+        await scope.ServiceProvider.GetRequiredService<IRetireRoomUseCase>()
+            .ExecuteAsync(seeded.RoomCode, CancellationToken.None)
             .ConfigureAwait(true);
-        await scope.ServiceProvider.GetRequiredService<IActivateBuildingUseCase>()
-            .ExecuteAsync("aud2-extra-bldg", CancellationToken.None)
+        await scope.ServiceProvider.GetRequiredService<IActivateRoomUseCase>()
+            .ExecuteAsync(seeded.RoomCode, CancellationToken.None)
             .ConfigureAwait(true);
 
         IReadOnlyList<OperatorAuditTrailItem> all = await QueryAsync(scope).ConfigureAwait(true);
@@ -127,9 +127,9 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyReturned);
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.WorkforceMemberMaintained);
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.WorkAssignmentEnded);
-        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.BuildingCreated);
-        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.BuildingRetired);
-        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.BuildingActivated);
+        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.RoomUpdated);
+        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.RoomRetired);
+        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.RoomActivated);
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.WorkAssignmentCreated);
 
         IReadOnlyList<OperatorAuditTrailItem> filtered = await QueryAsync(
@@ -146,19 +146,19 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
     {
         using IServiceScope scope = CreateScope();
         OperatorIdentityAccessor.TestOperatorReference.Value = "fail-user";
-        await scope.ServiceProvider.GetRequiredService<ICreateOrganizationUseCase>()
-            .ExecuteAsync("aud-fail-org", CancellationToken.None)
+        await scope.ServiceProvider.GetRequiredService<ICreateDepartmentUseCase>()
+            .ExecuteAsync("aud-fail-dept", CancellationToken.None)
             .ConfigureAwait(true);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                scope.ServiceProvider.GetRequiredService<ICreateOrganizationUseCase>()
-                    .ExecuteAsync("aud-fail-org", CancellationToken.None))
+                scope.ServiceProvider.GetRequiredService<ICreateDepartmentUseCase>()
+                    .ExecuteAsync("aud-fail-dept", CancellationToken.None))
             .ConfigureAwait(true);
 
         IReadOnlyList<OperatorAuditTrailItem> created = await QueryAsync(
                 scope,
-                actionType: OperatorAuditActions.OrganizationCreated,
-                subject: "aud-fail-org")
+                actionType: OperatorAuditActions.DepartmentCreated,
+                subject: "aud-fail-dept")
             .ConfigureAwait(true);
         Assert.Single(created);
 
@@ -175,13 +175,13 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
         OperatorIdentityAccessor.TestOperatorReference.Value = OperatorIdentityAccessor.DenyOperatorMarker;
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                scope.ServiceProvider.GetRequiredService<ICreateBuildingUseCase>()
-                    .ExecuteAsync("aud-no-op-bldg", CancellationToken.None))
+                scope.ServiceProvider.GetRequiredService<ICreateDepartmentUseCase>()
+                    .ExecuteAsync("aud-no-op-dept", CancellationToken.None))
             .ConfigureAwait(true);
 
         KeyInventoryDbContext db = scope.ServiceProvider.GetRequiredService<KeyInventoryDbContext>();
-        Assert.False(await db.Buildings.AnyAsync(entity => entity.BuildingCode == "aud-no-op-bldg").ConfigureAwait(true));
-        Assert.False(await db.OperatorAuditRecords.AnyAsync(entity => entity.SubjectReference == "aud-no-op-bldg")
+        Assert.False(await db.Departments.AnyAsync(entity => entity.DepartmentCode == "aud-no-op-dept").ConfigureAwait(true));
+        Assert.False(await db.OperatorAuditRecords.AnyAsync(entity => entity.SubjectReference == "aud-no-op-dept")
             .ConfigureAwait(true));
     }
 

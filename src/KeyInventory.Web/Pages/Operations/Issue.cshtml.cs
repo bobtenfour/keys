@@ -1,6 +1,7 @@
 using System.Text.Json;
 using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Lookup;
+using KeyInventory.Application.Readiness;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Application.Workflow;
 using KeyInventory.Web.Presentation;
@@ -24,6 +25,7 @@ public sealed class IssueModel : PageModel
     private readonly IListWorkforceMembersUseCase _listMembers;
     private readonly IListWorkAssignmentsUseCase _listAssignments;
     private readonly IListRoomsUseCase _listRooms;
+    private readonly IOperationalReadinessUseCase _readiness;
 
     public IssueModel(
         IIssueLoanUseCase issueLoan,
@@ -32,7 +34,8 @@ public sealed class IssueModel : PageModel
         IOperationalKeyLookupUseCase lookup,
         IListWorkforceMembersUseCase listMembers,
         IListWorkAssignmentsUseCase listAssignments,
-        IListRoomsUseCase listRooms)
+        IListRoomsUseCase listRooms,
+        IOperationalReadinessUseCase readiness)
     {
         _issueLoan = issueLoan ?? throw new ArgumentNullException(nameof(issueLoan));
         _listKeyAssets = listKeyAssets ?? throw new ArgumentNullException(nameof(listKeyAssets));
@@ -41,6 +44,7 @@ public sealed class IssueModel : PageModel
         _listMembers = listMembers ?? throw new ArgumentNullException(nameof(listMembers));
         _listAssignments = listAssignments ?? throw new ArgumentNullException(nameof(listAssignments));
         _listRooms = listRooms ?? throw new ArgumentNullException(nameof(listRooms));
+        _readiness = readiness ?? throw new ArgumentNullException(nameof(readiness));
     }
 
     [BindProperty]
@@ -73,6 +77,8 @@ public sealed class IssueModel : PageModel
     public IReadOnlyList<SelectListItem> RoomOptions { get; private set; } = [];
 
     public string JustificationDataJson { get; private set; } = "{}";
+
+    public OperationalReadinessViewModel Readiness { get; private set; } = null!;
 
     public string? SuccessMessage { get; private set; }
 
@@ -119,8 +125,12 @@ public sealed class IssueModel : PageModel
 
             SuccessMessage = $"Key {CatalogKeyCode} was issued.";
             LoanCode = string.Empty;
+            CatalogKeyCode = string.Empty;
             WorkforceMemberCode = string.Empty;
             JustificationCode = string.Empty;
+            IssuedLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow);
+            DueLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow.AddDays(1));
+            ModelState.Clear();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
@@ -132,6 +142,9 @@ public sealed class IssueModel : PageModel
 
     private async Task LoadOptionsAsync(CancellationToken cancellationToken)
     {
+        OperationalReadinessSnapshot snapshot = await _readiness.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        Readiness = new OperationalReadinessViewModel(snapshot);
+
         IReadOnlyList<KeyAssetListItem> keys = await _listKeyAssets.ExecuteAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<LoanListItem> openItems = await _listOpenLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
         HashSet<string> issued = openItems.Select(item => item.CatalogKeyCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -190,10 +203,7 @@ public sealed class IssueModel : PageModel
                         return new JustificationChoice(item.RoomCode, item.RoomCode);
                     }
 
-                    string label = string.IsNullOrWhiteSpace(room.Description)
-                        ? $"{room.BuildingCode}/{room.RoomNumber}"
-                        : $"{room.BuildingCode}/{room.RoomNumber} — {room.Description}";
-                    return new JustificationChoice(item.RoomCode, label);
+                    return new JustificationChoice(item.RoomCode, RoomDisplayFormatter.Format(room));
                 })
                 .GroupBy(choice => choice.Code, StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
