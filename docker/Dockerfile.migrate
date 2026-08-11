@@ -3,6 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0
 WORKDIR /src
 
 COPY KeyInventory.sln ./
+COPY Directory.Build.props Directory.Packages.props NuGet.config ./
 COPY src/KeyInventory.Domain/KeyInventory.Domain.csproj src/KeyInventory.Domain/
 COPY src/KeyInventory.Application/KeyInventory.Application.csproj src/KeyInventory.Application/
 COPY src/KeyInventory.Infrastructure/KeyInventory.Infrastructure.csproj src/KeyInventory.Infrastructure/
