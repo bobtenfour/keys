@@ -1,0 +1,50 @@
+# DEMO / EVALUATION ONLY - KeyInventory web on shared Droplet SQL Server. Not production.
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+COPY KeyInventory.sln ./
+COPY src/KeyInventory.Domain/KeyInventory.Domain.csproj src/KeyInventory.Domain/
+COPY src/KeyInventory.Application/KeyInventory.Application.csproj src/KeyInventory.Application/
+COPY src/KeyInventory.Infrastructure/KeyInventory.Infrastructure.csproj src/KeyInventory.Infrastructure/
+COPY src/KeyInventory.Web/KeyInventory.Web.csproj src/KeyInventory.Web/
+
+RUN dotnet restore src/KeyInventory.Web/KeyInventory.Web.csproj
+
+COPY src/KeyInventory.Domain/ src/KeyInventory.Domain/
+COPY src/KeyInventory.Application/ src/KeyInventory.Application/
+COPY src/KeyInventory.Infrastructure/ src/KeyInventory.Infrastructure/
+COPY src/KeyInventory.Web/ src/KeyInventory.Web/
+COPY docker/appsettings.Demo.json src/KeyInventory.Web/appsettings.Demo.json
+RUN rm -f src/KeyInventory.Web/appsettings.Local.json
+
+RUN dotnet publish src/KeyInventory.Web/KeyInventory.Web.csproj \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false \
+    --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+
+LABEL org.opencontainers.image.title="KeyInventory Demo Web"
+LABEL org.opencontainers.image.description="Non-production Docker evaluation only; reuses external SQL Server"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && (getent passwd app >/dev/null || useradd --system --uid 1654 --gid 0 --home /app --shell /usr/sbin/nologin app) \
+    && chown -R app:app /app
+
+COPY --from=build --chown=app:app /app/publish .
+
+COPY docker/web-entrypoint.sh /app/web-entrypoint.sh
+RUN sed -i 's/\r$//' /app/web-entrypoint.sh && chmod +x /app/web-entrypoint.sh
+
+ENV ASPNETCORE_ENVIRONMENT=Demo
+ENV PORT=8080
+
+EXPOSE 8080
+
+USER app
+
+ENTRYPOINT ["/app/web-entrypoint.sh"]

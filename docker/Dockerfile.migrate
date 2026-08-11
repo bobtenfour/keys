@@ -1,0 +1,28 @@
+# DEMO / EVALUATION ONLY - one-shot EF migration runner for KeyInventoryDemo.
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+WORKDIR /src
+
+COPY KeyInventory.sln ./
+COPY src/KeyInventory.Domain/KeyInventory.Domain.csproj src/KeyInventory.Domain/
+COPY src/KeyInventory.Application/KeyInventory.Application.csproj src/KeyInventory.Application/
+COPY src/KeyInventory.Infrastructure/KeyInventory.Infrastructure.csproj src/KeyInventory.Infrastructure/
+COPY src/KeyInventory.Web/KeyInventory.Web.csproj src/KeyInventory.Web/
+
+RUN dotnet restore src/KeyInventory.Web/KeyInventory.Web.csproj
+
+COPY src/KeyInventory.Domain/ src/KeyInventory.Domain/
+COPY src/KeyInventory.Application/ src/KeyInventory.Application/
+COPY src/KeyInventory.Infrastructure/ src/KeyInventory.Infrastructure/
+COPY src/KeyInventory.Web/ src/KeyInventory.Web/
+COPY docker/appsettings.Demo.json src/KeyInventory.Web/appsettings.Demo.json
+RUN rm -f src/KeyInventory.Web/appsettings.Local.json
+
+RUN dotnet tool install --global dotnet-ef --version 8.0.11
+ENV PATH="/root/.dotnet/tools:${PATH}"
+
+ENV ASPNETCORE_ENVIRONMENT=Demo
+
+COPY docker/migrate-entrypoint.sh /migrate-entrypoint.sh
+RUN sed -i 's/\r$//' /migrate-entrypoint.sh && chmod +x /migrate-entrypoint.sh
+
+ENTRYPOINT ["/migrate-entrypoint.sh"]

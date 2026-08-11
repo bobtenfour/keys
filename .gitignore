@@ -22,4 +22,5 @@ TestResults/
 *.db-wal
 keyinventory-local.db
 **/appsettings.Local.json
+.env.demo
 

@@ -23,10 +23,12 @@ internal static partial class LocalBootstrapAdminSeeder
             return;
         }
 
-        if (!environment.IsDevelopment())
+        bool isDevelopment = environment.IsDevelopment();
+        bool isDemo = environment.IsEnvironment("Demo");
+        if (!isDevelopment && !isDemo)
         {
             throw new InvalidOperationException(
-                "LocalBootstrapAdmin can only be enabled when the environment is Development.");
+                "LocalBootstrapAdmin can only be enabled when the environment is Development or Demo.");
         }
 
         if (string.IsNullOrWhiteSpace(options.UserName) ||
@@ -62,18 +64,27 @@ internal static partial class LocalBootstrapAdminSeeder
                 throw new InvalidOperationException($"Failed to create local bootstrap admin: {errors}");
             }
 
-            LogBootstrapCreated(logger, options.UserName);
+            if (isDemo)
+            {
+                LogBootstrapCreatedDemo(logger, options.UserName);
+            }
+            else
+            {
+                LogBootstrapCreated(logger, options.UserName);
+            }
+
             return;
         }
 
-        await ReconcilePasswordAsync(userManager, bootstrapUser, options.Password, logger).ConfigureAwait(false);
+        await ReconcilePasswordAsync(userManager, bootstrapUser, options.Password, logger, isDemo).ConfigureAwait(false);
     }
 
     private static async Task ReconcilePasswordAsync(
         UserManager<ApplicationUser> userManager,
         ApplicationUser bootstrapUser,
         string configuredPassword,
-        ILogger logger)
+        ILogger logger,
+        bool isDemo)
     {
         if (await userManager.CheckPasswordAsync(bootstrapUser, configuredPassword).ConfigureAwait(false))
         {
@@ -89,7 +100,14 @@ internal static partial class LocalBootstrapAdminSeeder
             throw new InvalidOperationException($"Failed to reconcile local bootstrap admin password: {errors}");
         }
 
-        LogBootstrapPasswordReconciled(logger, bootstrapUser.UserName);
+        if (isDemo)
+        {
+            LogBootstrapPasswordReconciledDemo(logger, bootstrapUser.UserName);
+        }
+        else
+        {
+            LogBootstrapPasswordReconciled(logger, bootstrapUser.UserName);
+        }
     }
 
     [LoggerMessage(
@@ -103,4 +121,16 @@ internal static partial class LocalBootstrapAdminSeeder
         Level = LogLevel.Warning,
         Message = "Local bootstrap admin '{UserName}' password was reconciled to the configured Development secret.")]
     private static partial void LogBootstrapPasswordReconciled(ILogger logger, string? userName);
+
+    [LoggerMessage(
+        EventId = 3,
+        Level = LogLevel.Warning,
+        Message = "Local bootstrap admin '{UserName}' was created for Demo evaluation only.")]
+    private static partial void LogBootstrapCreatedDemo(ILogger logger, string userName);
+
+    [LoggerMessage(
+        EventId = 4,
+        Level = LogLevel.Warning,
+        Message = "Local bootstrap admin '{UserName}' password was reconciled to the configured Demo secret.")]
+    private static partial void LogBootstrapPasswordReconciledDemo(ILogger logger, string? userName);
 }

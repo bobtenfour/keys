@@ -46,7 +46,7 @@ public static class WebServiceComposition
             .AddEntityFrameworkStores<KeyInventory.Infrastructure.Data.KeyInventoryDbContext>()
             .AddDefaultTokenProviders();
 
-        if (environment.IsDevelopment())
+        if (environment.IsDevelopment() || environment.IsEnvironment("Demo"))
         {
             services.Configure<IdentityOptions>(options =>
             {
