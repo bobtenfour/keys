@@ -150,6 +150,7 @@ public sealed class DemoResetBoundaryTests
 
         Assert.Contains("## NORMAL DEPLOY", readme, StringComparison.Ordinal);
         Assert.Contains("## RESET / RESEED DEMO", readme, StringComparison.Ordinal);
+        Assert.Contains("## COMPLETE CLEAN REBUILD (KeyInventory only)", readme, StringComparison.Ordinal);
         Assert.Contains("Preserves", readme, StringComparison.Ordinal);
         Assert.Contains("docker/reset-keyinventory-demo.sh", readme, StringComparison.Ordinal);
         Assert.Contains("./docker/reset-keyinventory-demo.sh", readme, StringComparison.Ordinal);

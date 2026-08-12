@@ -127,3 +127,44 @@ echo
 ```
 
 `run --rm migrate` must exit 0. KEY-ACCESS-COPY-1 applies on the empty recreated database; its legacy-data STOP behavior for non-empty catalog/loan rows is unchanged and is not used on a successful demo reset (database starts empty).
+
+---
+
+## COMPLETE CLEAN REBUILD (KeyInventory only)
+
+**Destructive.** Wipes KeyInventory demo containers/images, drops **only** `KeyInventoryDemo`, removes and reclones **only** `/opt/keys`, restores `.env.demo`, rebuilds from accepted `master`, migrates, starts Web, and verifies health plus DentalInventory isolation.
+
+### Repository-owned clean-rebuild mechanism
+
+| Item | Value |
+| --- | --- |
+| Script | `docker/clean-rebuild-keyinventory-demo.sh` |
+| Install path | Hard-coded `/opt/keys` (refuses other paths) |
+| Destructive DB target | Hard-coded `KeyInventoryDemo` (no database-name argument) |
+| Source | `git clone` `https://github.com/bobtenfour/keys.git` branch `master` |
+| Schema recreation | Existing `migrate` service → `dotnet ef database update` |
+| Login restore | Existing `.env.demo` backed up to `/tmp` then restored after clone |
+| Business seed | **None** |
+
+Preserves: `dentalinventory-demo-sql`, `dentalinventory-demo-web`, SQL volumes, `DentalInventoryDemo`, `KeyInventoryDev`, system databases, and every other database. Never runs `docker compose down -v`, `docker volume rm`, or `docker system prune`.
+
+Clean rebuild is **not** exposed through the Web application and is **not** part of normal `up -d`.
+
+### Exact Droplet commands (after this repository change is on `origin/master`)
+
+First sync so the script exists under `/opt/keys`, then run it:
+
+```bash
+cd /opt/keys
+git fetch origin
+git checkout master
+git reset --hard origin/master
+test -f .env.demo
+chmod 600 .env.demo
+chmod +x docker/clean-rebuild-keyinventory-demo.sh
+
+# Complete clean rebuild of KeyInventory only (script re-execs from /tmp before rm -rf /opt/keys).
+./docker/clean-rebuild-keyinventory-demo.sh
+```
+
+On success the script prints `CLEAN_REBUILD_COMPLETE` and `http://159.203.182.9:8081` is healthy. Business data is empty; `LocalBootstrapAdmin` comes from the restored `.env.demo`.
