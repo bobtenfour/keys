@@ -3,7 +3,7 @@ namespace KeyInventory.Application.Reports;
 public interface IOperationalReportsUseCase
 {
     Task<IReadOnlyList<CurrentKeyHolderReportRow>> ListCurrentKeyHoldersAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken);
 
     string FormatCurrentKeyHoldersCsv(IReadOnlyList<CurrentKeyHolderReportRow> rows);
@@ -13,7 +13,7 @@ public interface IOperationalReportsUseCase
     byte[] FormatCurrentKeyHoldersPdf(IReadOnlyList<CurrentKeyHolderReportRow> rows, string? filterContext);
 
     Task<IReadOnlyList<ActiveLoanReportRow>> ListActiveLoansReportAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken);
 
     string FormatActiveLoansCsv(IReadOnlyList<ActiveLoanReportRow> rows);
@@ -24,7 +24,7 @@ public interface IOperationalReportsUseCase
 
     Task<IReadOnlyList<OverdueKeyReportRow>> ListOverdueKeysAsync(
         DateTimeOffset utcNow,
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken);
 
     string FormatOverdueKeysCsv(IReadOnlyList<OverdueKeyReportRow> rows);
@@ -44,7 +44,7 @@ public interface IOperationalReportsUseCase
     byte[] FormatKeysByWorkforceMemberPdf(KeysByWorkforceMemberReport report, string? filterContext);
 
     Task<IReadOnlyList<KeyHistoryReportRow>> ListKeyHistoryAsync(
-        string catalogKeyCode,
+        string keyNumber,
         CancellationToken cancellationToken);
 
     string FormatKeyHistoryCsv(IReadOnlyList<KeyHistoryReportRow> rows);
@@ -68,7 +68,7 @@ public interface IOperationalReportsUseCase
         string? filterContext);
 
     Task<IReadOnlyList<KeyCatalogReportRow>> ListKeyCatalogReportAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken);
 
     string FormatKeyCatalogCsv(IReadOnlyList<KeyCatalogReportRow> rows);
@@ -81,7 +81,7 @@ public interface IOperationalReportsUseCase
         string? search,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<string>> ListCatalogKeyCodesAsync(
+    Task<IReadOnlyList<string>> ListKeyNumbersAsync(
         string? search,
         CancellationToken cancellationToken);
 }

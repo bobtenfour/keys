@@ -11,7 +11,7 @@ public sealed record OperationalReadinessSnapshot(
     bool HasWorkforceMember,
     bool HasWorkAssignment,
     bool HasKey,
-    bool HasKeyRoomAssignment,
+    bool HasKeyAccessPatternRoomAssignment,
     bool CanIssueKey,
     int DepartmentCount,
     int RoomCount,
@@ -29,12 +29,12 @@ public sealed class OperationalReadinessUseCase : IOperationalReadinessUseCase
 {
     private readonly IWorkforcePersistencePort _workforce;
     private readonly IKeyCatalogPersistencePort _catalog;
-    private readonly IKeyRoomAssignmentPersistencePort _keyRoomAssignments;
+    private readonly IKeyAccessPatternRoomAssignmentPersistencePort _keyRoomAssignments;
 
     public OperationalReadinessUseCase(
         IWorkforcePersistencePort workforce,
         IKeyCatalogPersistencePort catalog,
-        IKeyRoomAssignmentPersistencePort keyRoomAssignments)
+        IKeyAccessPatternRoomAssignmentPersistencePort keyRoomAssignments)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
@@ -57,7 +57,8 @@ public sealed class OperationalReadinessUseCase : IOperationalReadinessUseCase
             .ConfigureAwait(false);
         IReadOnlyList<KeyAssetListItem> keys = await _catalog.ListKeyAssetsAsync(cancellationToken)
             .ConfigureAwait(false);
-        bool hasKeyRoomAssignment = await _keyRoomAssignments.HasAnyAssignmentAsync(cancellationToken)
+        bool hasKeyAccessPatternRoomAssignment = await _keyRoomAssignments
+            .HasAnyAssignmentAsync(cancellationToken)
             .ConfigureAwait(false);
 
         bool hasDepartment = departments.Count > 0;
@@ -75,7 +76,7 @@ public sealed class OperationalReadinessUseCase : IOperationalReadinessUseCase
             hasWorkforceMember,
             hasWorkAssignment,
             hasKey,
-            hasKeyRoomAssignment,
+            hasKeyAccessPatternRoomAssignment,
             canIssueKey,
             departments.Count,
             rooms.Count,

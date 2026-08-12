@@ -3,16 +3,16 @@ namespace KeyInventory.Application.Reports;
 public interface IOperationalReportsPort
 {
     Task<IReadOnlyList<CurrentKeyHolderReportRow>> ListCurrentKeyHoldersAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<ActiveLoanReportRow>> ListActiveLoansReportAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<OverdueKeyReportRow>> ListOverdueKeysAsync(
         DateTimeOffset utcNow,
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken);
 
     Task<KeysByWorkforceMemberReport?> GetKeysByWorkforceMemberAsync(
@@ -20,7 +20,7 @@ public interface IOperationalReportsPort
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<KeyHistoryReportRow>> ListKeyHistoryAsync(
-        string catalogKeyCode,
+        string keyNumber,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<OutstandingWorkforceKeyReportRow>> ListOutstandingKeysByWorkforceStatusAsync(
@@ -28,14 +28,14 @@ public interface IOperationalReportsPort
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<KeyCatalogReportRow>> ListKeyCatalogReportAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<WorkforceMemberReportOption>> ListWorkforceMemberOptionsAsync(
         string? search,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<string>> ListCatalogKeyCodesAsync(
+    Task<IReadOnlyList<string>> ListKeyNumbersAsync(
         string? search,
         CancellationToken cancellationToken);
 }

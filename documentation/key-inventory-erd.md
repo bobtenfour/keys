@@ -7,9 +7,11 @@ This document is the logical data model authority.
 Define the logical entities and relationships required by the domain. It is not a database migration plan.
 
 ## Initial Logical Entities
+- KeyAccessPattern
+- KeyAccessPatternRoomAssignment
 - KeyAsset
-- KeyRoomAssignment
-- KeySeries
+- KeyRoomAssignment (historical; retired active authority under KEY-ACCESS-COPY-1)
+- KeySeries (non-operational seed; not KEY # authority)
 - KeyType
 - Lock
 - Location
@@ -48,10 +50,12 @@ Define the logical entities and relationships required by the domain. It is not 
 ## Entity Ownership Matrix
 | Entity | Owning aggregate or boundary | Authority document | Authoritative or derived | Lifecycle phase |
 |---|---|---|---|---|
-| KeyAsset | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative for catalog identity and current Key-to-Room assignments | Current baseline |
-| KeyRoomAssignment | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative current KeyAsset-to-Room opening association | Contracted; runtime when authorized |
-| KeySeries | Key Catalog classification | key-inventory-domain-contract.md | Authoritative classification | Current baseline |
-| KeyType | Key Catalog classification | key-inventory-domain-contract.md | Authoritative classification | Current baseline |
+| KeyAccessPattern | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative KEY # / access-pattern identity and Room openings | KEY-ACCESS-COPY-1 |
+| KeyAccessPatternRoomAssignment | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative current KEY #↔Room opening association | KEY-ACCESS-COPY-1 |
+| KeyAsset | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative physical-copy identity (KeyAssetId + MEDECO within KEY #) | KEY-ACCESS-COPY-1 supersedes CatalogKeyCode-as-unique-identity |
+| KeyRoomAssignment | Key Catalog aggregate | key-inventory-domain-contract.md | Retired active KeyAsset↔Room authority | Historical KEY-ROOM-ASSIGNMENT-1 |
+| KeySeries | Key Catalog classification | key-inventory-domain-contract.md | Non-operational seed; not KEY # / Room / copy authority | KEY-ACCESS-COPY-1 |
+| KeyType | Key Catalog classification | key-inventory-domain-contract.md | Authoritative classification owned at KeyAccessPattern | KEY-ACCESS-COPY-1 |
 | Lock | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative | Current baseline |
 | Location | Location boundary | key-inventory-domain-contract.md | Authoritative | Current baseline |
 | Building | Location boundary | key-inventory-domain-contract.md | Removed from active model (historical audit may reference) | OPERATOR-EXPERIENCE-1 |
@@ -95,44 +99,53 @@ Define the logical entities and relationships required by the domain. It is not 
 - KeyAsset must not contain an authoritative mutable lifecycle status.
 
 ## Catalog Logical Contract
-### KeyAsset
-- Purpose: authoritative catalog identity for one controlled physical key asset.
+### KeyAccessPattern
+- Purpose: authoritative KEY # / shared access-pattern identity and Room access set for all physical copies under that KEY #.
 - Owning aggregate or boundary: Key Catalog aggregate.
-- Authoritative or derived: Authoritative for catalog identity and current Key-to-Room opening associations.
-- Required relationships: references exactly one KeyType; may reference one KeySeries; may have zero, one, or multiple current KeyRoomAssignment records.
-- Cardinalities: one KeyType to zero or more KeyAsset records; zero or one KeySeries to zero or more KeyAsset records; one KeyAsset to zero or more KeyRoomAssignment records.
-- Required uniqueness: CatalogKeyCode is unique across KeyAsset records.
-- Required integrity constraints: CatalogKeyCode is required; KeyType reference is required; referenced KeyType and KeySeries must be active for new catalog assignment; Building is derived only through assigned Rooms; KeyAsset must not independently own Building.
-- Prohibited authority: must not store current possession, current custodian, loan state, return state, lifecycle state, audit history, maintenance workflow state, authorization state, authentication state, policy state, persistence-provider configuration, or UI state; must not use Lock or Location hierarchy as room-opening authority; must not own master/sub-master hierarchy.
+- Authoritative or derived: Authoritative for KeyNumber and current KeyAccessPattern↔Room openings.
+- Required relationships: references exactly one KeyType; may have zero or more KeyAsset physical copies; may have zero or more KeyAccessPatternRoomAssignment records.
+- Cardinalities: one KeyType to zero or more KeyAccessPattern records; one KeyAccessPattern to zero or more KeyAsset records; one KeyAccessPattern to zero or more Rooms via assignments; one Room to zero or more KeyAccessPatterns.
+- Required uniqueness: KeyNumber is unique across KeyAccessPattern records (installation-wide).
+- Required integrity constraints: KeyNumber required; KeyType required and active for new assignment; Building derived only through assigned Rooms; must not independently own Building; must not own custody.
+- Prohibited authority: possession, loan/return, lifecycle, audit history, master/sub-master hierarchy engine, KeySeries reinterpretation as this entity.
+
+### KeyAccessPatternRoomAssignment
+- Purpose: current authoritative association of one KEY # to one Room that every physical copy under that KEY # opens.
+- Owning aggregate or boundary: Key Catalog aggregate.
+- Authoritative or derived: Authoritative for current assignment only; sole Room-opening authority after KEY-ACCESS-COPY-1.
+- Required relationships: references exactly one KeyAccessPattern; references exactly one Room.
+- Cardinalities: many-to-many between KeyAccessPattern and Room.
+- Required uniqueness: the pair (KeyAccessPattern, Room) is unique among current assignments.
+- Required integrity constraints: both references required; active operational assignment requires an active Room; KeyAsset and KeyType do not participate as assignment owners.
+- Prohibited authority: dual KeyAsset↔Room authority; Lock mediation; assignment history as second truth; REPORTS-2.
+
+### KeyAsset
+- Purpose: authoritative physical key copy under exactly one KeyAccessPattern.
+- Owning aggregate or boundary: Key Catalog aggregate.
+- Authoritative or derived: Authoritative for KeyAssetId and MEDECO within KEY #; Rooms and KeyType are derived from parent KeyAccessPattern.
+- Required relationships: references exactly one KeyAccessPattern.
+- Cardinalities: one KeyAccessPattern to zero or more KeyAsset records; each KeyAsset exactly one KeyAccessPattern.
+- Required uniqueness: KeyAssetId unique globally; MEDECO Key Code unique within parent KeyAccessPattern (not globally).
+- Required integrity constraints: KeyAssetId immutable; MEDECO required; must not own independent Room assignments; CatalogKeyCode is not unique physical business identity; opaque composite KEY#+MEDECO strings forbidden as identity authority.
+- Prohibited authority: possession, loan/return state, independent Room openings, independent mutable KeyType, KeySeries-as-KEY #.
 
 ### KeyRoomAssignment
-- Purpose: current authoritative association of one KeyAsset to one Room that the physical key opens.
-- Owning aggregate or boundary: Key Catalog aggregate.
-- Authoritative or derived: Authoritative for current assignment only.
-- Required relationships: references exactly one KeyAsset; references exactly one Room.
-- Cardinalities: one KeyAsset to zero or more KeyRoomAssignment records; one Room to zero or more KeyRoomAssignment records.
-- Required uniqueness: the pair (KeyAsset, Room) is unique among current assignments.
-- Required integrity constraints: KeyAsset and Room references are required; active operational assignment requires an active Room; assignment history is not required; KeyType does not participate.
-- Prohibited authority: must not own Building or site abstractions independently; must not require Lock as an intermediate authority; must not invent assignment history as a second source of truth; must not authorize REPORTS-2 or new report families.
+- Purpose (historical): former current association of KeyAsset to Room.
+- Status: retired from active logical authority by KEY-ACCESS-COPY-1; must not remain a second source of truth beside KeyAccessPatternRoomAssignment.
 
 ### KeySeries
-- Purpose: authoritative catalog classification for an organizational keying system, pattern, or managed series.
-- Owning aggregate or boundary: Key Catalog classification.
-- Authoritative or derived: Authoritative classification.
-- Required relationships: may classify zero or more KeyAsset records.
-- Cardinalities: one KeySeries to zero or more KeyAsset records; a KeyAsset has zero or one KeySeries.
-- Required uniqueness: SeriesCode is unique across KeySeries records.
-- Required integrity constraints: SeriesCode is required; inactive KeySeries must not be used for new KeyAsset catalog assignment.
+- Purpose: non-operational Domain classification seed only.
+- Status: must not be KEY #, Room-access, or physical-copy identity authority under KEY-ACCESS-COPY-1.
 
 ### KeyType
-- Purpose: authoritative catalog classification for the physical or operational kind of key.
+- Purpose: authoritative catalog classification for the physical or operational kind of KEY # / KeyAccessPattern.
 - Owning aggregate or boundary: Key Catalog classification.
-- Authoritative or derived: Authoritative classification.
-- Required relationships: classifies zero or more KeyAsset records.
-- Cardinalities: one KeyType to zero or more KeyAsset records; a KeyAsset has exactly one KeyType.
+- Authoritative or derived: Authoritative classification referenced by KeyAccessPattern; physical copies derive type.
+- Required relationships: classifies zero or more KeyAccessPattern records.
+- Cardinalities: one KeyType to zero or more KeyAccessPattern records; a KeyAccessPattern has exactly one KeyType.
 - Required uniqueness: TypeCode is unique across KeyType records.
-- Required integrity constraints: TypeCode is required; inactive KeyType must not be used for new KeyAsset catalog assignment.
-- Prohibited authority: must not encode custody, loan, return, lifecycle, maintenance, authorization, policy, authentication, persistence, or UI state.
+- Required integrity constraints: TypeCode is required; inactive KeyType must not be used for new KeyAccessPattern catalog assignment.
+- Prohibited authority: must not encode KEY # semantics, custody, loan, return, lifecycle, maintenance, authorization, policy, authentication, persistence, UI state, or Room assignments.
 
 ### Lock
 - Purpose: optional catalog identity for one controlled physical lock device.
@@ -142,8 +155,8 @@ Define the logical entities and relationships required by the domain. It is not 
 - Cardinalities: one Location to zero or more Lock records when Location is used.
 - Required uniqueness: LockCode is unique across Lock records.
 - Required integrity constraints: LockCode is required; when Location is referenced it must be active for new Lock assignment.
-- Authority reconciliation: Lock is not intermediate or required authority for Key-to-Room opening associations; KeyRoomAssignment is the sole operational room-opening authority for KeyAsset.
-- Prohibited authority: must not store possession, custody, loan, return, lifecycle, maintenance, audit, authorization, authentication, policy, Key-to-Room opening authority, persistence-provider configuration, or UI state.
+- Authority reconciliation: Lock is not intermediate or required authority for KeyAccessPattern↔Room opening associations; KeyAccessPatternRoomAssignment is the sole operational room-opening authority.
+- Prohibited authority: must not store possession, custody, loan, return, lifecycle, maintenance, audit, authorization, authentication, policy, KeyAccessPattern↔Room opening authority, persistence-provider configuration, or UI state.
 
 ### Location
 - Purpose: authoritative physical organizational place where a key, lock, or custody action is relevant.
@@ -163,15 +176,15 @@ Define the logical entities and relationships required by the domain. It is not 
 - Lifecycle phase: OPERATOR-EXPERIENCE-1 (removal).
 
 ### Room
-- Purpose: physical room for this installation used for WorkAssignment, Room-based key-issue justification, and Key-to-Room opening associations.
+- Purpose: physical room for this installation used for WorkAssignment, Room-based key-issue justification, and KeyAccessPattern↔Room opening associations.
 - Owning aggregate or boundary: Location boundary.
-- Authoritative or derived: Authoritative for Room identity; Key Catalog owns KeyRoomAssignment references to Room.
-- Required relationships: may be referenced by zero or more WorkAssignment records; may be referenced by zero or more KeyRoomAssignment records; does not reference Building.
-- Cardinalities: one Room to zero or more WorkAssignment records; one Room to zero or more KeyRoomAssignment records.
+- Authoritative or derived: Authoritative for Room identity; Key Catalog owns KeyAccessPatternRoomAssignment references to Room.
+- Required relationships: may be referenced by zero or more WorkAssignment records; may be referenced by zero or more KeyAccessPatternRoomAssignment records; does not reference Building.
+- Cardinalities: one Room to zero or more WorkAssignment records; one Room to zero or more KeyAccessPatternRoomAssignment records.
 - Required uniqueness: RoomCode is unique across Room records; RoomNumber is unique across all Room records.
-- Required integrity constraints: RoomNumber is required as the operator-facing room identifier; RoomCode is immutable technical identity; only an active Room may be used for active WorkAssignment, Room-based key-issue justification, or active KeyRoomAssignment.
-- Prohibited authority: must not own WorkforceMember eligibility decisions, Department, Loan, Return, custody, audit, authentication, Key Catalog identity, Key-to-Room assignment ownership, or UI; Room must not exist outside Location boundary place authority.
-- Lifecycle phase: OPERATOR-EXPERIENCE-1.
+- Required integrity constraints: RoomNumber is required as the operator-facing room identifier (Room #); RoomCode is immutable technical identity; only an active Room may be used for active WorkAssignment, Room-based key-issue justification, or active KeyAccessPatternRoomAssignment.
+- Prohibited authority: must not own WorkforceMember eligibility decisions, Department, Loan, Return, custody, audit, authentication, Key Catalog identity, KeyAccessPattern↔Room assignment ownership, or UI; Room must not exist outside Location boundary place authority.
+- Lifecycle phase: OPERATOR-EXPERIENCE-1; Room↔KEY # cardinality governed by KEY-ACCESS-COPY-1.
 
 ## Workforce Eligibility Logical Contract
 ### Party
@@ -293,14 +306,14 @@ Define the logical entities and relationships required by the domain. It is not 
 
 ## Loan and Return Logical Contract
 ### Loan
-- Purpose: authoritative controlled issuance intent and workflow state for one cataloged key loaned to one Party.
+- Purpose: authoritative controlled issuance intent and workflow state for one physical KeyAsset copy loaned to one Party.
 - Owning aggregate or boundary: Loan aggregate.
 - Authoritative or derived: Authoritative for loan issuance intent and completion workflow, not possession.
-- Required relationships: references exactly one KeyAsset; references exactly one borrowing Party; may be referenced by zero or one Return; when Workforce Eligibility is in force, borrowing Party must be the Party of an eligible active WorkforceMember and issue justification/ResponsibleManager are required by domain eligibility rules without creating a Borrower entity.
-- Cardinalities: one KeyAsset to zero or more Loan records; one Party to zero or more Loan records; one Loan to zero or one Return.
+- Required relationships: references exactly one physical KeyAsset by KeyAssetId; references exactly one borrowing Party; may be referenced by zero or one Return; when Workforce Eligibility is in force, borrowing Party must be the Party of an eligible active WorkforceMember and issue justification is required by domain eligibility rules without creating a Borrower entity.
+- Cardinalities: one KeyAsset to zero or more Loan records with at most one Open Loan per KeyAsset; one Party to zero or more Loan records; one Loan to zero or one Return; multiple Open Loans may exist under one KEY # when they reference different physical copies.
 - Required uniqueness: LoanCode is unique across Loan records.
-- Required integrity constraints: LoanCode is required; KeyAsset reference is required; Party borrower reference is required; IssuedAtUtc is required; DueAtUtc is required; DueAtUtc must be later than IssuedAtUtc; LoanStatus must be Open, Returned, or Cancelled; an Open Loan may have zero Returns; a Returned Loan must have exactly one Return; a Cancelled Loan must have zero Returns; WorkforceMember termination must not rewrite LoanStatus automatically.
-- Prohibited authority: must not store current possession, current custodian, custody transfer history, catalog identity authority, Party profile data, WorkforceMember ownership, lifecycle state, lifecycle transition authority, audit history, authorization state, authentication state, policy state, persistence-provider configuration, or UI state.
+- Required integrity constraints: LoanCode is required; KeyAssetId reference is required; KEY # alone must not be the Loan subject; Party borrower reference is required; IssuedAtUtc is required; DueAtUtc is required; DueAtUtc must be later than IssuedAtUtc; LoanStatus must be Open, Returned, or Cancelled; an Open Loan may have zero Returns; a Returned Loan must have exactly one Return; a Cancelled Loan must have zero Returns; WorkforceMember termination must not rewrite LoanStatus automatically.
+- Prohibited authority: must not store current possession, current custodian, custody transfer history, catalog identity authority, Party profile data, WorkforceMember ownership, lifecycle state, lifecycle transition authority, audit history, authorization state, authentication state, policy state, persistence-provider configuration, or UI state; must not move custody to KEY # / KeyAccessPattern.
 
 ### Return
 - Purpose: authoritative completion record for one Loan back into organizational control.

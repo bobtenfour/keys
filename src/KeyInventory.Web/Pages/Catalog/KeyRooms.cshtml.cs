@@ -10,12 +10,12 @@ namespace KeyInventory.Web.Pages.Catalog;
 
 public sealed class KeyRoomsModel : PageModel
 {
-    private readonly IKeyRoomAssignmentUseCase _assignments;
+    private readonly IKeyAccessPatternRoomAssignmentUseCase _assignments;
     private readonly IListKeyAssetsUseCase _listKeys;
     private readonly IListRoomsUseCase _listRooms;
 
     public KeyRoomsModel(
-        IKeyRoomAssignmentUseCase assignments,
+        IKeyAccessPatternRoomAssignmentUseCase assignments,
         IListKeyAssetsUseCase listKeys,
         IListRoomsUseCase listRooms)
     {
@@ -25,7 +25,7 @@ public sealed class KeyRoomsModel : PageModel
     }
 
     [BindProperty(SupportsGet = true)]
-    public string Key { get; set; } = string.Empty;
+    public string KeyNumber { get; set; } = string.Empty;
 
     [BindProperty]
     public string RoomCode { get; set; } = string.Empty;
@@ -40,7 +40,7 @@ public sealed class KeyRoomsModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(Key))
+        if (string.IsNullOrWhiteSpace(KeyNumber))
         {
             return RedirectToPage("/Catalog/Keys");
         }
@@ -53,8 +53,8 @@ public sealed class KeyRoomsModel : PageModel
     {
         try
         {
-            await _assignments.AssignRoomAsync(Key, RoomCode, cancellationToken).ConfigureAwait(false);
-            SuccessMessage = "Room assignment saved.";
+            await _assignments.AssignRoomAsync(KeyNumber, RoomCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = "Room assignment saved for this KEY #.";
             RoomCode = string.Empty;
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
@@ -70,8 +70,8 @@ public sealed class KeyRoomsModel : PageModel
     {
         try
         {
-            await _assignments.RemoveRoomAsync(Key, roomCode, cancellationToken).ConfigureAwait(false);
-            SuccessMessage = "Room assignment removed.";
+            await _assignments.RemoveRoomAsync(KeyNumber, roomCode, cancellationToken).ConfigureAwait(false);
+            SuccessMessage = "Room assignment removed from this KEY #.";
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
@@ -85,15 +85,15 @@ public sealed class KeyRoomsModel : PageModel
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
         IReadOnlyList<KeyAssetListItem> keys = await _listKeys.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        if (!keys.Any(item => string.Equals(item.CatalogKeyCode, Key, StringComparison.Ordinal)))
+        if (!keys.Any(item => string.Equals(item.KeyNumber, KeyNumber, StringComparison.Ordinal)))
         {
-            ErrorMessage ??= "The key was not found in the catalog.";
+            ErrorMessage ??= "The KEY # was not found.";
             OpenedRooms = [];
             RoomOptions = [];
             return;
         }
 
-        OpenedRooms = await _assignments.ListOpenedRoomsAsync(Key, cancellationToken).ConfigureAwait(false);
+        OpenedRooms = await _assignments.ListOpenedRoomsAsync(KeyNumber, cancellationToken).ConfigureAwait(false);
         HashSet<string> assigned = OpenedRooms.Select(room => room.RoomCode).ToHashSet(StringComparer.Ordinal);
         RoomOptions = (await _listRooms.ExecuteAsync(cancellationToken).ConfigureAwait(false))
             .Where(room => room.IsActive && !assigned.Contains(room.RoomCode))

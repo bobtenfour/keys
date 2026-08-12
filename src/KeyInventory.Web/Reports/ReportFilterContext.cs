@@ -5,8 +5,8 @@ public static class ReportFilterContext
     public static string Key(string? keyFilter)
     {
         return string.IsNullOrWhiteSpace(keyFilter)
-            ? "Key filter: (none)"
-            : $"Key filter: {keyFilter.Trim()}";
+            ? "KEY # / MEDECO filter: (none)"
+            : $"KEY # / MEDECO filter: {keyFilter.Trim()}";
     }
 
     public static string Member(string? memberCode)

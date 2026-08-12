@@ -15,8 +15,8 @@
 <section class="card form-card">
     <form method="get" class="form-grid" role="search">
         <label>
-            Key filter
-            <input type="search" name="key" value="@Model.KeyFilter" placeholder="Partial key code..." />
+            KEY # / MEDECO filter
+            <input type="search" name="key" value="@Model.KeyFilter" placeholder="Partial KEY # or MEDECO..." />
         </label>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Apply</button>
@@ -42,7 +42,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Key</th>
+                        <th>KEY #</th>
+                        <th>MEDECO</th>
                         <th>Type</th>
                         <th>Active</th>
                         <th>Availability</th>
@@ -53,7 +54,8 @@
                 @foreach (var row in Model.Rows)
                 {
                     <tr>
-                        <td>@row.CatalogKeyCode</td>
+                        <td>@row.KeyNumber</td>
+                        <td>@row.MedecoKeyCode</td>
                         <td>@row.TypeCode</td>
                         <td>@(row.IsActive ? "Yes" : "No")</td>
                         <td>

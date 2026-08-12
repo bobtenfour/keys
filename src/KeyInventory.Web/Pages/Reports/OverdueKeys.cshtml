@@ -13,8 +13,8 @@
 <section class="card form-card">
     <form method="get" class="form-grid" role="search">
         <label>
-            Key filter
-            <input type="search" name="key" value="@Model.KeyFilter" placeholder="Partial key code..." />
+            KEY # / MEDECO filter
+            <input type="search" name="key" value="@Model.KeyFilter" placeholder="Partial KEY # or MEDECO..." />
         </label>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Apply</button>
@@ -40,7 +40,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Key</th>
+                        <th>KEY #</th>
+                        <th>MEDECO</th>
                         <th>Holder</th>
                         <th>Workforce Member</th>
                         <th>Department</th>
@@ -54,7 +55,8 @@
                 @foreach (var row in Model.Rows)
                 {
                     <tr>
-                        <td>@row.CatalogKeyCode</td>
+                        <td>@row.KeyNumber</td>
+                        <td>@row.MedecoKeyCode</td>
                         <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
                         <td>@(row.WorkforceMemberCode ?? "—")</td>
                         <td>@(row.DepartmentCode ?? "—")</td>

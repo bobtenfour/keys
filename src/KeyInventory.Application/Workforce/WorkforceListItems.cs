@@ -33,7 +33,8 @@ public sealed record WorkAssignmentListItem(
 
 public sealed record OutstandingReturnObligationItem(
     string LoanCode,
-    string CatalogKeyCode,
+    string KeyNumber,
+    string MedecoKeyCode,
     string BorrowerPartyReference,
     DateTimeOffset IssuedAtUtc,
     DateTimeOffset DueAtUtc);

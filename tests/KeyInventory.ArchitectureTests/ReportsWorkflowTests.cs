@@ -55,9 +55,9 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "rp")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("RP-KEY-1", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("RP-KEY-2", "electronic", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("RP-KEY-3", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("RP-KEY-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("RP-KEY-2", "01", "electronic", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("RP-KEY-3", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 1, 12, 0, 0, TimeSpan.Zero);
         DateTimeOffset duePast = new(2026, 8, 2, 12, 0, 0, TimeSpan.Zero);
@@ -67,6 +67,7 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
         await issue.ExecuteAsync(
                 "loan-rp-1",
                 "RP-KEY-1",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,
@@ -77,6 +78,7 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
         await issue.ExecuteAsync(
                 "loan-rp-2",
                 "RP-KEY-2",
+                "01",
                 seeded.MemberCode,
                 "Room",
                 seeded.RoomCode,
@@ -89,7 +91,7 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
             await reports.ListCurrentKeyHoldersAsync("RP-KEY", CancellationToken.None).ConfigureAwait(true);
         Assert.Equal(2, holders.Count);
         Assert.Contains(holders, row =>
-            row.CatalogKeyCode == "RP-KEY-1"
+            row.KeyNumber == "RP-KEY-1" && row.MedecoKeyCode == "01"
             && row.HolderFirstName == "Ada"
             && row.HolderLastName == "Lovelace"
             && row.WorkforceMemberCode == seeded.MemberCode
@@ -102,7 +104,8 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
         IReadOnlyList<OverdueKeyReportRow> overdue =
             await reports.ListOverdueKeysAsync(now, null, CancellationToken.None).ConfigureAwait(true);
         Assert.Single(overdue);
-        Assert.Equal("RP-KEY-1", overdue[0].CatalogKeyCode);
+        Assert.Equal("RP-KEY-1", overdue[0].KeyNumber);
+        Assert.Equal("01", overdue[0].MedecoKeyCode);
         Assert.Equal(6, overdue[0].DaysOverdue);
         Assert.Equal(seeded.MemberCode, overdue[0].WorkforceMemberCode);
 
@@ -118,9 +121,11 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
             .ConfigureAwait(true);
         Assert.NotNull(memberReport);
         Assert.Single(memberReport!.IssuedKeys);
-        Assert.Equal("RP-KEY-1", memberReport.IssuedKeys[0].CatalogKeyCode);
+        Assert.Equal("RP-KEY-1", memberReport.IssuedKeys[0].KeyNumber);
+        Assert.Equal("01", memberReport.IssuedKeys[0].MedecoKeyCode);
         Assert.Single(memberReport.ReturnedKeys);
-        Assert.Equal("RP-KEY-2", memberReport.ReturnedKeys[0].CatalogKeyCode);
+        Assert.Equal("RP-KEY-2", memberReport.ReturnedKeys[0].KeyNumber);
+        Assert.Equal("01", memberReport.ReturnedKeys[0].MedecoKeyCode);
 
         IReadOnlyList<KeyHistoryReportRow> history =
             await reports.ListKeyHistoryAsync("RP-KEY-2", CancellationToken.None).ConfigureAwait(true);
@@ -135,15 +140,15 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
         Assert.Contains(outstanding, row =>
             row.WorkforceMemberCode == seeded.MemberCode
             && row.WorkforceMemberStatus == "Terminated"
-            && row.CatalogKeyCode == "RP-KEY-1");
+            && row.KeyNumber == "RP-KEY-1" && row.MedecoKeyCode == "01");
 
         IReadOnlyList<KeyCatalogReportRow> catalog =
             await reports.ListKeyCatalogReportAsync("RP-KEY", CancellationToken.None).ConfigureAwait(true);
         Assert.Equal(3, catalog.Count);
         Assert.Contains(catalog, row =>
-            row.CatalogKeyCode == "RP-KEY-1" && row.AvailabilityStatus == OperationalKeyAvailability.Issued);
+            row.KeyNumber == "RP-KEY-1" && row.MedecoKeyCode == "01" && row.AvailabilityStatus == OperationalKeyAvailability.Issued);
         Assert.Contains(catalog, row =>
-            row.CatalogKeyCode == "RP-KEY-3" && row.AvailabilityStatus == OperationalKeyAvailability.Available);
+            row.KeyNumber == "RP-KEY-3" && row.MedecoKeyCode == "01" && row.AvailabilityStatus == OperationalKeyAvailability.Available);
 
         string csv = reports.FormatCurrentKeyHoldersCsv(
             await reports.ListCurrentKeyHoldersAsync(null, CancellationToken.None).ConfigureAwait(true));
@@ -171,11 +176,12 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "rp-flow")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("rp-flow-key", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("rp-flow-key", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 8, 15, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-rp-flow",
                 "rp-flow-key",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,

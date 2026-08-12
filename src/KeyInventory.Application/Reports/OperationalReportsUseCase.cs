@@ -19,10 +19,10 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
     }
 
     public Task<IReadOnlyList<CurrentKeyHolderReportRow>> ListCurrentKeyHoldersAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken)
     {
-        return _reports.ListCurrentKeyHoldersAsync(NormalizeOptional(catalogKeyCodeFilter), cancellationToken);
+        return _reports.ListCurrentKeyHoldersAsync(NormalizeOptional(keyNumberFilter), cancellationToken);
     }
 
     public string FormatCurrentKeyHoldersCsv(IReadOnlyList<CurrentKeyHolderReportRow> rows)
@@ -41,10 +41,10 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
     }
 
     public Task<IReadOnlyList<ActiveLoanReportRow>> ListActiveLoansReportAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken)
     {
-        return _reports.ListActiveLoansReportAsync(NormalizeOptional(catalogKeyCodeFilter), cancellationToken);
+        return _reports.ListActiveLoansReportAsync(NormalizeOptional(keyNumberFilter), cancellationToken);
     }
 
     public string FormatActiveLoansCsv(IReadOnlyList<ActiveLoanReportRow> rows)
@@ -64,7 +64,7 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
 
     public Task<IReadOnlyList<OverdueKeyReportRow>> ListOverdueKeysAsync(
         DateTimeOffset utcNow,
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken)
     {
         if (utcNow.Offset != TimeSpan.Zero)
@@ -72,7 +72,7 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             throw new InvalidOperationException("Overdue derivation requires a UTC timestamp.");
         }
 
-        return _reports.ListOverdueKeysAsync(utcNow, NormalizeOptional(catalogKeyCodeFilter), cancellationToken);
+        return _reports.ListOverdueKeysAsync(utcNow, NormalizeOptional(keyNumberFilter), cancellationToken);
     }
 
     public string FormatOverdueKeysCsv(IReadOnlyList<OverdueKeyReportRow> rows)
@@ -118,15 +118,15 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
     }
 
     public Task<IReadOnlyList<KeyHistoryReportRow>> ListKeyHistoryAsync(
-        string catalogKeyCode,
+        string keyNumber,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(catalogKeyCode))
+        if (string.IsNullOrWhiteSpace(keyNumber))
         {
-            throw new ArgumentException("Catalog key code is required.", nameof(catalogKeyCode));
+            throw new ArgumentException("KEY # is required.", nameof(keyNumber));
         }
 
-        return _reports.ListKeyHistoryAsync(catalogKeyCode.Trim(), cancellationToken);
+        return _reports.ListKeyHistoryAsync(keyNumber.Trim(), cancellationToken);
     }
 
     public string FormatKeyHistoryCsv(IReadOnlyList<KeyHistoryReportRow> rows)
@@ -173,10 +173,10 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
     }
 
     public Task<IReadOnlyList<KeyCatalogReportRow>> ListKeyCatalogReportAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken)
     {
-        return _reports.ListKeyCatalogReportAsync(NormalizeOptional(catalogKeyCodeFilter), cancellationToken);
+        return _reports.ListKeyCatalogReportAsync(NormalizeOptional(keyNumberFilter), cancellationToken);
     }
 
     public string FormatKeyCatalogCsv(IReadOnlyList<KeyCatalogReportRow> rows)
@@ -201,11 +201,11 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
         return _reports.ListWorkforceMemberOptionsAsync(NormalizeOptional(search), cancellationToken);
     }
 
-    public Task<IReadOnlyList<string>> ListCatalogKeyCodesAsync(
+    public Task<IReadOnlyList<string>> ListKeyNumbersAsync(
         string? search,
         CancellationToken cancellationToken)
     {
-        return _reports.ListCatalogKeyCodesAsync(NormalizeOptional(search), cancellationToken);
+        return _reports.ListKeyNumbersAsync(NormalizeOptional(search), cancellationToken);
     }
 
     private static string FormatCsv(ReportExportTable table)
@@ -225,7 +225,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             "Current Key Holders",
             filterContext,
             [
-                "Key",
+                "KEY #",
+                "MEDECO",
                 "Holder First Name",
                 "Holder Last Name",
                 "UIN",
@@ -237,7 +238,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             ],
             rows.Select(row => (IReadOnlyList<ReportExportCell>)
             [
-                ReportExportCell.FromText(row.CatalogKeyCode),
+                ReportExportCell.FromText(row.KeyNumber),
+                ReportExportCell.FromText(row.MedecoKeyCode),
                 ReportExportCell.FromText(row.HolderFirstName),
                 ReportExportCell.FromText(row.HolderLastName),
                 ReportExportCell.FromText(row.HolderUin),
@@ -259,7 +261,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             "Active Loans",
             filterContext,
             [
-                "Key",
+                "KEY #",
+                "MEDECO",
                 "Holder First Name",
                 "Holder Last Name",
                 "UIN",
@@ -271,7 +274,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             ],
             rows.Select(row => (IReadOnlyList<ReportExportCell>)
             [
-                ReportExportCell.FromText(row.CatalogKeyCode),
+                ReportExportCell.FromText(row.KeyNumber),
+                ReportExportCell.FromText(row.MedecoKeyCode),
                 ReportExportCell.FromText(row.HolderFirstName),
                 ReportExportCell.FromText(row.HolderLastName),
                 ReportExportCell.FromText(row.HolderUin),
@@ -293,7 +297,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             "Overdue Keys",
             filterContext,
             [
-                "Key",
+                "KEY #",
+                "MEDECO",
                 "Holder First Name",
                 "Holder Last Name",
                 "UIN",
@@ -306,7 +311,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             ],
             rows.Select(row => (IReadOnlyList<ReportExportCell>)
             [
-                ReportExportCell.FromText(row.CatalogKeyCode),
+                ReportExportCell.FromText(row.KeyNumber),
+                ReportExportCell.FromText(row.MedecoKeyCode),
                 ReportExportCell.FromText(row.HolderFirstName),
                 ReportExportCell.FromText(row.HolderLastName),
                 ReportExportCell.FromText(row.HolderUin),
@@ -331,7 +337,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             [
                 ReportExportCell.FromText(report.WorkforceMemberCode),
                 ReportExportCell.FromText("Issued"),
-                ReportExportCell.FromText(issued.CatalogKeyCode),
+                ReportExportCell.FromText(issued.KeyNumber),
+                ReportExportCell.FromText(issued.MedecoKeyCode),
                 ReportExportCell.FromText(issued.HolderFirstName),
                 ReportExportCell.FromText(issued.HolderLastName),
                 ReportExportCell.FromText(issued.HolderUin),
@@ -348,7 +355,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             [
                 ReportExportCell.FromText(report.WorkforceMemberCode),
                 ReportExportCell.FromText("Returned"),
-                ReportExportCell.FromText(returned.CatalogKeyCode),
+                ReportExportCell.FromText(returned.KeyNumber),
+                ReportExportCell.FromText(returned.MedecoKeyCode),
                 ReportExportCell.FromText(returned.HolderFirstName),
                 ReportExportCell.FromText(returned.HolderLastName),
                 ReportExportCell.FromText(returned.HolderUin),
@@ -366,7 +374,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             [
                 "Workforce Member",
                 "Row Kind",
-                "Key",
+                "KEY #",
+                "MEDECO",
                 "Holder First Name",
                 "Holder Last Name",
                 "UIN",
@@ -389,7 +398,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             filterContext,
             [
                 "Loan",
-                "Key",
+                "KEY #",
+                "MEDECO",
                 "Holder First Name",
                 "Holder Last Name",
                 "UIN",
@@ -401,7 +411,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             rows.Select(row => (IReadOnlyList<ReportExportCell>)
             [
                 ReportExportCell.FromText(row.LoanCode),
-                ReportExportCell.FromText(row.CatalogKeyCode),
+                ReportExportCell.FromText(row.KeyNumber),
+                ReportExportCell.FromText(row.MedecoKeyCode),
                 ReportExportCell.FromText(row.HolderFirstName),
                 ReportExportCell.FromText(row.HolderLastName),
                 ReportExportCell.FromText(row.HolderUin),
@@ -428,7 +439,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
                 "Holder Last Name",
                 "UIN",
                 "Department",
-                "Key",
+                "KEY #",
+                "MEDECO",
                 "Loan",
                 "Due At (UTC)"
             ],
@@ -440,7 +452,8 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
                 ReportExportCell.FromText(row.HolderLastName),
                 ReportExportCell.FromText(row.HolderUin),
                 ReportExportCell.FromText(row.DepartmentCode),
-                ReportExportCell.FromText(row.CatalogKeyCode),
+                ReportExportCell.FromText(row.KeyNumber),
+                ReportExportCell.FromText(row.MedecoKeyCode),
                 ReportExportCell.FromText(row.LoanCode),
                 ReportExportCell.DateTimeUtcValue(row.DueAtUtc)
             ]).ToArray());
@@ -455,10 +468,11 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             "Key Catalog",
             "Key Catalog",
             filterContext,
-            ["Key", "Type", "Active", "Availability", "Rooms Opened"],
+            ["KEY #", "MEDECO", "Type", "Active", "Availability", "Rooms Opened"],
             rows.Select(row => (IReadOnlyList<ReportExportCell>)
             [
-                ReportExportCell.FromText(row.CatalogKeyCode),
+                ReportExportCell.FromText(row.KeyNumber),
+                ReportExportCell.FromText(row.MedecoKeyCode),
                 ReportExportCell.FromText(row.TypeCode),
                 ReportExportCell.FromText(row.IsActive ? "Yes" : "No"),
                 ReportExportCell.FromText(row.AvailabilityStatus),

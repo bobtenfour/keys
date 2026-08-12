@@ -7,28 +7,28 @@
 
 <header class="page-header page-header-compact">
     <h1>Key History</h1>
-    <p class="lede">Existing issue and return history for one registered key.</p>
+    <p class="lede">Existing issue and return history for one KEY # (all physical MEDECO copies).</p>
 </header>
 
 <section class="card form-card">
     <form method="get" class="form-grid" role="search">
         <label>
-            Search keys
-            <input type="search" name="q" value="@Model.KeySearch" placeholder="Partial key code..." />
+            Search KEY #
+            <input type="search" name="q" value="@Model.KeySearch" placeholder="Partial KEY #..." />
         </label>
         <label>
-            Key
+            KEY #
             <select name="key" asp-items="Model.KeyOptions">
-                <option value="">Select a key</option>
+                <option value="">Select a KEY #</option>
             </select>
         </label>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Show</button>
-            @if (!string.IsNullOrWhiteSpace(Model.SelectedKeyCode))
+            @if (!string.IsNullOrWhiteSpace(Model.SelectedKeyNumber))
             {
-                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-format="csv" asp-route-key="@Model.SelectedKeyCode">CSV</a>
-                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-format="xlsx" asp-route-key="@Model.SelectedKeyCode">Excel</a>
-                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-format="pdf" asp-route-key="@Model.SelectedKeyCode">PDF</a>
+                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-format="csv" asp-route-key="@Model.SelectedKeyNumber">CSV</a>
+                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-format="xlsx" asp-route-key="@Model.SelectedKeyNumber">Excel</a>
+                <a class="btn btn-secondary" asp-page="/Reports/KeyHistory" asp-page-handler="Export" asp-route-format="pdf" asp-route-key="@Model.SelectedKeyNumber">PDF</a>
             }
             <a class="btn btn-secondary" asp-page="/Reports/Index">All Reports</a>
         </div>
@@ -39,15 +39,15 @@
     @if (!Model.KeySelected)
     {
         <div class="empty-state">
-            <strong>Select a key</strong>
-            Search and choose a key to view issue and return history.
+            <strong>Select a KEY #</strong>
+            Search and choose a KEY # to view issue and return history.
         </div>
     }
     else if (Model.Rows.Count == 0)
     {
         <div class="empty-state">
-            <strong>No history for this key</strong>
-            The key exists, but it has no issue or return records yet.
+            <strong>No history for this KEY #</strong>
+            The KEY # exists, but it has no issue or return records yet.
         </div>
     }
     else
@@ -57,7 +57,8 @@
                 <thead>
                     <tr>
                         <th>Loan</th>
-                        <th>Key</th>
+                        <th>KEY #</th>
+                        <th>MEDECO</th>
                         <th>Holder</th>
                         <th>Issued</th>
                         <th>Due</th>
@@ -70,7 +71,8 @@
                 {
                     <tr>
                         <td>@row.LoanCode</td>
-                        <td>@row.CatalogKeyCode</td>
+                        <td>@row.KeyNumber</td>
+                        <td>@row.MedecoKeyCode</td>
                         <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.IssuedAtUtc)</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.DueAtUtc)</td>

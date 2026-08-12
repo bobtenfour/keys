@@ -15,4 +15,6 @@ public interface ILoanPersistencePort
     Task<IReadOnlyList<LoanListItem>> ListOpenLoansAsync(CancellationToken cancellationToken);
 
     Task<IReadOnlyList<LoanListItem>> ListReturnedLoansAsync(CancellationToken cancellationToken);
+
+    Task<bool> HasOpenLoanForKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken);
 }

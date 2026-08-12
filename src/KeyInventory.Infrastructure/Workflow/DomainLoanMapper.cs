@@ -6,14 +6,14 @@ namespace KeyInventory.Infrastructure.Workflow;
 
 internal static class DomainLoanMapper
 {
-    internal static Loan ToOpenDomainLoan(LoanEntity entity)
+    internal static Loan ToOpenDomainLoan(LoanEntity entity, IEnumerable<string> openedRoomCodes)
     {
         if (!string.Equals(entity.Status, nameof(LoanStatus.Open), StringComparison.Ordinal))
         {
             throw new InvalidOperationException("Only an open loan can be loaded for return completion.");
         }
 
-        KeyAsset keyAsset = DomainCatalogMapper.ToDomain(entity.KeyAsset);
+        KeyAsset keyAsset = DomainCatalogMapper.ToDomain(entity.KeyAsset, openedRoomCodes);
         return new Loan(
             entity.LoanCode,
             keyAsset,
@@ -27,7 +27,7 @@ internal static class DomainLoanMapper
         return new LoanEntity
         {
             LoanCode = loan.LoanCode,
-            CatalogKeyCode = loan.KeyAsset.CatalogKeyCode,
+            KeyAssetId = loan.KeyAsset.KeyAssetId,
             BorrowerPartyReference = loan.BorrowerPartyReference,
             IssuedAtUtc = loan.IssuedAtUtc,
             DueAtUtc = loan.DueAtUtc,

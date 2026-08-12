@@ -85,9 +85,9 @@ public sealed class RetireKeyTypeUseCase : IRetireKeyTypeUseCase
         }
 
         int activeKeyAssets = await _catalog
-            .CountActiveKeyAssetsForTypeAsync(keyType.TypeCode, cancellationToken)
+            .CountActiveKeyAccessPatternsForTypeAsync(keyType.TypeCode, cancellationToken)
             .ConfigureAwait(false);
-        keyType.Retire(hasActiveKeyAssets: activeKeyAssets > 0);
+        keyType.Retire(hasActiveKeyAccessPatterns: activeKeyAssets > 0);
         _audit.Stage(
             OperatorAuditActions.KeyTypeRetired,
             OperatorAuditSubjects.KeyType,

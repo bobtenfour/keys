@@ -55,7 +55,8 @@ else if (!string.IsNullOrWhiteSpace(Model.SelectedMemberCode) && Model.Report is
                 <table>
                     <thead>
                         <tr>
-                            <th>Key</th>
+                            <th>KEY #</th>
+                            <th>MEDECO</th>
                             <th>Holder</th>
                             <th>Issued</th>
                             <th>Due</th>
@@ -66,7 +67,8 @@ else if (!string.IsNullOrWhiteSpace(Model.SelectedMemberCode) && Model.Report is
                     @foreach (var row in Model.Report.IssuedKeys)
                     {
                         <tr>
-                            <td>@row.CatalogKeyCode</td>
+                            <td>@row.KeyNumber</td>
+                            <td>@row.MedecoKeyCode</td>
                             <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
                             <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.IssuedAtUtc)</td>
                             <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.DueAtUtc)</td>
@@ -91,7 +93,8 @@ else if (!string.IsNullOrWhiteSpace(Model.SelectedMemberCode) && Model.Report is
                 <table>
                     <thead>
                         <tr>
-                            <th>Key</th>
+                            <th>KEY #</th>
+                            <th>MEDECO</th>
                             <th>Holder</th>
                             <th>Issued</th>
                             <th>Returned</th>
@@ -102,7 +105,8 @@ else if (!string.IsNullOrWhiteSpace(Model.SelectedMemberCode) && Model.Report is
                     @foreach (var row in Model.Report.ReturnedKeys)
                     {
                         <tr>
-                            <td>@row.CatalogKeyCode</td>
+                            <td>@row.KeyNumber</td>
+                            <td>@row.MedecoKeyCode</td>
                             <td>@PartyHolderDisplayFormatter.Format(row.HolderFirstName, row.HolderLastName, row.HolderUin)</td>
                             <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.IssuedAtUtc)</td>
                             <td>@OperatorTimestampFormatter.ToFriendlyDisplay(row.ReturnedAtUtc)</td>

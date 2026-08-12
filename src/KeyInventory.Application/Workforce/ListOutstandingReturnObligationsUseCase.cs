@@ -49,7 +49,8 @@ public sealed class ListOutstandingReturnObligationsUseCase : IListOutstandingRe
             .Where(loan => string.Equals(loan.BorrowerPartyReference, member.PartyCode, StringComparison.Ordinal))
             .Select(loan => new OutstandingReturnObligationItem(
                 loan.LoanCode,
-                loan.CatalogKeyCode,
+                loan.KeyNumber,
+                loan.MedecoKeyCode,
                 loan.BorrowerPartyReference,
                 loan.IssuedAtUtc,
                 loan.DueAtUtc))

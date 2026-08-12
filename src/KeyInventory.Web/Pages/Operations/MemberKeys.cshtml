@@ -35,7 +35,8 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Key</th>
+                            <th>KEY #</th>
+                            <th>MEDECO</th>
                             <th>Holder</th>
                             <th>Issued</th>
                             <th>Due</th>
@@ -46,7 +47,8 @@
                     @foreach (var item in Model.IssuedKeys)
                     {
                         <tr>
-                            <td>@item.CatalogKeyCode</td>
+                            <td>@item.KeyNumber</td>
+                            <td>@item.MedecoKeyCode</td>
                             <td>@PartyHolderDisplayFormatter.Format(item.HolderFirstName, item.HolderLastName, item.HolderUin)</td>
                             <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.IssuedAtUtc)</td>
                             <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.DueAtUtc)</td>

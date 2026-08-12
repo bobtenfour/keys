@@ -82,10 +82,10 @@ public sealed class OperatorExperienceFirstUseWorkflowTests : IAsyncLifetime
             .ConfigureAwait(true);
 
         await services.GetRequiredService<ICreateKeyAssetUseCase>()
-            .ExecuteAsync("KEY-101", "STD", CancellationToken.None)
+            .ExecuteAsync("KEY-101", "01", "STD", CancellationToken.None)
             .ConfigureAwait(true);
 
-        await services.GetRequiredService<IKeyRoomAssignmentUseCase>()
+        await services.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>()
             .AssignRoomAsync("KEY-101", roomCode, CancellationToken.None)
             .ConfigureAwait(true);
 
@@ -93,7 +93,7 @@ public sealed class OperatorExperienceFirstUseWorkflowTests : IAsyncLifetime
             .ExecuteAsync(CancellationToken.None)
             .ConfigureAwait(true);
         Assert.True(ready.CanIssueKey);
-        Assert.True(ready.HasKeyRoomAssignment);
+        Assert.True(ready.HasKeyAccessPatternRoomAssignment);
 
         DateTimeOffset issued = DateTimeOffset.UtcNow;
         DateTimeOffset due = issued.AddHours(8);
@@ -101,6 +101,7 @@ public sealed class OperatorExperienceFirstUseWorkflowTests : IAsyncLifetime
             .ExecuteAsync(
                 "LOAN-1",
                 "KEY-101",
+                "01",
                 memberCode,
                 "Department",
                 "FACILITIES",

@@ -4,7 +4,7 @@ public sealed class LoanEntity
 {
     public string LoanCode { get; set; } = string.Empty;
 
-    public string CatalogKeyCode { get; set; } = string.Empty;
+    public Guid KeyAssetId { get; set; }
 
     public string BorrowerPartyReference { get; set; } = string.Empty;
 

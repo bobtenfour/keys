@@ -69,12 +69,13 @@ public sealed class WorkforceEligibilityWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "wf-issue")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("key-wf-1", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("key-wf-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 6, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-wf-1",
                 "key-wf-1",
+                "01",
                 seeded.MemberCode,
                 "Room",
                 seeded.RoomCode,
@@ -90,6 +91,7 @@ public sealed class WorkforceEligibilityWorkflowTests : IAsyncLifetime
             issue.ExecuteAsync(
                 "loan-wf-2",
                 "key-wf-1",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 "wrong-dept",
@@ -112,11 +114,12 @@ public sealed class WorkforceEligibilityWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "wf-term")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("key-wf-term", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("key-wf-term", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 6, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-wf-term",
                 "key-wf-term",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,
@@ -153,6 +156,7 @@ public sealed class WorkforceEligibilityWorkflowTests : IAsyncLifetime
             issue.ExecuteAsync(
                 "loan-wf-blocked",
                 "key-wf-term",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,

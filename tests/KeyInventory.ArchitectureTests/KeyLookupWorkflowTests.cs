@@ -51,14 +51,15 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lk-search")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("LK-MASTER-1", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("LK-MASTER-2", "electronic", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("OTHER-9", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("LK-MASTER-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("LK-MASTER-2", "01", "electronic", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("OTHER-9", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 8, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-lk-1",
                 "LK-MASTER-1",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,
@@ -82,15 +83,15 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
             .ConfigureAwait(true);
         Assert.Equal(2, partial.Count);
         Assert.Contains(partial, item =>
-            item.CatalogKeyCode == "LK-MASTER-1" && item.AvailabilityStatus == OperationalKeyAvailability.Issued);
+            item.KeyNumber == "LK-MASTER-1" && item.AvailabilityStatus == OperationalKeyAvailability.Issued);
         Assert.Contains(partial, item =>
-            item.CatalogKeyCode == "LK-MASTER-2"
+            item.KeyNumber == "LK-MASTER-2"
             && item.AvailabilityStatus == OperationalKeyAvailability.Available
             && item.CurrentHolder is null);
 
         IReadOnlyList<KeyLookupResult> byType = await lookup.SearchKeysAsync("electronic", CancellationToken.None)
             .ConfigureAwait(true);
-        Assert.Contains(byType, item => item.CatalogKeyCode == "LK-MASTER-2");
+        Assert.Contains(byType, item => item.KeyNumber == "LK-MASTER-2");
     }
 
     [Fact]
@@ -103,13 +104,14 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lk-member")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("key-lk-m1", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("key-lk-m2", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("key-lk-m1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("key-lk-m2", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 8, 13, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-lk-m1",
                 "key-lk-m1",
+                "01",
                 seeded.MemberCode,
                 "Room",
                 seeded.RoomCode,
@@ -120,6 +122,7 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
         await issue.ExecuteAsync(
                 "loan-lk-m2",
                 "key-lk-m2",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,
@@ -139,8 +142,8 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
             Assert.Equal("Lovelace", item.HolderLastName);
             Assert.False(string.IsNullOrWhiteSpace(item.HolderUin));
         });
-        Assert.Contains(keys, item => item.CatalogKeyCode == "key-lk-m1");
-        Assert.Contains(keys, item => item.CatalogKeyCode == "key-lk-m2");
+        Assert.Contains(keys, item => item.KeyNumber == "key-lk-m1" && item.MedecoKeyCode == "01");
+        Assert.Contains(keys, item => item.KeyNumber == "key-lk-m2" && item.MedecoKeyCode == "01");
     }
 
     [Fact]
@@ -155,12 +158,13 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lk-flow")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("key-lk-flow", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("key-lk-flow", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 8, 14, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-lk-flow",
                 "key-lk-flow",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,

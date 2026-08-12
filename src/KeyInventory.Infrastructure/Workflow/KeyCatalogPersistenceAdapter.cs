@@ -9,20 +9,105 @@ namespace KeyInventory.Infrastructure.Workflow;
 public sealed class KeyCatalogPersistenceAdapter : IKeyCatalogPersistencePort
 {
     private readonly KeyInventoryDbContext _dbContext;
-    private readonly IKeyRoomAssignmentPersistencePort _roomAssignments;
+    private readonly IKeyAccessPatternRoomAssignmentPersistencePort _roomAssignments;
 
     public KeyCatalogPersistenceAdapter(
         KeyInventoryDbContext dbContext,
-        IKeyRoomAssignmentPersistencePort roomAssignments)
+        IKeyAccessPatternRoomAssignmentPersistencePort roomAssignments)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _roomAssignments = roomAssignments ?? throw new ArgumentNullException(nameof(roomAssignments));
     }
 
-    public Task<bool> KeyAssetExistsAsync(string catalogKeyCode, CancellationToken cancellationToken)
+    public Task<bool> KeyAccessPatternExistsAsync(string keyNumber, CancellationToken cancellationToken)
+    {
+        return _dbContext.KeyAccessPatterns.AnyAsync(
+            entity => entity.KeyNumber == keyNumber,
+            cancellationToken);
+    }
+
+    public async Task<KeyAccessPattern?> FindKeyAccessPatternAsync(
+        string keyNumber,
+        CancellationToken cancellationToken)
+    {
+        KeyAccessPatternEntity? entity = await _dbContext.KeyAccessPatterns
+            .AsNoTracking()
+            .Include(item => item.KeyType)
+            .FirstOrDefaultAsync(item => item.KeyNumber == keyNumber, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (entity is null)
+        {
+            return null;
+        }
+
+        IReadOnlyList<KeyOpenedRoomItem> rooms = await _roomAssignments
+            .ListForKeyNumberAsync(keyNumber, cancellationToken)
+            .ConfigureAwait(false);
+        return DomainCatalogMapper.ToDomain(entity, rooms.Select(room => room.RoomCode));
+    }
+
+    public async Task AddKeyAccessPatternAsync(KeyAccessPattern pattern, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(pattern);
+        _dbContext.KeyAccessPatterns.Add(DomainCatalogMapper.ToEntity(pattern));
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UpdateKeyAccessPatternAsync(KeyAccessPattern pattern, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(pattern);
+        KeyAccessPatternEntity? entity = await _dbContext.KeyAccessPatterns
+            .FirstOrDefaultAsync(item => item.KeyNumber == pattern.KeyNumber, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The KEY # was not found in persistence.");
+        }
+
+        entity.KeyTypeCode = pattern.KeyType.TypeCode;
+        entity.IsActive = pattern.IsActive;
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<KeyAccessPatternListItem>> ListKeyAccessPatternsAsync(
+        CancellationToken cancellationToken)
+    {
+        List<KeyAccessPatternEntity> patterns = await _dbContext.KeyAccessPatterns
+            .AsNoTracking()
+            .OrderBy(entity => entity.KeyNumber)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        Dictionary<string, int> copyCounts = await _dbContext.KeyAssets.AsNoTracking()
+            .GroupBy(entity => entity.KeyNumber)
+            .Select(group => new { KeyNumber = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.KeyNumber, item => item.Count, StringComparer.Ordinal, cancellationToken)
+            .ConfigureAwait(false);
+
+        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
+            .ListForKeyNumbersAsync(patterns.Select(item => item.KeyNumber), cancellationToken)
+            .ConfigureAwait(false);
+
+        return patterns
+            .Select(entity => new KeyAccessPatternListItem(
+                entity.KeyNumber,
+                entity.KeyTypeCode,
+                entity.IsActive,
+                copyCounts.TryGetValue(entity.KeyNumber, out int count) ? count : 0,
+                roomsByKey.TryGetValue(entity.KeyNumber, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
+                    ? rooms
+                    : []))
+            .ToArray();
+    }
+
+    public Task<bool> MedecoExistsUnderPatternAsync(
+        string keyNumber,
+        string medecoKeyCode,
+        CancellationToken cancellationToken)
     {
         return _dbContext.KeyAssets.AnyAsync(
-            entity => entity.CatalogKeyCode == catalogKeyCode,
+            entity => entity.KeyNumber == keyNumber && entity.MedecoKeyCode == medecoKeyCode,
             cancellationToken);
     }
 
@@ -58,9 +143,9 @@ public sealed class KeyCatalogPersistenceAdapter : IKeyCatalogPersistencePort
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public Task<int> CountActiveKeyAssetsForTypeAsync(string typeCode, CancellationToken cancellationToken)
+    public Task<int> CountActiveKeyAccessPatternsForTypeAsync(string typeCode, CancellationToken cancellationToken)
     {
-        return _dbContext.KeyAssets.CountAsync(
+        return _dbContext.KeyAccessPatterns.CountAsync(
             entity => entity.KeyTypeCode == typeCode && entity.IsActive,
             cancellationToken);
     }
@@ -72,7 +157,7 @@ public sealed class KeyCatalogPersistenceAdapter : IKeyCatalogPersistencePort
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        Dictionary<string, int> activeCounts = await _dbContext.KeyAssets.AsNoTracking()
+        Dictionary<string, int> activeCounts = await _dbContext.KeyAccessPatterns.AsNoTracking()
             .Where(entity => entity.IsActive)
             .GroupBy(entity => entity.KeyTypeCode)
             .Select(group => new { TypeCode = group.Key, Count = group.Count() })
@@ -94,12 +179,13 @@ public sealed class KeyCatalogPersistenceAdapter : IKeyCatalogPersistencePort
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<KeyAsset?> FindKeyAssetAsync(string catalogKeyCode, CancellationToken cancellationToken)
+    public async Task<KeyAsset?> FindKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken)
     {
         KeyAssetEntity? entity = await _dbContext.KeyAssets
             .AsNoTracking()
-            .Include(item => item.KeyType)
-            .FirstOrDefaultAsync(item => item.CatalogKeyCode == catalogKeyCode, cancellationToken)
+            .Include(item => item.AccessPattern)
+            .ThenInclude(pattern => pattern.KeyType)
+            .FirstOrDefaultAsync(item => item.KeyAssetId == keyAssetId, cancellationToken)
             .ConfigureAwait(false);
 
         if (entity is null)
@@ -107,38 +193,88 @@ public sealed class KeyCatalogPersistenceAdapter : IKeyCatalogPersistencePort
             return null;
         }
 
-        KeyAsset keyAsset = DomainCatalogMapper.ToDomain(entity);
         IReadOnlyList<KeyOpenedRoomItem> rooms = await _roomAssignments
-            .ListForKeyAsync(catalogKeyCode, cancellationToken)
+            .ListForKeyNumberAsync(entity.KeyNumber, cancellationToken)
             .ConfigureAwait(false);
-        foreach (KeyOpenedRoomItem room in rooms)
+        return DomainCatalogMapper.ToDomain(entity, rooms.Select(room => room.RoomCode));
+    }
+
+    public async Task<KeyAsset?> FindKeyAssetAsync(
+        string keyNumber,
+        string medecoKeyCode,
+        CancellationToken cancellationToken)
+    {
+        KeyAssetEntity? entity = await _dbContext.KeyAssets
+            .AsNoTracking()
+            .Include(item => item.AccessPattern)
+            .ThenInclude(pattern => pattern.KeyType)
+            .FirstOrDefaultAsync(
+                item => item.KeyNumber == keyNumber && item.MedecoKeyCode == medecoKeyCode,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (entity is null)
         {
-            keyAsset.AssignOpenedRoom(room.RoomCode);
+            return null;
         }
 
-        return keyAsset;
+        IReadOnlyList<KeyOpenedRoomItem> rooms = await _roomAssignments
+            .ListForKeyNumberAsync(entity.KeyNumber, cancellationToken)
+            .ConfigureAwait(false);
+        return DomainCatalogMapper.ToDomain(entity, rooms.Select(room => room.RoomCode));
     }
 
     public async Task<IReadOnlyList<KeyAssetListItem>> ListKeyAssetsAsync(CancellationToken cancellationToken)
     {
         List<KeyAssetEntity> keys = await _dbContext.KeyAssets
             .AsNoTracking()
-            .OrderBy(entity => entity.CatalogKeyCode)
+            .Include(entity => entity.AccessPattern)
+            .OrderBy(entity => entity.KeyNumber)
+            .ThenBy(entity => entity.MedecoKeyCode)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
-            .ListForKeysAsync(keys.Select(key => key.CatalogKeyCode), cancellationToken)
+            .ListForKeyNumbersAsync(keys.Select(key => key.KeyNumber).Distinct(StringComparer.Ordinal), cancellationToken)
             .ConfigureAwait(false);
 
         return keys
             .Select(entity => new KeyAssetListItem(
-                entity.CatalogKeyCode,
-                entity.KeyTypeCode,
+                entity.KeyAssetId,
+                entity.KeyNumber,
+                entity.MedecoKeyCode,
+                entity.AccessPattern.KeyTypeCode,
                 entity.IsActive,
-                roomsByKey.TryGetValue(entity.CatalogKeyCode, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
+                roomsByKey.TryGetValue(entity.KeyNumber, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
                     ? rooms
                     : []))
+            .ToArray();
+    }
+
+    public async Task<IReadOnlyList<KeyAssetListItem>> ListKeyAssetsForPatternAsync(
+        string keyNumber,
+        CancellationToken cancellationToken)
+    {
+        List<KeyAssetEntity> keys = await _dbContext.KeyAssets
+            .AsNoTracking()
+            .Include(entity => entity.AccessPattern)
+            .Where(entity => entity.KeyNumber == keyNumber)
+            .OrderBy(entity => entity.MedecoKeyCode)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        IReadOnlyList<KeyOpenedRoomItem> rooms = await _roomAssignments
+            .ListForKeyNumberAsync(keyNumber, cancellationToken)
+            .ConfigureAwait(false);
+
+        return keys
+            .Select(entity => new KeyAssetListItem(
+                entity.KeyAssetId,
+                entity.KeyNumber,
+                entity.MedecoKeyCode,
+                entity.AccessPattern.KeyTypeCode,
+                entity.IsActive,
+                rooms))
             .ToArray();
     }
 }

@@ -7,7 +7,7 @@
 
 <header class="page-header">
     <h1>Register Key</h1>
-    <p class="lede">Add a controlled key to the catalog.</p>
+    <p class="lede">Register a physical MEDECO copy under a KEY #. A new KEY # is created when needed.</p>
 </header>
 
 <section class="card form-card">
@@ -19,7 +19,7 @@
     {
         <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
         <div class="next-actions">
-            <a class="btn btn-primary" asp-page="/Catalog/Register">Register another key</a>
+            <a class="btn btn-primary" asp-page="/Catalog/Register">Register another copy</a>
             <a class="btn btn-secondary" asp-page="/Operations/Issue">Issue key</a>
             <a class="btn btn-secondary" asp-page="/Index">Return to Operations</a>
         </div>
@@ -28,13 +28,18 @@
     {
         <form method="post" class="form-grid">
             <label>
-                Key code
-                <input asp-for="CatalogKeyCode" autocomplete="off" required />
+                KEY #
+                <input asp-for="KeyNumber" autocomplete="off" required />
+            </label>
+            <label>
+                MEDECO Key Code
+                <input asp-for="MedecoKeyCode" autocomplete="off" required />
+                <span class="hint">Unique within this KEY #. The same MEDECO may exist under another KEY #.</span>
             </label>
             <label>
                 Key type
                 <input asp-for="TypeCode" autocomplete="off" required />
-                <span class="hint">If the type does not exist yet, it will be created.</span>
+                <span class="hint">Owned by the KEY #. Existing KEY # values must keep their type. New types are created when needed.</span>
             </label>
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Register Key</button>

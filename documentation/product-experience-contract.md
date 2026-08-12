@@ -45,6 +45,15 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 - Successful create uses server-side lifecycle: success confirmation, clean form state, logical next action; failed validation retains input; no field-by-field JavaScript clearing.
 - User Guide in `documentation/operator/` supplements the UI after runtime finalization and must present the same dependency model as the UI (including WorkAssignment as mandatory for Issue Key).
 
+## KEY-ACCESS-COPY-1 Product Experience
+- Catalog distinguishes KEY # (shared access pattern) from MEDECO Key Code (physical copy under that KEY #).
+- Room openings are maintained at KEY # level; operators assign Room # values to a KEY #; physical copies do not present independent conflicting Room editors.
+- Issue Key identifies person, KEY #, available MEDECO/physical copy, and derived Rooms opened (read-only; not re-entered). Internal KeyAssetId is not an operator typing target.
+- Return / receive identifies the exact physical copy as KEY # + MEDECO (e.g. 66800 / 26 vs 66800 / 27).
+- Find Key and reports distinguish KEY #, MEDECO/copy, holder, Rooms opened, and issue/return state; screen/CSV/XLSX/PDF parity preserved.
+- Do not expose Transfer; do not invent New Key terminology beyond KEY # / MEDECO presentation required by this slice.
+- Operator guide must explain KEY # → Rooms opened and MEDECO → physical copy held, using the 66800 / 410D / MEDECO 26–28 example pattern; screenshots refresh only after runtime finalization.
+
 ## Applies When
 This document is required only for slices that create or modify UI, navigation, user workflows, messages, or product-facing behavior.
 

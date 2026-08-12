@@ -56,7 +56,7 @@ public sealed class OperatorUxWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "oux")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("OUX-KEY-1", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("OUX-KEY-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         WorkforceMemberListItem member = (await listMembers.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.WorkforceMemberCode == seeded.MemberCode);
@@ -85,6 +85,7 @@ public sealed class OperatorUxWorkflowTests : IAsyncLifetime
         await issue.ExecuteAsync(
                 "loan-oux-dept",
                 "OUX-KEY-1",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 departmentCode,
@@ -93,10 +94,11 @@ public sealed class OperatorUxWorkflowTests : IAsyncLifetime
                 CancellationToken.None)
             .ConfigureAwait(true);
 
-        await createKey.ExecuteAsync("OUX-KEY-2", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("OUX-KEY-2", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await issue.ExecuteAsync(
                 "loan-oux-room",
                 "OUX-KEY-2",
+                "01",
                 seeded.MemberCode,
                 "Room",
                 room.RoomCode,

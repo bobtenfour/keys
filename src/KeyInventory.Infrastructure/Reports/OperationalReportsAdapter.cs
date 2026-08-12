@@ -11,21 +11,21 @@ namespace KeyInventory.Infrastructure.Reports;
 public sealed class OperationalReportsAdapter : IOperationalReportsPort
 {
     private readonly KeyInventoryDbContext _dbContext;
-    private readonly IKeyRoomAssignmentPersistencePort _roomAssignments;
+    private readonly IKeyAccessPatternRoomAssignmentPersistencePort _roomAssignments;
 
     public OperationalReportsAdapter(
         KeyInventoryDbContext dbContext,
-        IKeyRoomAssignmentPersistencePort roomAssignments)
+        IKeyAccessPatternRoomAssignmentPersistencePort roomAssignments)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _roomAssignments = roomAssignments ?? throw new ArgumentNullException(nameof(roomAssignments));
     }
 
     public async Task<IReadOnlyList<CurrentKeyHolderReportRow>> ListCurrentKeyHoldersAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken)
     {
-        List<OpenLoanPartyRow> openLoans = await LoadOpenLoansAsync(catalogKeyCodeFilter, cancellationToken)
+        List<OpenLoanPartyRow> openLoans = await LoadOpenLoansAsync(keyNumberFilter, cancellationToken)
             .ConfigureAwait(false);
         Dictionary<string, WorkforceMemberEntity> membersByParty =
             await ResolveMembersByPartyAsync(openLoans.Select(loan => loan.PartyCode), cancellationToken)
@@ -36,7 +36,8 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
             {
                 membersByParty.TryGetValue(loan.PartyCode, out WorkforceMemberEntity? member);
                 return new CurrentKeyHolderReportRow(
-                    loan.CatalogKeyCode,
+                    loan.KeyNumber,
+                    loan.MedecoKeyCode,
                     loan.FirstName,
                     loan.LastName,
                     loan.Uin,
@@ -46,15 +47,16 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                     loan.DueAtUtc,
                     loan.Status);
             })
-            .OrderBy(row => row.CatalogKeyCode, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(row => row.KeyNumber, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(row => row.MedecoKeyCode, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
     public async Task<IReadOnlyList<ActiveLoanReportRow>> ListActiveLoansReportAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken)
     {
-        List<OpenLoanPartyRow> openLoans = await LoadOpenLoansAsync(catalogKeyCodeFilter, cancellationToken)
+        List<OpenLoanPartyRow> openLoans = await LoadOpenLoansAsync(keyNumberFilter, cancellationToken)
             .ConfigureAwait(false);
         Dictionary<string, WorkforceMemberEntity> membersByParty =
             await ResolveMembersByPartyAsync(openLoans.Select(loan => loan.PartyCode), cancellationToken)
@@ -65,7 +67,8 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
             {
                 membersByParty.TryGetValue(loan.PartyCode, out WorkforceMemberEntity? member);
                 return new ActiveLoanReportRow(
-                    loan.CatalogKeyCode,
+                    loan.KeyNumber,
+                    loan.MedecoKeyCode,
                     loan.FirstName,
                     loan.LastName,
                     loan.Uin,
@@ -75,16 +78,17 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                     loan.DueAtUtc,
                     loan.Status);
             })
-            .OrderBy(row => row.CatalogKeyCode, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(row => row.KeyNumber, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(row => row.MedecoKeyCode, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
     public async Task<IReadOnlyList<OverdueKeyReportRow>> ListOverdueKeysAsync(
         DateTimeOffset utcNow,
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken)
     {
-        List<OpenLoanPartyRow> openLoans = await LoadOpenLoansAsync(catalogKeyCodeFilter, cancellationToken)
+        List<OpenLoanPartyRow> openLoans = await LoadOpenLoansAsync(keyNumberFilter, cancellationToken)
             .ConfigureAwait(false);
         List<OpenLoanPartyRow> overdue = openLoans.Where(loan => loan.DueAtUtc < utcNow).ToList();
         Dictionary<string, WorkforceMemberEntity> membersByParty =
@@ -97,7 +101,8 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                 membersByParty.TryGetValue(loan.PartyCode, out WorkforceMemberEntity? member);
                 int daysOverdue = Math.Max(0, (int)Math.Floor((utcNow - loan.DueAtUtc).TotalDays));
                 return new OverdueKeyReportRow(
-                    loan.CatalogKeyCode,
+                    loan.KeyNumber,
+                    loan.MedecoKeyCode,
                     loan.FirstName,
                     loan.LastName,
                     loan.Uin,
@@ -109,7 +114,8 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                     loan.Status);
             })
             .OrderByDescending(row => row.DaysOverdue)
-            .ThenBy(row => row.CatalogKeyCode, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(row => row.KeyNumber, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(row => row.MedecoKeyCode, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
@@ -133,31 +139,35 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
             throw new InvalidOperationException("The party for the workforce member was not found.");
         }
 
-        List<MemberIssuedKeyReportRow> issued = await _dbContext.Loans.AsNoTracking()
-            .Where(loan =>
-                loan.Status == nameof(LoanStatus.Open)
-                && loan.BorrowerPartyReference == member.PartyCode)
-            .OrderBy(loan => loan.CatalogKeyCode)
-            .Select(loan => new MemberIssuedKeyReportRow(
-                loan.CatalogKeyCode,
-                party.FirstName,
-                party.LastName,
-                party.Uin,
-                loan.IssuedAtUtc,
-                loan.DueAtUtc,
-                loan.Status))
+        List<MemberIssuedKeyReportRow> issued = await (
+                from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
+                where loan.Status == nameof(LoanStatus.Open)
+                    && loan.BorrowerPartyReference == member.PartyCode
+                orderby key.KeyNumber, key.MedecoKeyCode
+                select new MemberIssuedKeyReportRow(
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
+                    party.FirstName,
+                    party.LastName,
+                    party.Uin,
+                    loan.IssuedAtUtc,
+                    loan.DueAtUtc,
+                    loan.Status))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         List<MemberReturnedKeyReportRow> returned = await (
                 from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
                 join completedReturn in _dbContext.Returns.AsNoTracking()
                     on loan.LoanCode equals completedReturn.LoanCode
                 where loan.Status == nameof(LoanStatus.Returned)
                     && loan.BorrowerPartyReference == member.PartyCode
                 orderby completedReturn.ReturnedAtUtc descending
                 select new MemberReturnedKeyReportRow(
-                    loan.CatalogKeyCode,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
                     party.FirstName,
                     party.LastName,
                     party.Uin,
@@ -171,25 +181,27 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
     }
 
     public async Task<IReadOnlyList<KeyHistoryReportRow>> ListKeyHistoryAsync(
-        string catalogKeyCode,
+        string keyNumber,
         CancellationToken cancellationToken)
     {
-        bool keyExists = await _dbContext.KeyAssets.AsNoTracking()
-            .AnyAsync(key => key.CatalogKeyCode == catalogKeyCode, cancellationToken)
+        bool patternExists = await _dbContext.KeyAccessPatterns.AsNoTracking()
+            .AnyAsync(pattern => pattern.KeyNumber == keyNumber, cancellationToken)
             .ConfigureAwait(false);
-        if (!keyExists)
+        if (!patternExists)
         {
             return [];
         }
 
         var openRows = await (
                 from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
                 join party in _dbContext.Parties.AsNoTracking()
                     on loan.BorrowerPartyReference equals party.PartyCode
-                where loan.CatalogKeyCode == catalogKeyCode && loan.Status == nameof(LoanStatus.Open)
+                where key.KeyNumber == keyNumber && loan.Status == nameof(LoanStatus.Open)
                 select new KeyHistoryReportRow(
                     loan.LoanCode,
-                    loan.CatalogKeyCode,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
                     party.FirstName,
                     party.LastName,
                     party.Uin,
@@ -202,14 +214,16 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
 
         var returnedRows = await (
                 from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
                 join completedReturn in _dbContext.Returns.AsNoTracking()
                     on loan.LoanCode equals completedReturn.LoanCode
                 join party in _dbContext.Parties.AsNoTracking()
                     on loan.BorrowerPartyReference equals party.PartyCode
-                where loan.CatalogKeyCode == catalogKeyCode && loan.Status == nameof(LoanStatus.Returned)
+                where key.KeyNumber == keyNumber && loan.Status == nameof(LoanStatus.Returned)
                 select new KeyHistoryReportRow(
                     loan.LoanCode,
-                    loan.CatalogKeyCode,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
                     party.FirstName,
                     party.LastName,
                     party.Uin,
@@ -243,8 +257,9 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                     on member.PartyCode equals party.PartyCode
                 join loan in _dbContext.Loans.AsNoTracking()
                     on member.PartyCode equals loan.BorrowerPartyReference
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
                 where loan.Status == nameof(LoanStatus.Open)
-                orderby member.Status, member.WorkforceMemberCode, loan.CatalogKeyCode
+                orderby member.Status, member.WorkforceMemberCode, key.KeyNumber, key.MedecoKeyCode
                 select new OutstandingWorkforceKeyReportRow(
                     member.WorkforceMemberCode,
                     member.Status,
@@ -252,7 +267,8 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                     party.LastName,
                     party.Uin,
                     member.DepartmentCode,
-                    loan.CatalogKeyCode,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
                     loan.LoanCode,
                     loan.DueAtUtc))
             .ToListAsync(cancellationToken)
@@ -262,40 +278,45 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
     }
 
     public async Task<IReadOnlyList<KeyCatalogReportRow>> ListKeyCatalogReportAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken)
     {
-        HashSet<string> issuedKeys = (await _dbContext.Loans.AsNoTracking()
+        HashSet<Guid> issuedAssets = (await _dbContext.Loans.AsNoTracking()
                 .Where(loan => loan.Status == nameof(LoanStatus.Open))
-                .Select(loan => loan.CatalogKeyCode)
+                .Select(loan => loan.KeyAssetId)
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet();
 
-        IQueryable<KeyAssetEntity> keysQuery = _dbContext.KeyAssets.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(catalogKeyCodeFilter))
+        IQueryable<KeyAssetEntity> keysQuery = _dbContext.KeyAssets.AsNoTracking()
+            .Include(key => key.AccessPattern);
+        if (!string.IsNullOrWhiteSpace(keyNumberFilter))
         {
-            keysQuery = keysQuery.Where(key => key.CatalogKeyCode.Contains(catalogKeyCodeFilter));
+            keysQuery = keysQuery.Where(key =>
+                key.KeyNumber.Contains(keyNumberFilter)
+                || key.MedecoKeyCode.Contains(keyNumberFilter));
         }
 
         List<KeyAssetEntity> keys = await keysQuery
-            .OrderBy(key => key.CatalogKeyCode)
+            .OrderBy(key => key.KeyNumber)
+            .ThenBy(key => key.MedecoKeyCode)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
-            .ListForKeysAsync(keys.Select(key => key.CatalogKeyCode), cancellationToken)
+            .ListForKeyNumbersAsync(keys.Select(key => key.KeyNumber).Distinct(StringComparer.Ordinal), cancellationToken)
             .ConfigureAwait(false);
 
         return keys
             .Select(key => new KeyCatalogReportRow(
-                key.CatalogKeyCode,
-                key.KeyTypeCode,
+                key.KeyNumber,
+                key.MedecoKeyCode,
+                key.AccessPattern.KeyTypeCode,
                 key.IsActive,
-                issuedKeys.Contains(key.CatalogKeyCode)
+                issuedAssets.Contains(key.KeyAssetId)
                     ? OperationalKeyAvailability.Issued
                     : OperationalKeyAvailability.Available,
-                roomsByKey.TryGetValue(key.CatalogKeyCode, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
+                roomsByKey.TryGetValue(key.KeyNumber, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
                     ? rooms
                     : []))
             .ToArray();
@@ -334,49 +355,56 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
             .ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyList<string>> ListCatalogKeyCodesAsync(
+    public async Task<IReadOnlyList<string>> ListKeyNumbersAsync(
         string? search,
         CancellationToken cancellationToken)
     {
-        IQueryable<KeyAssetEntity> keys = _dbContext.KeyAssets.AsNoTracking();
+        IQueryable<KeyAccessPatternEntity> patterns = _dbContext.KeyAccessPatterns.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(search))
         {
-            keys = keys.Where(key => key.CatalogKeyCode.Contains(search));
+            patterns = patterns.Where(pattern => pattern.KeyNumber.Contains(search));
         }
 
-        return await keys
-            .OrderBy(key => key.CatalogKeyCode)
-            .Select(key => key.CatalogKeyCode)
+        return await patterns
+            .OrderBy(pattern => pattern.KeyNumber)
+            .Select(pattern => pattern.KeyNumber)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
     private async Task<List<OpenLoanPartyRow>> LoadOpenLoansAsync(
-        string? catalogKeyCodeFilter,
+        string? keyNumberFilter,
         CancellationToken cancellationToken)
     {
-        IQueryable<LoanEntity> loans = _dbContext.Loans.AsNoTracking()
-            .Where(loan => loan.Status == nameof(LoanStatus.Open));
-        if (!string.IsNullOrWhiteSpace(catalogKeyCodeFilter))
+        var query =
+            from loan in _dbContext.Loans.AsNoTracking()
+            join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
+            join party in _dbContext.Parties.AsNoTracking()
+                on loan.BorrowerPartyReference equals party.PartyCode
+            where loan.Status == nameof(LoanStatus.Open)
+            select new { loan, key, party };
+
+        if (!string.IsNullOrWhiteSpace(keyNumberFilter))
         {
-            loans = loans.Where(loan => loan.CatalogKeyCode.Contains(catalogKeyCodeFilter));
+            query = query.Where(item =>
+                item.key.KeyNumber.Contains(keyNumberFilter)
+                || item.key.MedecoKeyCode.Contains(keyNumberFilter));
         }
 
-        return await (
-                from loan in loans
-                join party in _dbContext.Parties.AsNoTracking()
-                    on loan.BorrowerPartyReference equals party.PartyCode
-                orderby loan.CatalogKeyCode
-                select new OpenLoanPartyRow(
-                    loan.LoanCode,
-                    loan.CatalogKeyCode,
-                    loan.BorrowerPartyReference,
-                    party.FirstName,
-                    party.LastName,
-                    party.Uin,
-                    loan.IssuedAtUtc,
-                    loan.DueAtUtc,
-                    loan.Status))
+        return await query
+            .OrderBy(item => item.key.KeyNumber)
+            .ThenBy(item => item.key.MedecoKeyCode)
+            .Select(item => new OpenLoanPartyRow(
+                item.loan.LoanCode,
+                item.key.KeyNumber,
+                item.key.MedecoKeyCode,
+                item.loan.BorrowerPartyReference,
+                item.party.FirstName,
+                item.party.LastName,
+                item.party.Uin,
+                item.loan.IssuedAtUtc,
+                item.loan.DueAtUtc,
+                item.loan.Status))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
@@ -410,7 +438,8 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
 
     private sealed record OpenLoanPartyRow(
         string LoanCode,
-        string CatalogKeyCode,
+        string KeyNumber,
+        string MedecoKeyCode,
         string PartyCode,
         string FirstName,
         string LastName,

@@ -63,7 +63,7 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
 
         await createDept.ExecuteAsync("am-dept", CancellationToken.None).ConfigureAwait(true);
         string roomCode = await createRoom.ExecuteAsync("101", "Lab", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("AM-KEY-1", "am-type", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("AM-KEY-1", "01", "am-type", CancellationToken.None).ConfigureAwait(true);
 
         await retireDept.ExecuteAsync("am-dept", CancellationToken.None).ConfigureAwait(true);
         Assert.False((await listDepts.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
@@ -83,7 +83,10 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 retireKeyType.ExecuteAsync("am-type", CancellationToken.None))
             .ConfigureAwait(true);
-        KeyAssetEntity key = await db.KeyAssets.SingleAsync(item => item.CatalogKeyCode == "AM-KEY-1")
+        KeyAccessPatternEntity pattern = await db.KeyAccessPatterns.SingleAsync(item => item.KeyNumber == "AM-KEY-1")
+            .ConfigureAwait(true);
+        pattern.IsActive = false;
+        KeyAssetEntity key = await db.KeyAssets.SingleAsync(item => item.KeyNumber == "AM-KEY-1" && item.MedecoKeyCode == "01")
             .ConfigureAwait(true);
         key.IsActive = false;
         await db.SaveChangesAsync().ConfigureAwait(true);
@@ -190,11 +193,12 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
         Assert.Equal(nameof(WorkforceType.Contractor), updated.WorkforceType);
         Assert.Equal(seeded.PartyCode, updated.PartyCode);
 
-        await createKey.ExecuteAsync("am-term-key", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("am-term-key", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 9, 18, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-am-term",
                 "am-term-key",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 "am-term-dept-2",
@@ -283,12 +287,13 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "am-flow")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("am-flow-key", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("am-flow-key", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 9, 19, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-am-flow",
                 "am-flow-key",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,
@@ -308,7 +313,7 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
         IReadOnlyList<KeyCatalogReportRow> catalog = await reports
             .ListKeyCatalogReportAsync("am-flow-key", CancellationToken.None)
             .ConfigureAwait(true);
-        Assert.Contains(catalog, row => row.CatalogKeyCode == "am-flow-key");
+        Assert.Contains(catalog, row => row.KeyNumber == "am-flow-key" && row.MedecoKeyCode == "01");
 
         await completeReturn.ExecuteAsync("return-am-flow", "loan-am-flow", issued.AddHours(1), CancellationToken.None)
             .ConfigureAwait(true);

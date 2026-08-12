@@ -30,13 +30,13 @@ public static class LoanVerticalComposition
         services.AddScoped<IOperatorAuditPersistencePort, OperatorAuditPersistenceAdapter>();
         services.AddScoped<IOperatorAuditRecorder, OperatorAuditRecorder>();
         services.AddScoped<IOperatorAuditTrailUseCase, OperatorAuditTrailUseCase>();
-        services.AddScoped<IKeyRoomAssignmentPersistencePort, KeyRoomAssignmentPersistenceAdapter>();
+        services.AddScoped<IKeyAccessPatternRoomAssignmentPersistencePort, KeyAccessPatternRoomAssignmentPersistenceAdapter>();
         services.AddScoped<IKeyCatalogPersistencePort, KeyCatalogPersistenceAdapter>();
         services.AddScoped<ILoanPersistencePort, LoanPersistenceAdapter>();
         services.AddScoped<IWorkforcePersistencePort, WorkforcePersistenceAdapter>();
         services.AddScoped<ICreateKeyAssetUseCase, CreateKeyAssetUseCase>();
         services.AddScoped<IListKeyAssetsUseCase, ListKeyAssetsUseCase>();
-        services.AddScoped<IKeyRoomAssignmentUseCase, KeyRoomAssignmentUseCase>();
+        services.AddScoped<IKeyAccessPatternRoomAssignmentUseCase, KeyAccessPatternRoomAssignmentUseCase>();
         services.AddScoped<IIssueLoanUseCase, IssueLoanUseCase>();
         services.AddScoped<ICompleteReturnUseCase, CompleteReturnUseCase>();
         services.AddScoped<IListOpenLoansUseCase, ListOpenLoansUseCase>();

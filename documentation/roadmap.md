@@ -37,9 +37,13 @@ Acceptance:
 ## Selected Next Strategic Capability — Operator Experience Simplification
 Human product governance selected OPERATOR-EXPERIENCE-1: remove Organization and Building as active configurable business concepts; remove ResponsibleManager as active workforce authority; make first-use and daily custody intuitive without inventing enterprise abstractions.
 
+## Selected Next Strategic Capability — KEY # Access Pattern and Physical Copies
+After OPERATOR-EXPERIENCE-1 acceptance, human product governance selected KEY-ACCESS-COPY-1: distinguish shared KEY # / Room access-pattern authority from physical MEDECO copies under Issue/Return custody, without Transfer, master-key engines, or spreadsheet flattening.
+Implementation sequencing authority remains documentation/implementation-roadmap.md.
+
 ## Future Capabilities
-Further strategic capabilities beyond OPERATOR-EXPERIENCE-1 are not pre-authorized by this document.
-Human product governance selects the next concrete operational capability after OPERATOR-EXPERIENCE-1 acceptance by asking what the key custodian needs next.
+Further strategic capabilities beyond KEY-ACCESS-COPY-1 are not pre-authorized by this document.
+Human product governance selects the next concrete operational capability after KEY-ACCESS-COPY-1 acceptance by asking what the key custodian needs next.
 Candidates may include only capabilities that serve this installation's day-to-day operations, such as richer custody accountability, overdue handling, inventory checks, maintenance records, or simple operational reporting, and only when a concrete need is stated.
 The following are not strategic commitments and must not drive design:
 - Policy engines or generalized authorization engines.

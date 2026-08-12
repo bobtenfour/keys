@@ -40,22 +40,22 @@ public sealed class IndexModel : PageModel
         IReadOnlyList<KeyAssetListItem> keys = await _listKeyAssets.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        HashSet<string> issuedKeyCodes = openLoans
-            .Select(loan => loan.CatalogKeyCode)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        HashSet<Guid> issuedKeyAssetIds = openLoans
+            .Select(loan => loan.KeyAssetId)
+            .ToHashSet();
 
         ActiveLoanCount = openLoans.Count;
         OverdueCount = openLoans.Count(loan => loan.DueAtUtc < now);
-        KeysAvailableCount = keys.Count(key => key.IsActive && !issuedKeyCodes.Contains(key.CatalogKeyCode));
+        KeysAvailableCount = keys.Count(key => key.IsActive && !issuedKeyAssetIds.Contains(key.KeyAssetId));
 
         RecentActivity = openLoans
             .Select(loan => new OperationsActivityItem(
-                $"Issued Key {loan.CatalogKeyCode} to {PartyHolderDisplayFormatter.Format(loan.HolderFirstName, loan.HolderLastName, loan.HolderUin)}",
+                $"Issued {PartyHolderDisplayFormatter.FormatKeyCopy(loan.KeyNumber, loan.MedecoKeyCode)} to {PartyHolderDisplayFormatter.Format(loan.HolderFirstName, loan.HolderLastName, loan.HolderUin)}",
                 loan.IssuedAtUtc,
                 loan.DueAtUtc < now ? "Overdue" : "Attention",
                 "Issued"))
             .Concat(returnedLoans.Select(loan => new OperationsActivityItem(
-                $"Received Key {loan.CatalogKeyCode} from {PartyHolderDisplayFormatter.Format(loan.HolderFirstName, loan.HolderLastName, loan.HolderUin)}",
+                $"Received {PartyHolderDisplayFormatter.FormatKeyCopy(loan.KeyNumber, loan.MedecoKeyCode)} from {PartyHolderDisplayFormatter.Format(loan.HolderFirstName, loan.HolderLastName, loan.HolderUin)}",
                 loan.ReturnedAtUtc ?? loan.IssuedAtUtc,
                 "Success",
                 "Received")))

@@ -13,9 +13,13 @@ Do not reintroduce Organization or Building as active configurable business conc
 Do not introduce policy engines, generalized authorization engines, workflow engines, event platforms, or extensibility frameworks unless a concrete KeyInventory business requirement later proves they are necessary.
 Workforce Eligibility evaluates legitimate active-worker key issue eligibility; it is not a generalized access-control or key-authorization policy engine.
 Room must not be expanded into Campus or enterprise location hierarchies without a future explicit business requirement.
-Key Catalog owns current KeyAsset-to-Room opening assignments; Location owns Room identity; keys associate to places only through Rooms.
-Key-to-Room Assignment is the operational authority for which Rooms a physical key opens; Lock must not be required or used as an intermediate room-opening authority.
-Master/sub-master hierarchy is out of scope; multiple Rooms are represented by multiple current assignments.
+Key Catalog owns KEY # / KeyAccessPattern identity, physical KeyAsset copies (MEDECO within KEY #), and current KeyAccessPattern-to-Room opening assignments; Location owns Room identity; keys associate to places only through Rooms via KEY #.
+KeyAccessPattern↔Room is the operational authority for which Rooms a KEY # opens; every physical copy under that KEY # derives the same Room set; Lock must not be required or used as an intermediate room-opening authority.
+KeyAsset must not own independent Room openings after KEY-ACCESS-COPY-1; dual KeyAsset↔Room authority is forbidden.
+KeySeries must not be elevated or used as KEY # / Room-access / copy identity authority.
+CatalogKeyCode must not remain unique physical-copy business identity; opaque composite KEY#+MEDECO strings must not be identity authority; KeyAssetId is immutable internal physical-copy identity.
+Custody (Issue/Return) remains on the physical KeyAsset; Transfer is out of scope.
+Master/sub-master hierarchy is out of scope; a master key is only a KEY # whose Room set contains multiple Rooms.
 
 ## Operational Report Export Boundary
 Existing REPORTS-1 tabular reports may be represented as on-screen tables and as CSV, XLSX, and PDF downloads of the same Application-owned filtered result set.
@@ -60,8 +64,9 @@ Runtime composition belongs to the application host. Service registration must n
 - MIGRATION-1 establishes the minimum persistence foundation required for LOAN-VERTICAL-1.
 - MIGRATION-1 includes one EF Core `DbContext` in Infrastructure.
 - MIGRATION-1 includes the initial migration for only these entities: KeyType, KeyAsset, Loan, and Return.
-- KeyAsset persistence may omit optional KeySeries references until a later authorized slice.
-- KeyAsset persistence must not treat Lock as required intermediate authority for Rooms opened by a key; Key-to-Room Assignment is the contracted room-opening authority when later implemented.
+- KeyAsset persistence may omit optional KeySeries references; KEY-ACCESS-COPY-1 must not elevate KeySeries into KEY # or Room-access authority.
+- KEY-ACCESS-COPY-1 migrates Room-opening persistence from KeyAsset↔Room to KeyAccessPattern↔Room and introduces KeyAccessPattern, KeyAssetId, and MEDECO-within-KEY # uniqueness; Lock must not mediate Room openings.
+- Existing CatalogKeyCode values must not be semantically guessed as KEY # vs MEDECO vs composite during migration; STOP rather than invent mapping. Controlled demo/test reset/reseed authority is separate from production migration authority.
 - Authoritative UTC timestamps persist as `DateTimeOffset` values without conversion or normalization.
 - A design-time `DbContext` factory may exist in Infrastructure solely to create and apply migrations against SQL Server using `ConnectionStrings:KeyInventory`.
 - MIGRATION-1 does not implement Application port adapters, command handlers, repository facades beyond the `DbContext`, business DI registrations, UI, seed data, or demo pages.
@@ -70,7 +75,7 @@ Runtime composition belongs to the application host. Service registration must n
 
 ## LOAN-VERTICAL-1 Runtime Workflow Contract
 - Application owns the LOAN-VERTICAL-1 use cases: create Key Asset, issue Loan, complete Return, list Open Loans, and list Returned Loans.
-- Create Key Asset accepts catalog key code and key type code; when the KeyType does not exist, Application creates that KeyType before creating the KeyAsset.
+- Historical LOAN-VERTICAL-1 Create Key Asset accepted catalog key code and key type code; KEY-ACCESS-COPY-1 supersedes that create shape with KEY # / KeyAccessPattern + physical MEDECO copy registration under Application authority.
 - Issue Loan and Complete Return use existing Domain Loan and Return aggregates and `UtcTimestamp` validation.
 - Borrower Party is an opaque required string reference; no Party aggregate is introduced.
 - Infrastructure implements persistence adapters against the existing `KeyInventoryDbContext` and MIGRATION-1 entity mappings; adapters translate between Domain aggregates and persistence entities without owning business rules.

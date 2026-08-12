@@ -3,8 +3,12 @@ namespace KeyInventory.Application.OperatorAudit;
 public static class OperatorAuditActions
 {
     public const string KeyRegistered = "Key registered";
+    public const string KeyAccessPatternCreated = "KEY # created";
+    public const string PhysicalKeyCopyRegistered = "Physical key copy registered";
     public const string KeyRoomAssignmentAdded = "Key↔Room assignment added";
     public const string KeyRoomAssignmentRemoved = "Key↔Room assignment removed";
+    public const string KeyAccessPatternRoomAssignmentAdded = "KEY #↔Room assignment added";
+    public const string KeyAccessPatternRoomAssignmentRemoved = "KEY #↔Room assignment removed";
     public const string KeyIssued = "Key issued";
     public const string KeyReturned = "Key returned";
     public const string WorkforceMemberCreated = "Workforce Member created";
@@ -36,7 +40,10 @@ public static class OperatorAuditActions
 public static class OperatorAuditSubjects
 {
     public const string Key = "Key";
+    public const string KeyAccessPattern = "KEY #";
+    public const string PhysicalKeyCopy = "Physical key copy";
     public const string KeyRoomAssignment = "Key↔Room";
+    public const string KeyAccessPatternRoomAssignment = "KEY #↔Room";
     public const string Loan = "Loan";
     public const string Return = "Return";
     public const string WorkforceMember = "Workforce Member";

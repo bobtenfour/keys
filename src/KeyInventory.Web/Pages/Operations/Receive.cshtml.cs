@@ -79,7 +79,7 @@ public sealed class ReceiveModel : PageModel
             await _lookup.ListOpenLoansWithHoldersAsync(cancellationToken).ConfigureAwait(false);
         ActiveIssueOptions = openItems
             .Select(item => new SelectListItem(
-                $"{item.CatalogKeyCode} · {PartyHolderDisplayFormatter.Format(item.HolderFirstName, item.HolderLastName, item.HolderUin)}",
+                $"{PartyHolderDisplayFormatter.FormatKeyCopy(item.KeyNumber, item.MedecoKeyCode)} · {PartyHolderDisplayFormatter.Format(item.HolderFirstName, item.HolderLastName, item.HolderUin)}",
                 item.LoanCode,
                 string.Equals(item.LoanCode, IssueReference, StringComparison.Ordinal)))
             .ToArray();

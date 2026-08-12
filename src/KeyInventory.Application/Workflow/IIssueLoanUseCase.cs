@@ -4,7 +4,8 @@ public interface IIssueLoanUseCase
 {
     Task ExecuteAsync(
         string loanCode,
-        string catalogKeyCode,
+        string keyNumber,
+        string medecoKeyCode,
         string workforceMemberCode,
         string justificationKind,
         string justificationCode,

@@ -126,8 +126,12 @@ public sealed class AuditTrailModel : PageModel
         string[] actions =
         [
             OperatorAuditActions.KeyRegistered,
+            OperatorAuditActions.KeyAccessPatternCreated,
+            OperatorAuditActions.PhysicalKeyCopyRegistered,
             OperatorAuditActions.KeyRoomAssignmentAdded,
             OperatorAuditActions.KeyRoomAssignmentRemoved,
+            OperatorAuditActions.KeyAccessPatternRoomAssignmentAdded,
+            OperatorAuditActions.KeyAccessPatternRoomAssignmentRemoved,
             OperatorAuditActions.KeyIssued,
             OperatorAuditActions.KeyReturned,
             OperatorAuditActions.WorkforceMemberCreated,

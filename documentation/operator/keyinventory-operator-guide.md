@@ -1,19 +1,39 @@
 # KeyInventory Operator Guide
 
 Concise guide for day-to-day key custody at a single-site KeyInventory installation.  
-Screenshots are from the final OPERATOR-EXPERIENCE-1 runtime.
+Screenshots currently reflect the OPERATOR-EXPERIENCE-1 runtime and will be refreshed after KEY-ACCESS-COPY-1 runtime finalization. Do not treat outdated screenshot labels as authority over KEY # / MEDECO vocabulary below.
 
 ## What KeyInventory does
 
 KeyInventory helps a key custodian:
 
-- catalog physical keys and the rooms they open
-- issue and receive keys to workforce members
-- see who currently holds each key
+- maintain **KEY #** access patterns and the **Room #** values each KEY # opens
+- register **MEDECO** physical copies under a KEY #
+- issue and return exact physical copies to people
+- see who currently holds each physical copy
 - correct authorized business records
 - review audit history and reports
 
 There is no Organization or Building setup. Departments and Rooms belong directly to this installation.
+
+## KEY # and MEDECO (authoritative vocabulary)
+
+| Term | Meaning |
+|---|---|
+| **KEY #** | Shared access number. Associated with the set of Rooms that open. Many physical copies may share one KEY #. |
+| **MEDECO Key Code** | Identifies the specific physical key copy issued to a person. Unique within a KEY #; may repeat under a different KEY #. |
+| **Room #** | Operator-facing room identifier. |
+
+**Example**
+
+- KEY # `66800`
+- Rooms opened: `410D`
+- Physical copies:
+  - MEDECO `26`
+  - MEDECO `27`
+  - MEDECO `28`
+
+Rooms opened are recorded once on the KEY #. Every MEDECO copy under that KEY # opens the same Rooms. Issue and return always name the exact MEDECO copy (for example KEY # 66800 / MEDECO 26), not merely the KEY #.
 
 ## Dependency model (authoritative)
 
@@ -37,23 +57,26 @@ flowchart TB
 
   WM[Workforce Member]
   WA[Work Assignment]
-  KEY[Register Key]
-  KR[Key↔Room assignment]
+  KN[KEY # access pattern]
+  KR[KEY # ↔ Room #]
+  COPY[MEDECO physical copy]
   ISSUE[Issue Key]
   ACTIVE[Active Custody]
-  RECV[Receive Key]
+  RECV[Return / Receive]
   HIST[History / Audit / Reports]
 
   D -->|mandatory| WM
   R -->|mandatory| WA
   WM -->|mandatory| WA
-  KT -->|mandatory| KEY
+  KT -->|mandatory| KN
+  KN -->|mandatory| COPY
+  KN --> KR
+  R --> KR
   WM -->|mandatory| ISSUE
   WA -->|mandatory| ISSUE
-  KEY -->|mandatory| ISSUE
-  KR -.->|optional for Issue| ISSUE
+  COPY -->|mandatory| ISSUE
   ISSUE -->|consequence| ACTIVE
-  ACTIVE -->|mandatory for receive| RECV
+  ACTIVE -->|mandatory for return| RECV
   ISSUE -->|consequence| HIST
   RECV -->|consequence| HIST
 ```
@@ -61,12 +84,12 @@ flowchart TB
 ### Minimum first-use path
 
 1. Sign in.
-2. Create **Department**, **Room**, and **Key Type** in any order.
+2. Create **Department**, **Room #**, and **Key Type** in any order.
 3. Create the first **Workforce Member** (no second person required).
 4. Create a **Work Assignment** (member ↔ room) — required before Issue.
-5. **Register** a Key.
-6. Optionally assign **Key↔Room**.
-7. **Issue Key** → **Active Loans** → **Receive** when returned.
+5. Create a **KEY #** (with Key Type) and assign **Room #** openings to that KEY #.
+6. Register at least one **MEDECO** physical copy under that KEY #.
+7. **Issue Key** (person + KEY # + available MEDECO; Rooms derived) → **Active custody** → **Return** the same MEDECO copy when returned.
 
 ![Home first-use readiness](images/01-home-first-use.png)
 
@@ -219,44 +242,45 @@ Issue Key eligibility (together with a registered key).
 
 ---
 
-## Key Types and registering Keys
+## Key Types, KEY #, and MEDECO copies
 
 ### Purpose
-Classify and catalog physical keys.
+Classify access patterns, record which Room # values a KEY # opens, and register physical MEDECO copies.
 
 ### Prerequisites
-Key Type may be created when registering a key if it does not exist (Catalog Register), or managed under Catalog → Key Types.
+Key Type may be created with the KEY # if it does not exist, or managed under Catalog → Key Types.
 
 ### Where to go
-Catalog → Register Key / Key Types
+Catalog (KEY # / Register copy / KEY # ↔ Room surfaces — labels follow KEY-ACCESS-COPY-1 runtime)
 
 ### Steps
-1. Ensure a Key Type exists (or enter a new type code on Register).
-2. Enter Catalog key code and type.
-3. Register.
+1. Ensure a Key Type exists (or enter a new type when creating the KEY #).
+2. Create **KEY #** (shared access number).
+3. Assign **Room #** openings to that KEY # (once for all copies).
+4. Register each **MEDECO** physical copy under that KEY #.
 
 ### Expected result
-Key appears in catalog and Find Key.
+KEY # shows Rooms opened; MEDECO copies appear under that KEY # in catalog and Find Key.
 
 ### What becomes available next
-Key↔Room and Issue Key.
+Issue Key for an available MEDECO copy.
 
 ---
 
-## Assigning rooms opened by a Key
+## Assigning rooms opened by a KEY #
 
 ### Purpose
-Record which rooms a physical key opens.
+Record which Room # values a KEY # opens. Every MEDECO copy under that KEY # opens the same Rooms.
 
 ### Prerequisites
-Registered Key and active Room.  
-**Optional for Issue Key**; recommended for Find Key / rooms-opened clarity.
+KEY # and active Room.  
+Room assignment is on the KEY #, not repeated on each physical copy.
 
 ### Where to go
-Catalog → Key Rooms (or key-specific Key↔Room surface)
+Catalog → KEY # ↔ Room (runtime label after KEY-ACCESS-COPY-1)
 
 ### Steps
-1. Select key and room.
+1. Select KEY # and Room #.
 2. Assign.
 3. Remove only when the opening association should end.
 
@@ -265,13 +289,13 @@ Catalog → Key Rooms (or key-specific Key↔Room surface)
 ## Issuing a Key
 
 ### Purpose
-Hand a cataloged key to an eligible workforce member.
+Hand an available MEDECO physical copy to an eligible person.
 
 ### Prerequisites (mandatory)
 - Active Workforce Member with valid Party identity
 - Active Department on that member
 - At least one active Work Assignment
-- Registered Key
+- Available MEDECO physical copy under a KEY #
 - Justification: member’s Department **or** an assigned Work Assignment Room
 
 ### Where to go
@@ -280,57 +304,67 @@ Operations → Issue Key
 ![Issue Key](images/03-issue-key.png)
 
 ### Steps
-1. Select Key and Issue to person.
-2. Choose For = Department or Room and the matching justification.
-3. Confirm Issued / Due (local date-time controls).
-4. Enter Loan code.
-5. Issue Key.
+1. Select person (Issue to).
+2. Select **KEY #**, then an **available MEDECO** copy under that KEY #.
+3. Confirm **Rooms opened** shown as derived from the KEY # (do not re-enter Rooms).
+4. Choose For = Department or Room and the matching justification.
+5. Confirm Issued / Due (local date-time controls).
+6. Enter Loan code.
+7. Issue Key.
 
 ### Expected result
-Success message; Active Loans shows the open loan with human-readable times.
+Success message; Active custody shows KEY # + MEDECO for the open issue with human-readable times.
 
 ![Active Loans](images/04-active-loans.png)
 
 ### Common problems
-- Readiness still shows missing Work Assignment or Key.
+- Readiness still shows missing Work Assignment or Key / MEDECO copy.
+- Selected MEDECO already issued.
 - Justification room not on the member’s assignments.
 
 ### What becomes available next
-Active Custody / Receive.
+Active Custody / Return of that exact MEDECO copy.
 
 ---
 
-## Active custody and Receive
+## Active custody and Return
 
 ### Purpose
-See who holds keys; complete return.
+See who holds which MEDECO copy; complete return of that exact copy.
 
 ### Prerequisites
-Open loan for Receive.
+Open loan for the physical copy being returned.
 
 ### Where to go
-Operations → Active Loans → Receive, or Operations → Receive Key
+Operations → Active Loans → Receive/Return, or Operations → Receive Key
 
 ### Steps
-1. Open the active loan.
-2. Confirm received time with the local control.
-3. Complete receive.
+1. Identify the open issue by **KEY #** and **MEDECO** (for example 66800 / 26, not 66800 / 27).
+2. Confirm returned time with the local control.
+3. Complete return.
 
 ### Expected result
-Loan leaves Active; appears in History as returned.
+That MEDECO copy leaves Active custody; appears in History as returned. Other MEDECO copies under the same KEY # are unaffected.
 
 ---
 
 ## Find Key
 
 ### Purpose
-Locate a key quickly and see rooms it opens / custody context.
+Answer KEY #-level and copy-level questions without a separate search system.
 
 ### Where to go
 Home search or Operations Find Key surfaces.
 
 ### Prerequisites
-Catalog data (assignments enrich the result when present).
+Catalog data (KEY # Room openings and MEDECO copies).
+
+### What you should be able to answer
+- What Room # values does KEY # 66800 open?
+- What MEDECO copies exist under KEY # 66800? Which are available or issued?
+- Who holds MEDECO 28 under KEY # 66800?
+- Which KEY # / MEDECO does a person currently hold?
+- Which KEY # values open Room X?
 
 ---
 

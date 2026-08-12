@@ -31,7 +31,7 @@ public sealed class CompleteReturnUseCase : ICompleteReturnUseCase
             OperatorAuditActions.KeyReturned,
             OperatorAuditSubjects.Return,
             completedReturn.ReturnCode,
-            $"Loan={loan.LoanCode}; Key={loan.KeyAsset.CatalogKeyCode}");
+            $"Loan={loan.LoanCode}; KEY#={loan.KeyAsset.KeyNumber}; MEDECO={loan.KeyAsset.MedecoKeyCode}; KeyAssetId={loan.KeyAsset.KeyAssetId:D}");
         await _loans.AddReturnAsync(completedReturn, cancellationToken).ConfigureAwait(false);
     }
 }

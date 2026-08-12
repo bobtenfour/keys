@@ -13,9 +13,12 @@ public sealed class KeyInventoryDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<KeyTypeEntity> KeyTypes => Set<KeyTypeEntity>();
 
-    public DbSet<KeyAssetEntity> KeyAssets => Set<KeyAssetEntity>();
+    public DbSet<KeyAccessPatternEntity> KeyAccessPatterns => Set<KeyAccessPatternEntity>();
 
-    public DbSet<KeyRoomAssignmentEntity> KeyRoomAssignments => Set<KeyRoomAssignmentEntity>();
+    public DbSet<KeyAccessPatternRoomAssignmentEntity> KeyAccessPatternRoomAssignments =>
+        Set<KeyAccessPatternRoomAssignmentEntity>();
+
+    public DbSet<KeyAssetEntity> KeyAssets => Set<KeyAssetEntity>();
 
     public DbSet<LoanEntity> Loans => Set<LoanEntity>();
 

@@ -8,7 +8,7 @@
 
 <header class="page-header page-header-compact">
     <h1>Keys</h1>
-    <p class="lede">Controlled keys in the catalog.</p>
+    <p class="lede">Physical MEDECO copies under KEY # access patterns.</p>
 </header>
 
 <section class="card">
@@ -21,7 +21,7 @@
     {
         <div class="empty-state">
             <strong>No keys registered</strong>
-            Register your first key using the button above.
+            Register your first physical copy using the button above.
         </div>
     }
     else
@@ -30,7 +30,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Key</th>
+                        <th>KEY #</th>
+                        <th>MEDECO</th>
                         <th>Type</th>
                         <th>Rooms opened</th>
                         <th>Status</th>
@@ -41,7 +42,8 @@
                 @foreach (var key in Model.Keys)
                 {
                     <tr>
-                        <td>@key.CatalogKeyCode</td>
+                        <td>@key.KeyNumber</td>
+                        <td>@key.MedecoKeyCode</td>
                         <td>@key.TypeCode</td>
                         <td>
                             @{
@@ -61,7 +63,7 @@
                             {
                                 <span class="badge badge-warning">Inactive</span>
                             }
-                            else if (Model.IssuedKeyCodes.Contains(key.CatalogKeyCode))
+                            else if (Model.IssuedKeyAssetIds.Contains(key.KeyAssetId))
                             {
                                 <span class="badge badge-attention">Issued</span>
                             }
@@ -71,7 +73,7 @@
                             }
                         </td>
                         <td>
-                            <a asp-page="/Catalog/KeyRooms" asp-route-key="@key.CatalogKeyCode">Rooms</a>
+                            <a asp-page="/Catalog/KeyRooms" asp-route-keyNumber="@key.KeyNumber">Rooms</a>
                         </td>
                     </tr>
                 }

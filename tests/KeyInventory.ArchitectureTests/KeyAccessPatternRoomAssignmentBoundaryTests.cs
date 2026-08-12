@@ -12,19 +12,21 @@ using Xunit;
 
 namespace KeyInventory.ArchitectureTests;
 
-public sealed class KeyRoomAssignmentBoundaryTests
+public sealed class KeyAccessPatternRoomAssignmentBoundaryTests
 {
     [Fact]
     public void CatalogKeyRoomsPageConsumesApplicationUseCaseWithoutDbContext()
     {
         ConstructorInfo ctor = typeof(KeyRoomsModel).GetConstructors().Single();
-        Assert.Contains(ctor.GetParameters(), parameter => parameter.ParameterType == typeof(IKeyRoomAssignmentUseCase));
+        Assert.Contains(
+            ctor.GetParameters(),
+            parameter => parameter.ParameterType == typeof(IKeyAccessPatternRoomAssignmentUseCase));
         Assert.DoesNotContain(
             ctor.GetParameters(),
             parameter =>
                 parameter.ParameterType.Name.Contains("DbContext", StringComparison.Ordinal)
                 || (parameter.ParameterType.Namespace?.StartsWith("KeyInventory.Infrastructure", StringComparison.Ordinal) ?? false)
-                || parameter.ParameterType == typeof(IKeyRoomAssignmentPersistencePort));
+                || parameter.ParameterType == typeof(IKeyAccessPatternRoomAssignmentPersistencePort));
     }
 
     [Fact]
@@ -32,7 +34,7 @@ public sealed class KeyRoomAssignmentBoundaryTests
     {
         Assembly[] assemblies =
         [
-            typeof(IKeyRoomAssignmentUseCase).Assembly,
+            typeof(IKeyAccessPatternRoomAssignmentUseCase).Assembly,
             typeof(LoanVerticalComposition).Assembly,
             typeof(KeyInventory.Web.Program).Assembly
         ];
@@ -69,12 +71,12 @@ public sealed class KeyRoomAssignmentBoundaryTests
             builder.Environment);
 
         using ServiceProvider provider = builder.Services.BuildServiceProvider();
-        Assert.NotNull(provider.GetService<IKeyRoomAssignmentUseCase>());
-        Assert.NotNull(provider.GetService<IKeyRoomAssignmentPersistencePort>());
+        Assert.NotNull(provider.GetService<IKeyAccessPatternRoomAssignmentUseCase>());
+        Assert.NotNull(provider.GetService<IKeyAccessPatternRoomAssignmentPersistencePort>());
     }
 
     [Fact]
-    public void KeyRoomAssignmentMappingHasNoLockForeignKeyAndNoBuildingOnKeyAsset()
+    public void KeyAccessPatternRoomAssignmentMappingHasNoLockForeignKeyAndNoBuildingOnKeyAsset()
     {
         string connectionString = KeyInventorySqlServerTestConnection.Require();
         DbContextOptions<KeyInventoryDbContext> options = new DbContextOptionsBuilder<KeyInventoryDbContext>()
@@ -86,10 +88,11 @@ public sealed class KeyRoomAssignmentBoundaryTests
         Assert.Null(typeof(KeyAssetEntity).GetProperty("BuildingCode"));
         Assert.Null(typeof(KeyAsset).GetProperty("Building"));
         Assert.Null(typeof(KeyAsset).GetProperty("BuildingCode"));
+        Assert.Null(typeof(KeyAssetEntity).GetProperty("CatalogKeyCode"));
 
-        var assignmentEntity = context.Model.FindEntityType(typeof(KeyRoomAssignmentEntity));
+        var assignmentEntity = context.Model.FindEntityType(typeof(KeyAccessPatternRoomAssignmentEntity));
         Assert.NotNull(assignmentEntity);
-        Assert.Equal("KeyRoomAssignments", assignmentEntity.GetTableName());
+        Assert.Equal("KeyAccessPatternRoomAssignments", assignmentEntity.GetTableName());
         Assert.DoesNotContain(
             assignmentEntity.GetForeignKeys(),
             fk => fk.PrincipalEntityType.ClrType.Name.Contains("Lock", StringComparison.Ordinal));
@@ -98,7 +101,11 @@ public sealed class KeyRoomAssignmentBoundaryTests
             fk => fk.PrincipalEntityType.ClrType == typeof(RoomEntity));
         Assert.Contains(
             assignmentEntity.GetForeignKeys(),
+            fk => fk.PrincipalEntityType.ClrType == typeof(KeyAccessPatternEntity));
+        Assert.DoesNotContain(
+            assignmentEntity.GetForeignKeys(),
             fk => fk.PrincipalEntityType.ClrType == typeof(KeyAssetEntity));
+        Assert.Null(context.Model.FindEntityType("KeyInventory.Infrastructure.Data.KeyRoomAssignmentEntity"));
     }
 
     private static bool ContainsAny(string value, params string[] terms)

@@ -24,8 +24,11 @@ Prevent hidden coupling, documentation drift, authority duplication, and operati
 - WorkforceMember is the sole workforce relationship and eligibility authority and must not own FirstName, LastName, UIN, or other Party person-identity attributes.
 - Employment is not a separate aggregate and must not duplicate WorkforceMember relationship authority.
 - RoomNumber is required and unique across all Room records; Room place authority remains inside the Location boundary; Building is not an active place authority.
-- Current KeyAsset-to-Room opening assignments are owned by Key Catalog; Location owns Room identity; KeyAsset must not independently own Building or site abstractions.
-- Key-to-Room Assignment is the sole operational authority for which Rooms a physical key opens; Lock must not mediate or duplicate that authority; KeyType must not own Room assignments; assignment history is not required; master/sub-master hierarchy is forbidden for this product.
+- KEY # / KeyAccessPattern is the sole shared access-pattern identity; physical KeyAsset copies belong to exactly one KeyAccessPattern; MEDECO Key Code is unique within KEY # and is not globally unique.
+- Current KeyAccessPattern-to-Room opening assignments are owned by Key Catalog; Location owns Room identity; KeyAsset must not independently own Building, site abstractions, or Room openings; physical copies derive Rooms opened only through parent KEY #.
+- KeyAccessPattern↔Room is the sole operational authority for which Rooms a KEY # (and therefore every physical copy under it) opens; Lock must not mediate or duplicate that authority; KeyType must not own Room assignments; KeySeries must not own KEY # or Room access; assignment history is not required; master/sub-master hierarchy is forbidden (a master key is only a KEY # with multiple Rooms).
+- CatalogKeyCode must not remain unique physical-copy business identity; opaque composite KEY#+MEDECO strings must not be identity authority; KeyAssetId is the immutable internal physical-copy identity.
+- Custody (Issue/Return/open Loan) remains on the physical KeyAsset; at most one open Loan per physical copy; different copies under the same KEY # may be issued simultaneously.
 - Key issue eligibility for a WorkforceMember requires Active status, Party person identity with valid UIN, Department, and at least one active Room WorkAssignment; Organization and ResponsibleManager are not eligibility requirements.
 - Keys may be issued only for the Department or Room where the WorkforceMember is authorized to work.
 - WorkforceMember termination, rehire, Department change, and Employee or Contractor WorkforceType transition must not rewrite Party person identity.

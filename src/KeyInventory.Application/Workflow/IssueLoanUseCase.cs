@@ -28,7 +28,8 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
 
     public async Task ExecuteAsync(
         string loanCode,
-        string catalogKeyCode,
+        string keyNumber,
+        string medecoKeyCode,
         string workforceMemberCode,
         string justificationKind,
         string justificationCode,
@@ -47,15 +48,21 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
             throw new InvalidOperationException("A loan with this loan code already exists.");
         }
 
-        KeyAsset? keyAsset = await _catalog.FindKeyAssetAsync(catalogKeyCode, cancellationToken).ConfigureAwait(false);
+        KeyAsset? keyAsset = await _catalog.FindKeyAssetAsync(keyNumber, medecoKeyCode, cancellationToken)
+            .ConfigureAwait(false);
         if (keyAsset is null)
         {
-            throw new InvalidOperationException("The selected key was not found.");
+            throw new InvalidOperationException("The selected physical key copy was not found.");
         }
 
         if (!keyAsset.IsActive)
         {
-            throw new InvalidOperationException("An inactive key cannot be loaned.");
+            throw new InvalidOperationException("An inactive physical key copy cannot be issued.");
+        }
+
+        if (await _loans.HasOpenLoanForKeyAssetAsync(keyAsset.KeyAssetId, cancellationToken).ConfigureAwait(false))
+        {
+            throw new InvalidOperationException("This physical key copy already has an open loan.");
         }
 
         WorkforceMember? member = await _workforce.FindWorkforceMemberAsync(workforceMemberCode, cancellationToken)
@@ -96,7 +103,7 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
             OperatorAuditActions.KeyIssued,
             OperatorAuditSubjects.Loan,
             loan.LoanCode,
-            $"Key={keyAsset.CatalogKeyCode}; WorkforceMember={member.WorkforceMemberCode}; Justification={kind}/{justificationCode?.Trim()}");
+            $"KEY#={keyAsset.KeyNumber}; MEDECO={keyAsset.MedecoKeyCode}; KeyAssetId={keyAsset.KeyAssetId:D}; WorkforceMember={member.WorkforceMemberCode}; Justification={kind}/{justificationCode?.Trim()}");
         await _loans.AddLoanAsync(loan, cancellationToken).ConfigureAwait(false);
     }
 }

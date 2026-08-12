@@ -146,7 +146,7 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
             .ConfigureAwait(true);
 
         await scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>()
-            .ExecuteAsync("TERM-KEY-1", "mechanical", CancellationToken.None)
+            .ExecuteAsync("TERM-KEY-1", "01", "mechanical", CancellationToken.None)
             .ConfigureAwait(true);
 
         DateTimeOffset issued = DateTimeOffset.UtcNow;
@@ -155,6 +155,7 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
             .ExecuteAsync(
                 "loan-term-1",
                 "TERM-KEY-1",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,

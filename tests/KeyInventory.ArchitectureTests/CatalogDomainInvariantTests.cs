@@ -7,60 +7,46 @@ namespace KeyInventory.ArchitectureTests;
 public sealed class CatalogDomainInvariantTests
 {
     [Fact]
-    public void KeyAssetRequiresCatalogKeyCode()
+    public void KeyAssetRequiresMedecoKeyCode()
     {
-        KeyType keyType = new("mechanical");
+        KeyAccessPattern pattern = CatalogTestFactory.CreatePattern("66800");
 
-        Assert.Throws<ArgumentException>(() => new KeyAsset(" ", keyType));
+        Assert.Throws<ArgumentException>(() => new KeyAsset(Guid.NewGuid(), pattern, " "));
     }
 
     [Fact]
-    public void KeyAssetRequiresActiveKeyType()
+    public void KeyAssetRequiresNonEmptyKeyAssetId()
     {
-        KeyType keyType = new("mechanical");
-        keyType.Retire(hasActiveKeyAssets: false);
+        KeyAccessPattern pattern = CatalogTestFactory.CreatePattern("66800");
 
-        Assert.Throws<InvalidOperationException>(() => new KeyAsset("key-1", keyType));
+        Assert.Throws<ArgumentException>(() => new KeyAsset(Guid.Empty, pattern, "26"));
     }
 
     [Fact]
-    public void KeyAssetRejectsInactiveKeySeriesForNewAssignment()
+    public void KeyAssetRequiresActiveKeyAccessPattern()
     {
         KeyType keyType = new("mechanical");
-        KeySeries keySeries = new("master-a");
-        keySeries.Retire(hasActiveKeyAssets: false);
+        KeyAccessPattern pattern = new("66800", keyType);
+        pattern.Retire(hasActivePhysicalCopies: false);
 
-        Assert.Throws<InvalidOperationException>(() => new KeyAsset("key-1", keyType, keySeries));
+        Assert.Throws<InvalidOperationException>(() => new KeyAsset(Guid.NewGuid(), pattern, "26"));
     }
 
     [Fact]
-    public void KeyAssetRejectsInactiveLockForNewAssignment()
+    public void KeyAccessPatternRequiresActiveKeyType()
     {
         KeyType keyType = new("mechanical");
-        Location location = new("hq");
-        CatalogLock intendedLock = new("front-door", location);
-        intendedLock.Retire();
+        keyType.Retire(hasActiveKeyAccessPatterns: false);
 
-        Assert.Throws<InvalidOperationException>(() => new KeyAsset("key-1", keyType, intendedLock: intendedLock));
+        Assert.Throws<InvalidOperationException>(() => new KeyAccessPattern("66800", keyType));
     }
 
     [Fact]
-    public void KeyAssetRejectsLockWithInactiveLocationForNewAssignment()
-    {
-        KeyType keyType = new("mechanical");
-        Location location = new("hq");
-        CatalogLock intendedLock = new("front-door", location);
-        location.Retire(hasActiveChildLocations: false);
-
-        Assert.Throws<InvalidOperationException>(() => new KeyAsset("key-1", keyType, intendedLock: intendedLock));
-    }
-
-    [Fact]
-    public void KeyTypeCannotRetireWhileActiveKeyAssetsRequireIt()
+    public void KeyTypeCannotRetireWhileActiveKeyAccessPatternsRequireIt()
     {
         KeyType keyType = new("mechanical");
 
-        Assert.Throws<InvalidOperationException>(() => keyType.Retire(hasActiveKeyAssets: true));
+        Assert.Throws<InvalidOperationException>(() => keyType.Retire(hasActiveKeyAccessPatterns: true));
     }
 
     [Fact]
@@ -106,42 +92,39 @@ public sealed class CatalogDomainInvariantTests
     }
 
     [Fact]
-    public void KeyAssetAllowsZeroOneAndMultipleRoomAssignments()
+    public void KeyAccessPatternOwnsRoomAssignmentsWithZeroOneAndManyCardinality()
     {
-        KeyType keyType = new("mechanical");
-        KeyAsset keyAsset = new("key-rooms", keyType);
+        KeyAccessPattern pattern = CatalogTestFactory.CreatePattern("66800");
 
-        Assert.Empty(keyAsset.OpenedRoomCodes);
+        Assert.Empty(pattern.OpenedRoomCodes);
 
-        keyAsset.AssignOpenedRoom("room-a");
-        Assert.Equal(["room-a"], keyAsset.OpenedRoomCodes.Order(StringComparer.Ordinal));
+        pattern.AssignOpenedRoom("room-a");
+        Assert.Equal(["room-a"], pattern.OpenedRoomCodes.Order(StringComparer.Ordinal));
 
-        keyAsset.AssignOpenedRoom("room-b");
-        Assert.Equal(["room-a", "room-b"], keyAsset.OpenedRoomCodes.Order(StringComparer.Ordinal));
+        pattern.AssignOpenedRoom("room-b");
+        Assert.Equal(["room-a", "room-b"], pattern.OpenedRoomCodes.Order(StringComparer.Ordinal));
 
-        keyAsset.RemoveOpenedRoom("room-a");
-        Assert.Equal(["room-b"], keyAsset.OpenedRoomCodes.Order(StringComparer.Ordinal));
+        pattern.RemoveOpenedRoom("room-a");
+        Assert.Equal(["room-b"], pattern.OpenedRoomCodes.Order(StringComparer.Ordinal));
 
-        keyAsset.RemoveOpenedRoom("room-b");
-        Assert.Empty(keyAsset.OpenedRoomCodes);
+        pattern.RemoveOpenedRoom("room-b");
+        Assert.Empty(pattern.OpenedRoomCodes);
     }
 
     [Fact]
-    public void KeyAssetRejectsDuplicateRoomAssignment()
+    public void KeyAccessPatternRejectsDuplicateRoomAssignment()
     {
-        KeyType keyType = new("mechanical");
-        KeyAsset keyAsset = new("key-dup", keyType);
-        keyAsset.AssignOpenedRoom("room-a");
+        KeyAccessPattern pattern = CatalogTestFactory.CreatePattern("66800");
+        pattern.AssignOpenedRoom("room-a");
 
-        Assert.Throws<InvalidOperationException>(() => keyAsset.AssignOpenedRoom("room-a"));
+        Assert.Throws<InvalidOperationException>(() => pattern.AssignOpenedRoom("room-a"));
     }
 
     [Fact]
-    public void MultipleKeyAssetsMayOpenTheSameRoom()
+    public void MultipleKeyAccessPatternsMayOpenTheSameRoom()
     {
-        KeyType keyType = new("mechanical");
-        KeyAsset first = new("key-1", keyType);
-        KeyAsset second = new("key-2", keyType);
+        KeyAccessPattern first = CatalogTestFactory.CreatePattern("66800");
+        KeyAccessPattern second = CatalogTestFactory.CreatePattern("66801");
 
         first.AssignOpenedRoom("shared-room");
         second.AssignOpenedRoom("shared-room");
@@ -151,12 +134,32 @@ public sealed class CatalogDomainInvariantTests
     }
 
     [Fact]
-    public void KeyAssetDoesNotOwnBuildingAndKeyTypeDoesNotOwnRoomAssignments()
+    public void PhysicalCopiesDeriveIdenticalRoomsFromParentKeyAccessPattern()
     {
+        KeyAccessPattern pattern = CatalogTestFactory.CreatePattern("66800");
+        pattern.AssignOpenedRoom("410D");
+        pattern.AssignOpenedRoom("411A");
+
+        KeyAsset copyA = new(Guid.NewGuid(), pattern, "26");
+        KeyAsset copyB = new(Guid.NewGuid(), pattern, "27");
+
+        Assert.Equal(pattern.OpenedRoomCodes, copyA.OpenedRoomCodes);
+        Assert.Equal(pattern.OpenedRoomCodes, copyB.OpenedRoomCodes);
+        Assert.Equal(copyA.OpenedRoomCodes.Order(StringComparer.Ordinal), copyB.OpenedRoomCodes.Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void KeyAssetDoesNotOwnRoomAssignmentMutatorsOrBuilding()
+    {
+        Assert.DoesNotContain(
+            typeof(KeyAsset).GetMethods(),
+            method => method.Name is "AssignOpenedRoom" or "RemoveOpenedRoom");
         Assert.DoesNotContain(
             typeof(KeyAsset).GetProperties(),
             property => string.Equals(property.Name, "Building", StringComparison.Ordinal)
-                || string.Equals(property.Name, "BuildingCode", StringComparison.Ordinal));
+                || string.Equals(property.Name, "BuildingCode", StringComparison.Ordinal)
+                || string.Equals(property.Name, "IntendedLock", StringComparison.Ordinal)
+                || string.Equals(property.Name, "CatalogKeyCode", StringComparison.Ordinal));
 
         Assert.DoesNotContain(
             typeof(KeyType).GetMethods(),
@@ -167,13 +170,28 @@ public sealed class CatalogDomainInvariantTests
     }
 
     [Fact]
-    public void RoomAssignmentDoesNotRequireIntendedLock()
+    public void SameMedecoIsAllowedUnderDifferentKeyNumbersAtDomainLevel()
     {
-        KeyType keyType = new("mechanical");
-        KeyAsset keyAsset = new("key-no-lock", keyType);
+        KeyAsset first = CatalogTestFactory.CreateCopy("66800", "26", "mechanical");
+        KeyAsset second = CatalogTestFactory.CreateCopy("66801", "26", "mechanical");
 
-        Assert.Null(keyAsset.IntendedLock);
-        keyAsset.AssignOpenedRoom("room-open");
-        Assert.Contains("room-open", keyAsset.OpenedRoomCodes);
+        Assert.Equal("26", first.MedecoKeyCode);
+        Assert.Equal("26", second.MedecoKeyCode);
+        Assert.NotEqual(first.KeyNumber, second.KeyNumber);
+        Assert.NotEqual(first.KeyAssetId, second.KeyAssetId);
+    }
+
+    [Fact]
+    public void DomainAllowsConstructingDistinctCopiesUnderSameKeyNumberWithDifferentMedeco()
+    {
+        KeyAccessPattern pattern = CatalogTestFactory.CreatePattern("66800", "mechanical");
+        KeyAsset first = new(Guid.NewGuid(), pattern, "26");
+        KeyAsset second = new(Guid.NewGuid(), pattern, "27");
+
+        Assert.Equal("66800", first.KeyNumber);
+        Assert.Equal("66800", second.KeyNumber);
+        Assert.NotEqual(first.MedecoKeyCode, second.MedecoKeyCode);
+        Assert.Same(pattern, first.AccessPattern);
+        Assert.Same(pattern, second.AccessPattern);
     }
 }

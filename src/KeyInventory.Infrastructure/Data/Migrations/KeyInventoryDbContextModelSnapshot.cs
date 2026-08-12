@@ -36,9 +36,9 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                     b.ToTable("Departments", (string)null);
                 });
 
-            modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAssetEntity", b =>
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAccessPatternEntity", b =>
                 {
-                    b.Property<string>("CatalogKeyCode")
+                    b.Property<string>("KeyNumber")
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
@@ -50,16 +50,16 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.HasKey("CatalogKeyCode");
+                    b.HasKey("KeyNumber");
 
                     b.HasIndex("KeyTypeCode");
 
-                    b.ToTable("KeyAssets", (string)null);
+                    b.ToTable("KeyAccessPatterns", (string)null);
                 });
 
-            modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyRoomAssignmentEntity", b =>
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAccessPatternRoomAssignmentEntity", b =>
                 {
-                    b.Property<string>("CatalogKeyCode")
+                    b.Property<string>("KeyNumber")
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
@@ -67,11 +67,37 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.HasKey("CatalogKeyCode", "RoomCode");
+                    b.HasKey("KeyNumber", "RoomCode");
 
                     b.HasIndex("RoomCode");
 
-                    b.ToTable("KeyRoomAssignments", (string)null);
+                    b.ToTable("KeyAccessPatternRoomAssignments", (string)null);
+                });
+
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAssetEntity", b =>
+                {
+                    b.Property<Guid>("KeyAssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("KeyNumber")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("MedecoKeyCode")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("KeyAssetId");
+
+                    b.HasIndex("KeyNumber", "MedecoKeyCode")
+                        .IsUnique();
+
+                    b.ToTable("KeyAssets", (string)null);
                 });
 
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyTypeEntity", b =>
@@ -99,16 +125,14 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<string>("CatalogKeyCode")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
                     b.Property<DateTimeOffset>("DueAtUtc")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset>("IssuedAtUtc")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("KeyAssetId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -117,7 +141,7 @@ namespace KeyInventory.Infrastructure.Data.Migrations
 
                     b.HasKey("LoanCode");
 
-                    b.HasIndex("CatalogKeyCode");
+                    b.HasIndex("KeyAssetId");
 
                     b.ToTable("Loans", (string)null);
                 });
@@ -514,7 +538,7 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAssetEntity", b =>
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAccessPatternEntity", b =>
                 {
                     b.HasOne("KeyInventory.Infrastructure.Data.KeyTypeEntity", "KeyType")
                         .WithMany()
@@ -525,11 +549,11 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                     b.Navigation("KeyType");
                 });
 
-            modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyRoomAssignmentEntity", b =>
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAccessPatternRoomAssignmentEntity", b =>
                 {
-                    b.HasOne("KeyInventory.Infrastructure.Data.KeyAssetEntity", "KeyAsset")
+                    b.HasOne("KeyInventory.Infrastructure.Data.KeyAccessPatternEntity", "KeyAccessPattern")
                         .WithMany()
-                        .HasForeignKey("CatalogKeyCode")
+                        .HasForeignKey("KeyNumber")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -539,16 +563,27 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("KeyAsset");
+                    b.Navigation("KeyAccessPattern");
 
                     b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.KeyAssetEntity", b =>
+                {
+                    b.HasOne("KeyInventory.Infrastructure.Data.KeyAccessPatternEntity", "AccessPattern")
+                        .WithMany()
+                        .HasForeignKey("KeyNumber")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AccessPattern");
                 });
 
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.LoanEntity", b =>
                 {
                     b.HasOne("KeyInventory.Infrastructure.Data.KeyAssetEntity", "KeyAsset")
                         .WithMany()
-                        .HasForeignKey("CatalogKeyCode")
+                        .HasForeignKey("KeyAssetId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

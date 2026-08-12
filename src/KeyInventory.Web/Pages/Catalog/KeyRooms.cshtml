@@ -2,13 +2,13 @@
 @using KeyInventory.Application.Catalog
 @model KeyInventory.Web.Pages.Catalog.KeyRoomsModel
 @{
-    ViewData["Title"] = "Key Rooms";
+    ViewData["Title"] = "KEY # Rooms";
     ViewData["NavSection"] = "catalog";
 }
 
 <header class="page-header page-header-compact">
-    <h1>Rooms for @Model.Key</h1>
-    <p class="lede">Assign the rooms this physical key currently opens.</p>
+    <h1>Rooms for KEY # @Model.KeyNumber</h1>
+    <p class="lede">Assign the rooms this KEY # opens. Every physical MEDECO copy under the KEY # inherits these rooms.</p>
 </header>
 
 <section class="card form-card">
@@ -22,7 +22,7 @@
     }
 
     <form method="post" asp-page-handler="Assign" class="form-grid">
-        <input type="hidden" asp-for="Key" />
+        <input type="hidden" asp-for="KeyNumber" />
         <label>
             Room
             <select asp-for="RoomCode" asp-items="Model.RoomOptions" required>
@@ -41,7 +41,7 @@
     {
         <div class="empty-state">
             <strong>No rooms assigned</strong>
-            This key has zero Room assignments. Registration remains valid; assign Rooms when known.
+            This KEY # has zero Room assignments. Physical copies remain valid; assign Rooms when known.
         </div>
     }
     else
@@ -65,7 +65,7 @@
                         <td>@room.RoomCode</td>
                         <td>
                             <form method="post" asp-page-handler="Remove">
-                                <input type="hidden" name="Key" value="@Model.Key" />
+                                <input type="hidden" name="KeyNumber" value="@Model.KeyNumber" />
                                 <input type="hidden" name="roomCode" value="@room.RoomCode" />
                                 <button type="submit" class="btn btn-secondary">Remove</button>
                             </form>

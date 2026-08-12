@@ -1,12 +1,12 @@
 namespace KeyInventory.Application.Catalog;
 
 /// <summary>
-/// Current Room opened by a KeyAsset.
+/// Room opened by a KEY # / KeyAccessPattern (derived for every physical copy under that KEY #).
 /// </summary>
 public sealed record KeyOpenedRoomItem(
     string RoomCode,
     string RoomNumber,
-    string Description);
+    string? Description);
 
 public static class KeyOpenedRoomDisplayFormatter
 {

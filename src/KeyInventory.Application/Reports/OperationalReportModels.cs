@@ -3,7 +3,8 @@ using KeyInventory.Application.Catalog;
 namespace KeyInventory.Application.Reports;
 
 public sealed record CurrentKeyHolderReportRow(
-    string CatalogKeyCode,
+    string KeyNumber,
+    string MedecoKeyCode,
     string HolderFirstName,
     string HolderLastName,
     string HolderUin,
@@ -14,7 +15,8 @@ public sealed record CurrentKeyHolderReportRow(
     string Status);
 
 public sealed record ActiveLoanReportRow(
-    string CatalogKeyCode,
+    string KeyNumber,
+    string MedecoKeyCode,
     string HolderFirstName,
     string HolderLastName,
     string HolderUin,
@@ -25,7 +27,8 @@ public sealed record ActiveLoanReportRow(
     string Status);
 
 public sealed record OverdueKeyReportRow(
-    string CatalogKeyCode,
+    string KeyNumber,
+    string MedecoKeyCode,
     string HolderFirstName,
     string HolderLastName,
     string HolderUin,
@@ -37,7 +40,8 @@ public sealed record OverdueKeyReportRow(
     string Status);
 
 public sealed record MemberIssuedKeyReportRow(
-    string CatalogKeyCode,
+    string KeyNumber,
+    string MedecoKeyCode,
     string HolderFirstName,
     string HolderLastName,
     string HolderUin,
@@ -46,7 +50,8 @@ public sealed record MemberIssuedKeyReportRow(
     string Status);
 
 public sealed record MemberReturnedKeyReportRow(
-    string CatalogKeyCode,
+    string KeyNumber,
+    string MedecoKeyCode,
     string HolderFirstName,
     string HolderLastName,
     string HolderUin,
@@ -61,7 +66,8 @@ public sealed record KeysByWorkforceMemberReport(
 
 public sealed record KeyHistoryReportRow(
     string LoanCode,
-    string CatalogKeyCode,
+    string KeyNumber,
+    string MedecoKeyCode,
     string HolderFirstName,
     string HolderLastName,
     string HolderUin,
@@ -77,12 +83,14 @@ public sealed record OutstandingWorkforceKeyReportRow(
     string HolderLastName,
     string HolderUin,
     string DepartmentCode,
-    string CatalogKeyCode,
+    string KeyNumber,
+    string MedecoKeyCode,
     string LoanCode,
     DateTimeOffset DueAtUtc);
 
 public sealed record KeyCatalogReportRow(
-    string CatalogKeyCode,
+    string KeyNumber,
+    string MedecoKeyCode,
     string TypeCode,
     bool IsActive,
     string AvailabilityStatus,

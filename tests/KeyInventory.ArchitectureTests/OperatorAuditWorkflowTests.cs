@@ -73,15 +73,15 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
             .ConfigureAwait(true);
 
         await scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>()
-            .ExecuteAsync("AUD-KEY-1", "aud-type", CancellationToken.None)
+            .ExecuteAsync("AUD-KEY-1", "01", "aud-type", CancellationToken.None)
             .ConfigureAwait(true);
-        await scope.ServiceProvider.GetRequiredService<IKeyRoomAssignmentUseCase>()
+        await scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>()
             .AssignRoomAsync("AUD-KEY-1", seeded.RoomCode, CancellationToken.None)
             .ConfigureAwait(true);
-        await scope.ServiceProvider.GetRequiredService<IKeyRoomAssignmentUseCase>()
+        await scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>()
             .RemoveRoomAsync("AUD-KEY-1", seeded.RoomCode, CancellationToken.None)
             .ConfigureAwait(true);
-        await scope.ServiceProvider.GetRequiredService<IKeyRoomAssignmentUseCase>()
+        await scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>()
             .AssignRoomAsync("AUD-KEY-1", seeded.RoomCode, CancellationToken.None)
             .ConfigureAwait(true);
 
@@ -91,6 +91,7 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
             .ExecuteAsync(
                 "loan-aud-1",
                 "AUD-KEY-1",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,
@@ -120,9 +121,10 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
 
         IReadOnlyList<OperatorAuditTrailItem> all = await QueryAsync(scope).ConfigureAwait(true);
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyTypeCreated && item.OperatorReference == "ops-user");
-        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyRegistered);
-        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyRoomAssignmentAdded);
-        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyRoomAssignmentRemoved);
+        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyAccessPatternCreated);
+        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.PhysicalKeyCopyRegistered);
+        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyAccessPatternRoomAssignmentAdded);
+        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyAccessPatternRoomAssignmentRemoved);
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyIssued);
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyReturned);
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.WorkforceMemberMaintained);

@@ -73,8 +73,7 @@ public sealed class AuditDomainInvariantTests
     [Fact]
     public void AuditEventMayOptionallyReferencePartyKeyAssetLoanOrReturnWithoutMutatingThem()
     {
-        KeyType keyType = new("mechanical");
-        KeyAsset keyAsset = new("key-1", keyType);
+        KeyAsset keyAsset = CatalogTestFactory.CreateCopy("key-1", "01", "mechanical");
         Loan loan = new(
             "loan-1",
             keyAsset,
@@ -83,7 +82,9 @@ public sealed class AuditDomainInvariantTests
             OccurredAt.AddDays(1));
         Return completedReturn = new("return-1", loan, OccurredAt.AddHours(1));
         LoanStatus statusAfterReturn = loan.Status;
-        string catalogKeyCode = keyAsset.CatalogKeyCode;
+        string keyNumber = keyAsset.KeyNumber;
+        string medeco = keyAsset.MedecoKeyCode;
+        Guid keyAssetId = keyAsset.KeyAssetId;
         string returnCode = completedReturn.ReturnCode;
 
         AuditEvent auditEvent = new(
@@ -102,7 +103,9 @@ public sealed class AuditDomainInvariantTests
         Assert.Same(completedReturn, auditEvent.SubjectReturn);
         Assert.Equal(LoanStatus.Returned, statusAfterReturn);
         Assert.Equal(LoanStatus.Returned, loan.Status);
-        Assert.Equal(catalogKeyCode, keyAsset.CatalogKeyCode);
+        Assert.Equal(keyNumber, keyAsset.KeyNumber);
+        Assert.Equal(medeco, keyAsset.MedecoKeyCode);
+        Assert.Equal(keyAssetId, keyAsset.KeyAssetId);
         Assert.Equal(returnCode, completedReturn.ReturnCode);
     }
 

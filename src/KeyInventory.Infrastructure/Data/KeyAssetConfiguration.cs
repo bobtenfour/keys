@@ -9,13 +9,15 @@ public sealed class KeyAssetConfiguration : IEntityTypeConfiguration<KeyAssetEnt
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.ToTable("KeyAssets");
-        builder.HasKey(entity => entity.CatalogKeyCode);
-        builder.Property(entity => entity.CatalogKeyCode).HasMaxLength(128).IsRequired();
-        builder.Property(entity => entity.KeyTypeCode).HasMaxLength(128).IsRequired();
+        builder.HasKey(entity => entity.KeyAssetId);
+        builder.Property(entity => entity.KeyAssetId).ValueGeneratedNever();
+        builder.Property(entity => entity.KeyNumber).HasMaxLength(128).IsRequired();
+        builder.Property(entity => entity.MedecoKeyCode).HasMaxLength(128).IsRequired();
         builder.Property(entity => entity.IsActive).IsRequired();
-        builder.HasOne(entity => entity.KeyType)
+        builder.HasIndex(entity => new { entity.KeyNumber, entity.MedecoKeyCode }).IsUnique();
+        builder.HasOne(entity => entity.AccessPattern)
             .WithMany()
-            .HasForeignKey(entity => entity.KeyTypeCode)
+            .HasForeignKey(entity => entity.KeyNumber)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

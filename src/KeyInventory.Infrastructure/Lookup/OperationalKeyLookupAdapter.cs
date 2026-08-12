@@ -10,11 +10,11 @@ namespace KeyInventory.Infrastructure.Lookup;
 public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
 {
     private readonly KeyInventoryDbContext _dbContext;
-    private readonly IKeyRoomAssignmentPersistencePort _roomAssignments;
+    private readonly IKeyAccessPatternRoomAssignmentPersistencePort _roomAssignments;
 
     public OperationalKeyLookupAdapter(
         KeyInventoryDbContext dbContext,
-        IKeyRoomAssignmentPersistencePort roomAssignments)
+        IKeyAccessPatternRoomAssignmentPersistencePort roomAssignments)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _roomAssignments = roomAssignments ?? throw new ArgumentNullException(nameof(roomAssignments));
@@ -27,33 +27,37 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
         string pattern = query.Trim();
 
-        var openLoans = await _dbContext.Loans.AsNoTracking()
-            .Where(loan => loan.Status == nameof(LoanStatus.Open))
-            .Select(loan => new
-            {
-                loan.CatalogKeyCode,
-                loan.LoanCode,
-                loan.BorrowerPartyReference
-            })
+        var openLoans = await (
+                from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
+                where loan.Status == nameof(LoanStatus.Open)
+                select new
+                {
+                    loan.KeyAssetId,
+                    loan.LoanCode,
+                    loan.BorrowerPartyReference
+                })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        Dictionary<string, (string LoanCode, string PartyCode)> openByKey = openLoans
-            .GroupBy(loan => loan.CatalogKeyCode, StringComparer.OrdinalIgnoreCase)
+        Dictionary<Guid, (string LoanCode, string PartyCode)> openByAsset = openLoans
+            .GroupBy(loan => loan.KeyAssetId)
             .ToDictionary(
                 group => group.Key,
-                group => (group.First().LoanCode, group.First().BorrowerPartyReference),
-                StringComparer.OrdinalIgnoreCase);
+                group => (group.First().LoanCode, group.First().BorrowerPartyReference));
 
         List<KeyAssetEntity> keys = await _dbContext.KeyAssets.AsNoTracking()
+            .Include(key => key.AccessPattern)
             .Where(key =>
-                key.CatalogKeyCode.Contains(pattern)
-                || key.KeyTypeCode.Contains(pattern))
-            .OrderBy(key => key.CatalogKeyCode)
+                key.KeyNumber.Contains(pattern)
+                || key.MedecoKeyCode.Contains(pattern)
+                || key.AccessPattern.KeyTypeCode.Contains(pattern))
+            .OrderBy(key => key.KeyNumber)
+            .ThenBy(key => key.MedecoKeyCode)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        HashSet<string> partyCodes = openByKey.Values
+        HashSet<string> partyCodes = openByAsset.Values
             .Select(item => item.PartyCode)
             .ToHashSet(StringComparer.Ordinal);
 
@@ -63,26 +67,28 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
             .ConfigureAwait(false);
 
         IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
-            .ListForKeysAsync(keys.Select(key => key.CatalogKeyCode), cancellationToken)
+            .ListForKeyNumbersAsync(keys.Select(key => key.KeyNumber).Distinct(StringComparer.Ordinal), cancellationToken)
             .ConfigureAwait(false);
 
         List<KeyLookupResult> results = [];
         foreach (KeyAssetEntity key in keys)
         {
             IReadOnlyList<KeyOpenedRoomItem> openedRooms =
-                roomsByKey.TryGetValue(key.CatalogKeyCode, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
+                roomsByKey.TryGetValue(key.KeyNumber, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
                     ? rooms
                     : [];
 
-            if (openByKey.TryGetValue(key.CatalogKeyCode, out (string LoanCode, string PartyCode) open))
+            if (openByAsset.TryGetValue(key.KeyAssetId, out (string LoanCode, string PartyCode) open))
             {
                 parties.TryGetValue(open.PartyCode, out PartyEntity? party);
                 PartyHolderDisplay? holder = party is null
                     ? null
                     : new PartyHolderDisplay(party.FirstName, party.LastName, party.Uin);
                 results.Add(new KeyLookupResult(
-                    key.CatalogKeyCode,
-                    key.KeyTypeCode,
+                    key.KeyAssetId,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
+                    key.AccessPattern.KeyTypeCode,
                     OperationalKeyAvailability.Issued,
                     holder,
                     open.LoanCode,
@@ -91,8 +97,10 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
             else
             {
                 results.Add(new KeyLookupResult(
-                    key.CatalogKeyCode,
-                    key.KeyTypeCode,
+                    key.KeyAssetId,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
+                    key.AccessPattern.KeyTypeCode,
                     OperationalKeyAvailability.Available,
                     null,
                     null,
@@ -129,19 +137,22 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
             throw new InvalidOperationException("The party for the workforce member was not found.");
         }
 
-        return await _dbContext.Loans.AsNoTracking()
-            .Where(loan =>
-                loan.Status == nameof(LoanStatus.Open)
-                && loan.BorrowerPartyReference == member.PartyCode)
-            .OrderBy(loan => loan.CatalogKeyCode)
-            .Select(loan => new IssuedKeyForMemberItem(
-                loan.LoanCode,
-                loan.CatalogKeyCode,
-                party.FirstName,
-                party.LastName,
-                party.Uin,
-                loan.IssuedAtUtc,
-                loan.DueAtUtc))
+        return await (
+                from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
+                where loan.Status == nameof(LoanStatus.Open)
+                    && loan.BorrowerPartyReference == member.PartyCode
+                orderby key.KeyNumber, key.MedecoKeyCode
+                select new IssuedKeyForMemberItem(
+                    loan.LoanCode,
+                    loan.KeyAssetId,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
+                    party.FirstName,
+                    party.LastName,
+                    party.Uin,
+                    loan.IssuedAtUtc,
+                    loan.DueAtUtc))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
@@ -151,13 +162,16 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
     {
         return await (
                 from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
                 join party in _dbContext.Parties.AsNoTracking()
                     on loan.BorrowerPartyReference equals party.PartyCode
                 where loan.Status == nameof(LoanStatus.Open)
                 orderby loan.LoanCode
                 select new OperationalLoanDisplay(
                     loan.LoanCode,
-                    loan.CatalogKeyCode,
+                    loan.KeyAssetId,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
                     party.FirstName,
                     party.LastName,
                     party.Uin,
@@ -174,6 +188,7 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
     {
         return await (
                 from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
                 join completedReturn in _dbContext.Returns.AsNoTracking()
                     on loan.LoanCode equals completedReturn.LoanCode
                 join party in _dbContext.Parties.AsNoTracking()
@@ -182,7 +197,9 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
                 orderby loan.LoanCode
                 select new OperationalLoanDisplay(
                     loan.LoanCode,
-                    loan.CatalogKeyCode,
+                    loan.KeyAssetId,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
                     party.FirstName,
                     party.LastName,
                     party.Uin,

@@ -61,10 +61,19 @@ Define the approved execution order without expanding into detailed slice specif
 |---|---|---|---|
 | OPERATOR-EXPERIENCE-1 | Accepted | OPERATOR-AUDIT-1 | slices/OPERATOR-EXPERIENCE-1.md |
 
+## Later Phases — Key Access Pattern and Physical Copy Authority
+
+| Slice | Status | Depends On | Slice Spec |
+|---|---|---|---|
+| KEY-ACCESS-COPY-1 | Accepted | OPERATOR-EXPERIENCE-1 | slices/KEY-ACCESS-COPY-1.md |
+
 ## Later Phases
 Later phase slices must be created only when human governance selects a concrete operational capability for this building and architectural contracts are mature enough to support implementation without assumptions.
 OPERATOR-EXPERIENCE-1 is Accepted.
+KEY-ACCESS-COPY-1 is Accepted (2026-08-11).
 Next Allowed Slice remains STOP until human governance explicitly prepares the next concrete operational capability.
+Do not prepare or invent slices for speculative enterprise scale, multi-campus design, policy engines, workflow engines, event platforms, or extensibility frameworks.
+Preserve KEY-ACCESS-COPY-1 authorities: KeyAccessPattern sole KEY # / Room-access; KeyAsset physical MEDECO-copy custody; KeyType classification; KeySeries non-authority; migration STOP for ambiguous legacy CatalogKeyCode data.
 Do not prepare or invent slices for speculative enterprise scale, multi-campus design, policy engines, workflow engines, event platforms, or extensibility frameworks.
 
 ## Depends On

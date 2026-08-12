@@ -51,7 +51,10 @@ public sealed class IssueModel : PageModel
     public string LoanCode { get; set; } = string.Empty;
 
     [BindProperty]
-    public string CatalogKeyCode { get; set; } = string.Empty;
+    public string KeyNumber { get; set; } = string.Empty;
+
+    [BindProperty]
+    public string MedecoKeyCode { get; set; } = string.Empty;
 
     [BindProperty]
     public string WorkforceMemberCode { get; set; } = string.Empty;
@@ -68,7 +71,11 @@ public sealed class IssueModel : PageModel
     [BindProperty]
     public string DueLocalText { get; set; } = string.Empty;
 
-    public IReadOnlyList<SelectListItem> KeyOptions { get; private set; } = [];
+    public IReadOnlyList<SelectListItem> KeyNumberOptions { get; private set; } = [];
+
+    public IReadOnlyList<SelectListItem> MedecoOptions { get; private set; } = [];
+
+    public string OpenedRoomsDisplay { get; private set; } = "—";
 
     public IReadOnlyList<SelectListItem> WorkforceMemberOptions { get; private set; } = [];
 
@@ -78,17 +85,26 @@ public sealed class IssueModel : PageModel
 
     public string JustificationDataJson { get; private set; } = "{}";
 
+    public string KeyCopyDataJson { get; private set; } = "{}";
+
+    public bool HasAvailableCopies { get; private set; }
+
     public OperationalReadinessViewModel Readiness { get; private set; } = null!;
 
     public string? SuccessMessage { get; private set; }
 
     public string? ErrorMessage { get; private set; }
 
-    public async Task OnGetAsync(string? catalogKeyCode, CancellationToken cancellationToken)
+    public async Task OnGetAsync(string? keyNumber, string? medecoKeyCode, CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrWhiteSpace(catalogKeyCode))
+        if (!string.IsNullOrWhiteSpace(keyNumber))
         {
-            CatalogKeyCode = catalogKeyCode;
+            KeyNumber = keyNumber;
+        }
+
+        if (!string.IsNullOrWhiteSpace(medecoKeyCode))
+        {
+            MedecoKeyCode = medecoKeyCode;
         }
 
         await LoadOptionsAsync(cancellationToken).ConfigureAwait(false);
@@ -114,7 +130,8 @@ public sealed class IssueModel : PageModel
 
             await _issueLoan.ExecuteAsync(
                     LoanCode,
-                    CatalogKeyCode,
+                    KeyNumber,
+                    MedecoKeyCode,
                     WorkforceMemberCode,
                     JustificationKind,
                     JustificationCode,
@@ -123,14 +140,17 @@ public sealed class IssueModel : PageModel
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            SuccessMessage = $"Key {CatalogKeyCode} was issued.";
+            SuccessMessage =
+                $"{PartyHolderDisplayFormatter.FormatKeyCopy(KeyNumber, MedecoKeyCode)} was issued.";
             LoanCode = string.Empty;
-            CatalogKeyCode = string.Empty;
+            KeyNumber = string.Empty;
+            MedecoKeyCode = string.Empty;
             WorkforceMemberCode = string.Empty;
             JustificationCode = string.Empty;
             IssuedLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow);
             DueLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow.AddDays(1));
             ModelState.Clear();
+            await LoadOptionsAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
@@ -147,22 +167,54 @@ public sealed class IssueModel : PageModel
 
         IReadOnlyList<KeyAssetListItem> keys = await _listKeyAssets.ExecuteAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<LoanListItem> openItems = await _listOpenLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        HashSet<string> issued = openItems.Select(item => item.CatalogKeyCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        HashSet<Guid> issued = openItems.Select(item => item.KeyAssetId).ToHashSet();
 
-        KeyOptions = keys
-            .Where(key => key.IsActive && !issued.Contains(key.CatalogKeyCode))
-            .Select(key =>
-            {
-                string rooms = KeyOpenedRoomDisplayFormatter.Format(key.OpenedRooms);
-                string text = string.IsNullOrEmpty(rooms)
-                    ? $"{key.CatalogKeyCode} ({key.TypeCode})"
-                    : $"{key.CatalogKeyCode} ({key.TypeCode}) — {rooms}";
-                return new SelectListItem(
-                    text,
-                    key.CatalogKeyCode,
-                    string.Equals(key.CatalogKeyCode, CatalogKeyCode, StringComparison.OrdinalIgnoreCase));
-            })
+        List<KeyAssetListItem> available = keys
+            .Where(key => key.IsActive && !issued.Contains(key.KeyAssetId))
+            .OrderBy(key => key.KeyNumber, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(key => key.MedecoKeyCode, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        HasAvailableCopies = available.Count > 0;
+
+        Dictionary<string, KeyNumberIssueOptions> byKeyNumber = available
+            .GroupBy(key => key.KeyNumber, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group =>
+                {
+                    string rooms = KeyOpenedRoomDisplayFormatter.Format(group.First().OpenedRooms);
+                    return new KeyNumberIssueOptions(
+                        string.IsNullOrEmpty(rooms) ? "—" : rooms,
+                        group.Select(copy => new MedecoChoice(copy.MedecoKeyCode, copy.MedecoKeyCode)).ToArray());
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        KeyCopyDataJson = JsonSerializer.Serialize(byKeyNumber, JustificationJsonOptions);
+
+        KeyNumberOptions = byKeyNumber.Keys
+            .OrderBy(key => key, StringComparer.OrdinalIgnoreCase)
+            .Select(key => new SelectListItem(
+                key,
+                key,
+                string.Equals(key, KeyNumber, StringComparison.OrdinalIgnoreCase)))
             .ToArray();
+
+        if (!string.IsNullOrWhiteSpace(KeyNumber)
+            && byKeyNumber.TryGetValue(KeyNumber, out KeyNumberIssueOptions? selectedKey))
+        {
+            OpenedRoomsDisplay = selectedKey.Rooms;
+            MedecoOptions = selectedKey.Medecos
+                .Select(choice => new SelectListItem(
+                    choice.Code,
+                    choice.Code,
+                    string.Equals(choice.Code, MedecoKeyCode, StringComparison.OrdinalIgnoreCase)))
+                .ToArray();
+        }
+        else
+        {
+            OpenedRoomsDisplay = "—";
+            MedecoOptions = [];
+        }
 
         IReadOnlyList<WorkforceMemberIdentityDisplay> members = await _lookup
             .ListActiveWorkforceMembersWithIdentityAsync(cancellationToken)
@@ -237,6 +289,12 @@ public sealed class IssueModel : PageModel
             RoomOptions = [];
         }
     }
+
+    private sealed record MedecoChoice(string Code, string Label);
+
+    private sealed record KeyNumberIssueOptions(
+        string Rooms,
+        IReadOnlyList<MedecoChoice> Medecos);
 
     private sealed record JustificationChoice(string Code, string Label);
 

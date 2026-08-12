@@ -17,7 +17,7 @@ public sealed class KeyHistoryModel : PageModel
 
     public string? KeySearch { get; private set; }
 
-    public string? SelectedKeyCode { get; private set; }
+    public string? SelectedKeyNumber { get; private set; }
 
     public IReadOnlyList<SelectListItem> KeyOptions { get; private set; } = [];
 
@@ -28,13 +28,13 @@ public sealed class KeyHistoryModel : PageModel
     public async Task OnGetAsync(string? key, string? q, CancellationToken cancellationToken)
     {
         KeySearch = q;
-        SelectedKeyCode = key;
-        IReadOnlyList<string> codes = await _reports.ListCatalogKeyCodesAsync(q, cancellationToken).ConfigureAwait(false);
-        KeyOptions = codes
-            .Select(code => new SelectListItem(
-                code,
-                code,
-                string.Equals(code, SelectedKeyCode, StringComparison.OrdinalIgnoreCase)))
+        SelectedKeyNumber = key;
+        IReadOnlyList<string> keyNumbers = await _reports.ListKeyNumbersAsync(q, cancellationToken).ConfigureAwait(false);
+        KeyOptions = keyNumbers
+            .Select(keyNumber => new SelectListItem(
+                keyNumber,
+                keyNumber,
+                string.Equals(keyNumber, SelectedKeyNumber, StringComparison.OrdinalIgnoreCase)))
             .ToArray();
 
         if (string.IsNullOrWhiteSpace(key))

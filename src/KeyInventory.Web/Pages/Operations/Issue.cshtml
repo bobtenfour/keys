@@ -7,7 +7,7 @@
 
 <header class="page-header">
     <h1>Issue Key</h1>
-    <p class="lede">Hand a controlled key to an eligible workforce member.</p>
+    <p class="lede">Hand a physical MEDECO copy to an eligible workforce member.</p>
 </header>
 
 @if (!Model.Readiness.Snapshot.CanIssueKey && string.IsNullOrWhiteSpace(Model.SuccessMessage))
@@ -30,11 +30,11 @@
         </div>
     }
 
-    @if (Model.KeyOptions.Count == 0)
+    @if (!Model.HasAvailableCopies)
     {
         <div class="empty-state">
-            <strong>No keys available to issue</strong>
-            Register an active key that is not already issued, then return here.
+            <strong>No physical copies available to issue</strong>
+            Register an active MEDECO copy that is not already issued, then return here.
         </div>
         <div class="form-actions">
             <a class="btn btn-primary" asp-page="/Catalog/Register">Register Key</a>
@@ -55,12 +55,25 @@
     {
         <form method="post" class="form-grid" id="issue-key-form">
             <label>
-                Key
-                <select asp-for="CatalogKeyCode" asp-items="Model.KeyOptions" required></select>
-            </label>
-            <label>
                 Issue to
                 <select asp-for="WorkforceMemberCode" asp-items="Model.WorkforceMemberOptions" id="issue-to" required></select>
+            </label>
+            <label>
+                KEY #
+                <select asp-for="KeyNumber" asp-items="Model.KeyNumberOptions" id="issue-key-number" required>
+                    <option value="">Select a KEY #...</option>
+                </select>
+            </label>
+            <label>
+                MEDECO Key Code
+                <select asp-for="MedecoKeyCode" asp-items="Model.MedecoOptions" id="issue-medeco" required>
+                    <option value="">Select an available MEDECO...</option>
+                </select>
+            </label>
+            <label>
+                Rooms opened
+                <input type="text" id="issue-rooms" value="@Model.OpenedRoomsDisplay" readonly />
+                <span class="hint">Derived from the KEY #. Not entered at issue time.</span>
             </label>
             <label>
                 For
@@ -100,29 +113,35 @@
             </div>
         </form>
         <script type="application/json" id="issue-justification-data">@Html.Raw(Model.JustificationDataJson)</script>
+        <script type="application/json" id="issue-key-copy-data">@Html.Raw(Model.KeyCopyDataJson)</script>
         <script>
             (function () {
-                const dataEl = document.getElementById('issue-justification-data');
-                const data = dataEl ? JSON.parse(dataEl.textContent || '{}') : {};
+                const justificationEl = document.getElementById('issue-justification-data');
+                const keyCopyEl = document.getElementById('issue-key-copy-data');
+                const justificationData = justificationEl ? JSON.parse(justificationEl.textContent || '{}') : {};
+                const keyCopyData = keyCopyEl ? JSON.parse(keyCopyEl.textContent || '{}') : {};
                 const memberEl = document.getElementById('issue-to');
                 const kindEl = document.getElementById('issue-for-kind');
                 const deptLabel = document.getElementById('issue-for-department-label');
                 const roomLabel = document.getElementById('issue-for-room-label');
                 const deptSelect = document.getElementById('issue-for-department');
                 const roomSelect = document.getElementById('issue-for-room');
-                if (!memberEl || !kindEl || !deptSelect || !roomSelect) return;
+                const keyNumberEl = document.getElementById('issue-key-number');
+                const medecoEl = document.getElementById('issue-medeco');
+                const roomsEl = document.getElementById('issue-rooms');
+                if (!memberEl || !kindEl || !deptSelect || !roomSelect || !keyNumberEl || !medecoEl || !roomsEl) return;
 
-                function fill(select, choices, selected) {
+                function fill(select, choices, selected, emptyLabel) {
                     const keep = selected || select.value;
                     select.innerHTML = '';
                     const empty = document.createElement('option');
                     empty.value = '';
-                    empty.textContent = select === deptSelect ? 'Select a department...' : 'Select a room...';
+                    empty.textContent = emptyLabel;
                     select.appendChild(empty);
                     (choices || []).forEach(function (choice) {
                         const opt = document.createElement('option');
                         opt.value = choice.code;
-                        opt.textContent = choice.label;
+                        opt.textContent = choice.label || choice.code;
                         if (keep && keep.toLowerCase() === String(choice.code).toLowerCase()) {
                             opt.selected = true;
                         }
@@ -130,10 +149,16 @@
                     });
                 }
 
-                function sync() {
-                    const member = data[memberEl.value] || { departments: [], rooms: [] };
-                    fill(deptSelect, member.departments, deptSelect.value);
-                    fill(roomSelect, member.rooms, roomSelect.value);
+                function syncKeyCopy() {
+                    const selected = keyCopyData[keyNumberEl.value] || { rooms: '—', medecos: [] };
+                    roomsEl.value = selected.rooms || '—';
+                    fill(medecoEl, selected.medecos, medecoEl.value, 'Select an available MEDECO...');
+                }
+
+                function syncJustification() {
+                    const member = justificationData[memberEl.value] || { departments: [], rooms: [] };
+                    fill(deptSelect, member.departments, deptSelect.value, 'Select a department...');
+                    fill(roomSelect, member.rooms, roomSelect.value, 'Select a room...');
                     const isRoom = kindEl.value === 'Room';
                     deptLabel.hidden = isRoom;
                     roomLabel.hidden = !isRoom;
@@ -150,9 +175,11 @@
                     }
                 }
 
-                memberEl.addEventListener('change', sync);
-                kindEl.addEventListener('change', sync);
-                sync();
+                memberEl.addEventListener('change', syncJustification);
+                kindEl.addEventListener('change', syncJustification);
+                keyNumberEl.addEventListener('change', syncKeyCopy);
+                syncJustification();
+                syncKeyCopy();
             })();
         </script>
     }

@@ -76,16 +76,16 @@ public sealed class CatalogBoundaryTests
             .ToArray();
 
         Assert.Contains(catalogTypes, type => type == typeof(IKeyAssetLookupPort));
-        Assert.Contains(catalogTypes, type => type == typeof(IKeyRoomAssignmentUseCase));
-        Assert.Contains(catalogTypes, type => type == typeof(IKeyRoomAssignmentPersistencePort));
+        Assert.Contains(catalogTypes, type => type == typeof(IKeyAccessPatternRoomAssignmentUseCase));
+        Assert.Contains(catalogTypes, type => type == typeof(IKeyAccessPatternRoomAssignmentPersistencePort));
         Assert.Contains(catalogTypes, type => type == typeof(KeyOpenedRoomItem));
-        Assert.Contains(catalogTypes, type => type == typeof(KeyRoomAssignmentUseCase));
+        Assert.Contains(catalogTypes, type => type == typeof(KeyAccessPatternRoomAssignmentUseCase));
 
         string[] unexpected = catalogTypes
             .Select(type => type.Name)
             .Where(name =>
                 !name.EndsWith("LookupPort", StringComparison.Ordinal)
-                && !name.Contains("KeyRoomAssignment", StringComparison.Ordinal)
+                && !name.Contains("KeyAccessPatternRoomAssignment", StringComparison.Ordinal)
                 && !name.Contains("KeyOpenedRoom", StringComparison.Ordinal))
             .ToArray();
 

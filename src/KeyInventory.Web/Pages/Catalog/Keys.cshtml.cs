@@ -15,12 +15,12 @@ public sealed class KeysModel : PageModel
     }
 
     public IReadOnlyList<KeyAssetListItem> Keys { get; private set; } = [];
-    public HashSet<string> IssuedKeyCodes { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+    public HashSet<Guid> IssuedKeyAssetIds { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         Keys = await _listKeyAssets.ExecuteAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<LoanListItem> openItems = await _listOpenLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        IssuedKeyCodes = openItems.Select(item => item.CatalogKeyCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        IssuedKeyAssetIds = openItems.Select(item => item.KeyAssetId).ToHashSet();
     }
 }

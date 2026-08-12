@@ -9,14 +9,17 @@ Define the business model without implementation details.
 ## Product Scope Alignment
 This domain model serves a single-site KeyInventory installation (one organization and one building as fixed product scope, not as configurable multi-organization or multi-building entities), a small workforce, employees and regular contractors, rooms and keys, day-to-day issue/return, accountability, and straightforward administration/audit.
 Organization and Building are not active Domain business concepts. Do not replace them with Tenant, Site, Facility, Campus, LocationRoot, or another hierarchy abstraction.
-Room is the active place concept for duties, justification, and Key-to-Room openings; Campus and enterprise location hierarchies remain out of scope unless a future explicit business requirement adds them.
+Room is the active place concept for duties, justification, and KeyAccessPattern↔Room openings; Campus and enterprise location hierarchies remain out of scope unless a future explicit business requirement adds them.
 Workforce Eligibility ensures keys are issued to legitimate active workers and must not become a generalized access-control or key-authorization policy engine.
 OPERATOR-EXPERIENCE-1 owns the active single-site simplification authority that supersedes prior Organization, Building, and ResponsibleManager active-model requirements.
+KEY-ACCESS-COPY-1 owns the active KEY # / physical-copy authority that supersedes prior KeyAsset↔Room opening ownership and CatalogKeyCode-as-unique-physical-identity semantics.
 
 ## Core Business Concepts
-- Key: controlled physical key asset.
-- Key Catalog: authoritative list of controlled keys.
-- Key-to-Room Assignment: current authoritative association of a physical KeyAsset to a Room that the key opens; owned by Key Catalog.
+- KEY # / KeyAccessPattern: shared access-pattern identity associated with the Room access set; operator-facing KEY #.
+- Physical key copy / KeyAsset: one controlled physical key copy under exactly one KEY #; operator-facing MEDECO Key Code unique within that KEY #.
+- Key Catalog: authoritative catalog of KEY # access patterns and physical copies.
+- KeyAccessPattern-to-Room Assignment: current authoritative association of a KEY # to a Room that every physical copy under that KEY # opens; owned by Key Catalog.
+- Key-to-Room Assignment (historical name): superseded active authority; former KeyAsset↔Room openings replaced by KeyAccessPattern↔Room under KEY-ACCESS-COPY-1.
 - Location: physical place where a key, lock, or custody action is relevant (foundation hierarchy; not a substitute Organization/Building business model).
 - Room: physical room for this installation; operator-facing identity uses RoomNumber unique across all Room records; internal RoomCode remains immutable technical identity.
 - Party: persistent person business identity; sole person-identity authority.
@@ -37,8 +40,11 @@ OPERATOR-EXPERIENCE-1 owns the active single-site simplification authority that 
 - Lifecycle Event: immutable event that supports key lifecycle derivation, including KeyCreated, KeyUpdated, Issued, Returned, CustodyTransferred, Lost, Recovered, and Destroyed.
 
 ## Domain Invariants
-- A key must have one authoritative catalog identity.
-- Possession must be traceable.
+- A KEY # (KeyAccessPattern) must have one authoritative KeyNumber unique across the installation.
+- A physical key copy (KeyAsset) must have one immutable internal KeyAssetId and exactly one parent KEY #.
+- MEDECO Key Code must be unique within its KEY # and must not be required to be globally unique.
+- All physical copies under one KEY # open exactly the same Room set, derived solely from that KEY #’s Room assignments.
+- Possession must be traceable to the physical copy, not merely to the KEY #.
 - Loan and return must not create orphan custody.
 - Custody transfers must support Party and storage endpoints, including employees, contractors, security personnel, storage locations, and other authorized Party types.
 - Audit history must not be rewritten.
@@ -49,100 +55,120 @@ OPERATOR-EXPERIENCE-1 owns the active single-site simplification authority that 
 
 ## Catalog Contract
 ### Aggregate Roots
-- KeyAsset is the Key Catalog aggregate root for one controlled physical key asset.
+- KeyAccessPattern is the Key Catalog aggregate root for one KEY # / shared access pattern.
+- KeyAsset is the Key Catalog aggregate root for one controlled physical key copy under exactly one KeyAccessPattern.
 - Lock is the Key Catalog aggregate root for one controlled physical lock.
 - Location is the Location boundary aggregate root for one physical organizational place.
 
 ### Entities and Classifications
-- KeySeries is a catalog classification for grouping KeyAsset records that share an organizational keying system, pattern, or managed series.
-- KeyType is a catalog classification for the physical or operational type of a KeyAsset.
+- KeyType is a catalog classification for the physical or operational kind of a KEY # / KeyAccessPattern; physical copies derive KeyType from their parent KeyAccessPattern.
+- KeySeries is a non-operational Domain classification seed only. KeySeries must not be KEY # authority, Room-access authority, or physical-copy identity. KEY-ACCESS-COPY-1 must not elevate or silently reinterpret KeySeries.
 
-### KeyAsset
-Purpose: define the authoritative catalog identity of one controlled physical key asset.
+### KeyAccessPattern
+Purpose: define the authoritative shared KEY # / access-pattern identity and the Room access set opened by every physical copy under that KEY #.
 
-Identity: KeyAsset is identified by one catalog key code that is unique across all KeyAsset records.
+Identity: KeyAccessPattern is identified by one KeyNumber (operator-facing KEY #) that is unique across all KeyAccessPattern records for the installation.
 
-Ownership: Key Catalog owns creation, catalog detail updates, activation, retirement rules, and current Key-to-Room assignments for KeyAsset.
+Ownership: Key Catalog owns creation, KeyNumber uniqueness, KeyType reference, activation/retirement, and current KeyAccessPattern↔Room assignments.
 
 Invariants:
-- A KeyAsset must have a non-empty catalog key code.
-- A KeyAsset must reference exactly one KeyType.
-- A KeyAsset may reference one KeySeries.
-- A KeyAsset may be registered with zero Room assignments.
-- A KeyAsset may have zero, one, or multiple current Room assignments representing the Rooms that physical key opens.
-- A KeyAsset that opens multiple Rooms is represented only by multiple current Room assignments; master/sub-master hierarchy is not part of this product.
-- KeyAsset place association is exclusively through assigned Rooms; KeyAsset must not independently own Building or any Organization/Building substitute.
-- A KeyAsset must not reference an inactive KeyType or inactive KeySeries for new catalog assignment.
-- A retired KeyAsset remains catalog-identifiable and must not be reused as a different physical key.
+- A KeyAccessPattern must have a non-empty KeyNumber unique installation-wide.
+- A KeyAccessPattern must reference exactly one KeyType.
+- A KeyAccessPattern may have zero, one, or multiple physical KeyAsset copies.
+- A KeyAccessPattern may have zero, one, or multiple current Room assignments.
+- All physical copies under a KeyAccessPattern open exactly the same Room set; Room access must not vary by copy.
+- A master/broader-access key is represented only as another KeyAccessPattern whose Room set contains multiple Rooms; no master/sub-master hierarchy engine exists.
+- A KeyAccessPattern must not reference an inactive KeyType for new catalog assignment.
+- KeyAccessPattern must not own custody, Loan, Return, holder, or possession state.
 
 Allowed lifecycle-neutral behavior:
-- Create catalog identity.
-- Update catalog descriptive attributes.
-- Assign or change KeyType and KeySeries references.
-- Assign, change, or clear current Key-to-Room assignments after registration.
-- Activate or retire catalog availability for future use.
+- Create KEY # access pattern.
+- Assign or change KeyType.
+- Assign, change, or clear current KeyAccessPattern↔Room assignments.
+- Activate or retire the access pattern for future copy registration / issue eligibility as catalog rules require.
+
+Prohibited authority:
+- KeyAccessPattern must not store authoritative possession, current custodian, loan state, return state, lifecycle state, audit history, authentication, authorization, policy, or UI state.
+- KeyAccessPattern must not use Lock or Location hierarchy as Room-opening authority beyond KeyAccessPattern↔Room.
+- KeyAccessPattern must not own Building or any site abstraction independently of Room.
+
+### KeyAsset
+Purpose: define one controlled physical key copy that may be issued to a person.
+
+Identity: KeyAsset is identified by one immutable internal KeyAssetId. Operator-facing physical-copy identity is MEDECO Key Code unique within the parent KeyAccessPattern. The operational business pair is (KEY #, MEDECO Key Code). CatalogKeyCode is not the unique physical-copy business identity under KEY-ACCESS-COPY-1. Opaque composite strings (for example `66800-28`) must not be identity authority.
+
+Ownership: Key Catalog owns physical-copy registration, MEDECO uniqueness within KEY #, activation, and retirement. Custody remains outside Key Catalog (Loan/Return).
+
+Invariants:
+- A KeyAsset must have a non-empty immutable KeyAssetId.
+- A KeyAsset must reference exactly one KeyAccessPattern.
+- A KeyAsset must have a non-empty MEDECO Key Code unique among KeyAsset records that share the same KeyAccessPattern.
+- MEDECO Key Code may repeat under a different KeyAccessPattern.
+- A KeyAsset derives KeyType and Rooms opened solely from its parent KeyAccessPattern.
+- A KeyAsset must not own independent Room assignments and must not store a conflicting Room set.
+- A retired KeyAsset remains catalog-identifiable and must not be reused as a different physical copy.
+
+Allowed lifecycle-neutral behavior:
+- Register physical copy under an existing KEY #.
+- Activate or retire catalog availability for future issue.
 
 Prohibited authority:
 - KeyAsset must not store authoritative possession, current custodian, loan state, return state, lifecycle state, audit history, maintenance workflow state, policy decision state, authentication data, authorization data, or UI state.
-- KeyAsset must not use Lock or Location hierarchy as the authority for which Rooms the key opens.
-- KeyAsset must not own Building or any site abstraction independently of Room.
+- KeyAsset must not own Room-opening authority, Building, or KeyType as an independent mutable authority.
+- KeyAsset must not reference KeySeries as active KEY # or access authority.
 
-### Key-to-Room Assignment
-Purpose: define the current authoritative association between one physical KeyAsset and one Room that the key opens.
+### KeyAccessPattern-to-Room Assignment
+Purpose: define the current authoritative association between one KEY # / KeyAccessPattern and one Room that every physical copy under that KEY # opens.
 
-Ownership: Key Catalog owns current Key-to-Room assignments. Location boundary owns Room identity (Building is not an active place authority).
+Ownership: Key Catalog owns current KeyAccessPattern↔Room assignments. Location boundary owns Room identity (Building is not an active place authority).
 
 Cardinality:
-- One KeyAsset may open zero, one, or multiple Rooms.
-- One Room may be opened by zero, one, or multiple KeyAssets.
-- The relationship belongs to physical KeyAsset, not KeyType.
+- One KeyAccessPattern may open zero, one, or multiple Rooms.
+- One Room may be opened by zero, one, or multiple KeyAccessPatterns.
+- The relationship belongs to KeyAccessPattern, not KeyAsset, not KeyType, and not KeySeries.
 
 Authority rules:
-- Only current Key-to-Room assignments are authoritative.
+- Only current KeyAccessPattern↔Room assignments are authoritative for Rooms opened.
+- Physical copies derive Rooms opened exclusively through their parent KeyAccessPattern.
+- Former KeyAsset↔Room assignment authority is retired from the active model; dual authority is forbidden.
 - Assignment history is not required and must not be invented as a second source of truth.
-- Key-to-Room assignments are editable after KeyAsset registration.
-- Key-to-Room is the operational authority for which Rooms a physical key opens.
-- Lock must not be introduced or required as an intermediate authority for Key-to-Room.
-- Existing Key Catalog, Find Key / operational lookup, and existing REPORTS-1 surfaces that already present Key catalog or key information may consume current Key-to-Room assignments when a later authorized slice implements them; this does not authorize new report families or REPORTS-2.
+- Assignments are editable after KEY # creation.
+- Lock must not be introduced or required as an intermediate authority.
+- Existing Key Catalog, Find Key / operational lookup, and existing REPORTS-1 surfaces consume this authority; this does not authorize REPORTS-2.
 
 Invariants:
-- A Key-to-Room assignment must reference an existing KeyAsset and an existing Room.
-- An active Key-to-Room assignment used for operational display must reference an active Room.
-- Duplicate active assignment of the same KeyAsset to the same Room is forbidden.
+- An assignment must reference an existing KeyAccessPattern and an existing Room.
+- An active assignment used for operational display must reference an active Room.
+- Duplicate active assignment of the same KeyAccessPattern to the same Room is forbidden.
 
 ### KeySeries
-Purpose: group catalog keys that share an organizational keying system, pattern, or managed series.
+Purpose (historical/seed only): former optional classification for organizational keying system, pattern, or managed series.
 
-Ownership: Key Catalog owns creation, update, activation, and retirement rules for KeySeries.
-
-Relationships: KeySeries may classify zero or more KeyAsset records.
-
-Uniqueness rules:
-- KeySeries code is unique across all KeySeries records.
-
-Invariants:
-- A KeySeries must have a non-empty series code.
-- A KeySeries must not be retired while active KeyAsset records reference it for new catalog assignment.
-- Retiring a KeySeries does not retire existing KeyAsset records.
+Active authority under KEY-ACCESS-COPY-1:
+- KeySeries is not KEY #.
+- KeySeries is not Room-access authority.
+- KeySeries is not physical-copy identity.
+- Implementation must not persist or expose KeySeries as a competing access-pattern authority.
 
 ### KeyType
-Purpose: classify the physical or operational kind of a KeyAsset.
+Purpose: classify the physical or operational kind of a KEY # / KeyAccessPattern.
 
 Ownership: Key Catalog owns creation, update, activation, and retirement rules for KeyType.
 
 Classification rules:
 - KeyType is catalog reference data.
-- KeyType classifies zero or more KeyAsset records.
-- KeyType must not own Key-to-Room assignments.
+- KeyType is referenced by KeyAccessPattern; physical KeyAsset copies derive KeyType from the parent KeyAccessPattern.
+- KeyType must not own KeyAccessPattern↔Room assignments.
 - KeyType must not encode custody, loan, return, lifecycle, maintenance, authorization, or policy state.
+- KeyType must not be overloaded with KEY # semantics.
 
 Uniqueness rules:
 - KeyType code is unique across all KeyType records.
 
 Invariants:
 - A KeyType must have a non-empty type code.
-- A KeyType must not be retired while active KeyAsset records require it for new catalog assignment.
-- Retiring a KeyType does not retire existing KeyAsset records.
+- A KeyType must not be retired while active KeyAccessPattern records require it for new catalog assignment.
+- Retiring a KeyType does not retire existing KeyAccessPattern or KeyAsset records.
 
 ### Lock
 Purpose: optional catalog identity for a controlled physical lock device.
@@ -150,14 +176,14 @@ Purpose: optional catalog identity for a controlled physical lock device.
 Ownership: Key Catalog owns creation, catalog detail updates, activation, and retirement rules for Lock when Lock is used.
 
 Authority reconciliation:
-- Lock is not the operational authority for which Rooms a physical KeyAsset opens.
-- Key-to-Room Assignment is the sole operational authority for Rooms opened by a KeyAsset.
-- Lock must not mediate, duplicate, or be required for Key-to-Room assignment.
-- Existing KeyAsset→Lock→Location wording is superseded for room-opening authority by Key-to-Room Assignment.
+- Lock is not the operational authority for which Rooms a KEY # or physical KeyAsset opens.
+- KeyAccessPattern↔Room Assignment is the sole operational authority for Rooms opened by a KEY # (and therefore by every physical copy under it).
+- Lock must not mediate, duplicate, or be required for KeyAccessPattern↔Room assignment.
+- Existing KeyAsset→Lock→Location and former KeyAsset↔Room wording is superseded for room-opening authority by KeyAccessPattern↔Room.
 
 Relationships:
 - A Lock may reference one Location.
-- Lock is not required on KeyAsset for catalog registration or Key-to-Room assignment.
+- Lock is not required on KeyAsset for catalog registration or KeyAccessPattern↔Room assignment.
 
 Uniqueness rules:
 - Lock code is unique across all Lock records.
@@ -165,8 +191,8 @@ Uniqueness rules:
 Invariants:
 - A Lock must have a non-empty lock code.
 - A Lock must not reference an inactive Location for new Lock catalog assignment when Location is used.
-- Retiring a Lock does not retire related KeyAsset records or Key-to-Room assignments.
-- Lock must not own possession, custody, loan, return, lifecycle, maintenance, audit, authorization, Key-to-Room assignment, or UI authority.
+- Retiring a Lock does not retire related KeyAccessPattern, KeyAsset, or KeyAccessPattern↔Room assignments.
+- Lock must not own possession, custody, loan, return, lifecycle, maintenance, audit, authorization, KeyAccessPattern↔Room assignment, or UI authority.
 
 ### Location
 Purpose: define a physical organizational place where a key, lock, or custody action is relevant.
@@ -193,9 +219,9 @@ Status: removed from the active Domain model by OPERATOR-EXPERIENCE-1.
 Building is not an active aggregate, selector, or prerequisite. Historical OperatorAuditRecord rows that reference Building remain immutable and readable. Do not replace Building with Tenant, Site, Facility, Campus, LocationRoot, or another abstraction.
 
 ### Room
-Purpose: define one physical room for this installation where workforce duties, key-issue justification, and Key-to-Room opening associations occur.
+Purpose: define one physical room for this installation where workforce duties, key-issue justification, and KeyAccessPattern↔Room opening associations occur.
 
-Ownership: Location boundary owns Room creation, activation, retirement, RoomNumber mutation under authorized Application commands, and global RoomNumber uniqueness. Key Catalog owns Key-to-Room assignments that reference Room.
+Ownership: Location boundary owns Room creation, activation, retirement, RoomNumber mutation under authorized Application commands, and global RoomNumber uniqueness. Key Catalog owns KeyAccessPattern↔Room assignments that reference Room.
 
 Identity: Room is identified by one room code (RoomCode) that is unique across all Room records and is an immutable technical identity generated by the system. Operators use RoomNumber; they must not be required to invent RoomCode.
 
@@ -207,13 +233,13 @@ Uniqueness rules:
 - RoomCode is unique across all Room records.
 
 Relationships:
-- A Room may be opened by zero, one, or multiple KeyAssets through current Key-to-Room assignments.
+- A Room may be opened by zero, one, or multiple KEY # / KeyAccessPattern records through current KeyAccessPattern↔Room assignments.
 - A Room does not reference Building.
 
 Invariants:
-- Only an active Room may be used for active WorkAssignment, Room-based key-issue justification, or active Key-to-Room assignment.
+- Only an active Room may be used for active WorkAssignment, Room-based key-issue justification, or active KeyAccessPattern↔Room assignment.
 - Room must not exist outside Location boundary place authority; a second independent place model is forbidden.
-- Room must not own Key Catalog identity or Key-to-Room assignment authority.
+- Room must not own Key Catalog identity or KeyAccessPattern↔Room assignment authority.
 
 ### Catalog Authority Exclusions
 Catalog authority may never store:
@@ -239,7 +265,8 @@ Catalog authority may never store:
 - Persistence foundation for KeyType, KeyAsset, Loan, and Return belongs to MIGRATION-1; Application port adapters, workflow DI, and LOAN-VERTICAL-1 UI belong to LOAN-VERTICAL-1.
 - UI behavior outside LOAN-VERTICAL-1 belongs to future product experience or UI slices.
 - Workforce eligibility single-site authority (Department, Room without Building, WorkforceMember without Organization/ResponsibleManager, WorkAssignment, global RoomNumber) belongs to OPERATOR-EXPERIENCE-1 for active model changes; WORKFORCE-ELIGIBILITY-1 remains historical Accepted foundation.
-- Runtime implementation of Key-to-Room Assignment belongs to a later explicitly prepared slice; governing Key-to-Room authority is established by this contract and must not be invented at implementation time.
+- Historical runtime KeyAsset↔Room assignment belonged to KEY-ROOM-ASSIGNMENT-1; active Room-opening authority is KeyAccessPattern↔Room under KEY-ACCESS-COPY-1.
+- KEY # / physical-copy normalized model runtime belongs to KEY-ACCESS-COPY-1.
 
 ## Party and Workforce Eligibility Contract
 ### Boundary Ownership
@@ -386,14 +413,17 @@ Identity: Loan is identified by one loan code that is unique across all Loan rec
 Ownership: The Loan aggregate owns loan creation, issuance workflow state, due date, borrower reference, key reference, and cancellation rules.
 
 Relationships:
-- A Loan must reference exactly one KeyAsset catalog identity.
+- A Loan must reference exactly one physical KeyAsset (KeyAssetId).
+- A Loan must not treat KEY # alone as the issued subject; custody is always the physical copy.
 - A Loan must reference exactly one borrowing Party.
 - A Loan may have zero or one Return.
 - Borrower is a workflow role fulfilled by an eligible active WorkforceMember when Workforce Eligibility is in force; Loan still stores the borrowing Party reference only.
 
 Invariants:
 - A Loan must have a non-empty loan code.
-- A Loan must reference a cataloged KeyAsset.
+- A Loan must reference a cataloged physical KeyAsset.
+- At most one Open Loan may exist for a given KeyAsset at a time.
+- Different KeyAsset copies under the same KEY # may each have an Open Loan simultaneously.
 - A Loan must reference a Party borrower without owning Party profile or lifecycle.
 - When Workforce Eligibility is in force for issue authorization, the borrowing Party must be the Party of a WorkforceMember that satisfies Key Issue Eligibility Rules at issue time.
 - When Workforce Eligibility is in force, issue justification must reference the authorizing Department or Room without transferring ownership of those authorities into Loan.

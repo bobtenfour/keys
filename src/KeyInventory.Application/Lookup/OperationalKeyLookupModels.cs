@@ -8,7 +8,9 @@ public sealed record PartyHolderDisplay(
     string Uin);
 
 public sealed record KeyLookupResult(
-    string CatalogKeyCode,
+    Guid KeyAssetId,
+    string KeyNumber,
+    string MedecoKeyCode,
     string TypeCode,
     string AvailabilityStatus,
     PartyHolderDisplay? CurrentHolder,
@@ -17,7 +19,9 @@ public sealed record KeyLookupResult(
 
 public sealed record OperationalLoanDisplay(
     string LoanCode,
-    string CatalogKeyCode,
+    Guid KeyAssetId,
+    string KeyNumber,
+    string MedecoKeyCode,
     string HolderFirstName,
     string HolderLastName,
     string HolderUin,
@@ -28,7 +32,9 @@ public sealed record OperationalLoanDisplay(
 
 public sealed record IssuedKeyForMemberItem(
     string LoanCode,
-    string CatalogKeyCode,
+    Guid KeyAssetId,
+    string KeyNumber,
+    string MedecoKeyCode,
     string HolderFirstName,
     string HolderLastName,
     string HolderUin,
@@ -60,4 +66,7 @@ public static class PartyHolderDisplayFormatter
     {
         return $"{firstName} {lastName} — UIN {uin}";
     }
+
+    public static string FormatKeyCopy(string keyNumber, string medecoKeyCode)
+        => $"KEY # {keyNumber} / MEDECO {medecoKeyCode}";
 }

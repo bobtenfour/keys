@@ -11,7 +11,7 @@ using Xunit;
 
 namespace KeyInventory.ArchitectureTests;
 
-public sealed class KeyRoomAssignmentWorkflowTests : IAsyncLifetime
+public sealed class KeyAccessPatternRoomAssignmentWorkflowTests : IAsyncLifetime
 {
     private ServiceProvider? _services;
 
@@ -45,11 +45,12 @@ public sealed class KeyRoomAssignmentWorkflowTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task AssignRemoveAndLookupReuseAuthoritativeRoomAssignments()
+    public async Task AssignRemoveAndLookupReuseAuthoritativeKeyAccessPatternRoomAssignments()
     {
         using IServiceScope scope = CreateScope();
         ICreateKeyAssetUseCase createKey = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
-        IKeyRoomAssignmentUseCase assignments = scope.ServiceProvider.GetRequiredService<IKeyRoomAssignmentUseCase>();
+        IKeyAccessPatternRoomAssignmentUseCase assignments =
+            scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>();
         IListKeyAssetsUseCase listKeys = scope.ServiceProvider.GetRequiredService<IListKeyAssetsUseCase>();
         IOperationalKeyLookupUseCase lookup = scope.ServiceProvider.GetRequiredService<IOperationalKeyLookupUseCase>();
         IOperationalReportsUseCase reports = scope.ServiceProvider.GetRequiredService<IOperationalReportsUseCase>();
@@ -59,8 +60,8 @@ public sealed class KeyRoomAssignmentWorkflowTests : IAsyncLifetime
         string roomCode1 = await createRoom.ExecuteAsync("101", "Office", CancellationToken.None).ConfigureAwait(true);
         string roomCode2 = await createRoom.ExecuteAsync("102", "Lab", CancellationToken.None).ConfigureAwait(true);
 
-        await createKey.ExecuteAsync("KRA-KEY-1", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("KRA-KEY-2", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("KRA-KEY-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("KRA-KEY-2", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         IReadOnlyList<KeyOpenedRoomItem> zero = await assignments
             .ListOpenedRoomsAsync("KRA-KEY-1", CancellationToken.None)
@@ -84,7 +85,7 @@ public sealed class KeyRoomAssignmentWorkflowTests : IAsyncLifetime
 
         IReadOnlyList<KeyAssetListItem> catalog = await listKeys.ExecuteAsync(CancellationToken.None)
             .ConfigureAwait(true);
-        KeyAssetListItem catalogKey1 = Assert.Single(catalog, item => item.CatalogKeyCode == "KRA-KEY-1");
+        KeyAssetListItem catalogKey1 = Assert.Single(catalog, item => item.KeyNumber == "KRA-KEY-1");
         Assert.Equal(2, catalogKey1.OpenedRooms.Count);
         Assert.Equal(
             KeyOpenedRoomDisplayFormatter.Format(forKey1),
@@ -101,7 +102,7 @@ public sealed class KeyRoomAssignmentWorkflowTests : IAsyncLifetime
         IReadOnlyList<KeyCatalogReportRow> report = await reports
             .ListKeyCatalogReportAsync("KRA-KEY", CancellationToken.None)
             .ConfigureAwait(true);
-        KeyCatalogReportRow reportKey1 = Assert.Single(report, row => row.CatalogKeyCode == "KRA-KEY-1");
+        KeyCatalogReportRow reportKey1 = Assert.Single(report, row => row.KeyNumber == "KRA-KEY-1");
         Assert.Equal(2, reportKey1.OpenedRooms.Count);
         string reportCsv = reports.FormatKeyCatalogCsv(report);
         string roomsDisplay = KeyOpenedRoomDisplayFormatter.Format(reportKey1.OpenedRooms);
@@ -119,7 +120,7 @@ public sealed class KeyRoomAssignmentWorkflowTests : IAsyncLifetime
         Assert.Null(typeof(KeyAssetEntity).GetProperty("BuildingCode"));
         Assert.Null(typeof(KeyAssetEntity).GetProperty("Building"));
         Assert.DoesNotContain(
-            db.Model.FindEntityType(typeof(KeyRoomAssignmentEntity))!.GetForeignKeys(),
+            db.Model.FindEntityType(typeof(KeyAccessPatternRoomAssignmentEntity))!.GetForeignKeys(),
             fk => fk.PrincipalEntityType.ClrType.Name.Contains("Lock", StringComparison.Ordinal));
     }
 
@@ -128,20 +129,22 @@ public sealed class KeyRoomAssignmentWorkflowTests : IAsyncLifetime
     {
         using IServiceScope scope = CreateScope();
         ICreateKeyAssetUseCase createKey = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
-        IKeyRoomAssignmentUseCase assignments = scope.ServiceProvider.GetRequiredService<IKeyRoomAssignmentUseCase>();
+        IKeyAccessPatternRoomAssignmentUseCase assignments =
+            scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>();
         IIssueLoanUseCase issue = scope.ServiceProvider.GetRequiredService<IIssueLoanUseCase>();
         ICompleteReturnUseCase completeReturn = scope.ServiceProvider.GetRequiredService<ICompleteReturnUseCase>();
         IListOpenLoansUseCase listOpen = scope.ServiceProvider.GetRequiredService<IListOpenLoansUseCase>();
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "kra-flow")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("kra-flow-key", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("kra-flow-key", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await assignments.AssignRoomAsync("kra-flow-key", seeded.RoomCode, CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 9, 16, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-kra-flow",
                 "kra-flow-key",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,

@@ -27,7 +27,8 @@ public sealed class OperatorUxBoundaryTests
     public void IssuePageUsesOperatorHierarchyAndLocalDateControls()
     {
         string view = Read("src/KeyInventory.Web/Pages/Operations/Issue.cshtml");
-        Assert.Contains("Key\r\n", view, StringComparison.Ordinal);
+        Assert.Contains("KEY #\r\n", view, StringComparison.Ordinal);
+        Assert.Contains("MEDECO Key Code\r\n", view, StringComparison.Ordinal);
         Assert.Contains("Issue to\r\n", view, StringComparison.Ordinal);
         Assert.Contains("For\r\n", view, StringComparison.Ordinal);
         Assert.Contains("Issued\r\n", view, StringComparison.Ordinal);

@@ -14,7 +14,10 @@ public sealed class RegisterModel : PageModel
     }
 
     [BindProperty]
-    public string CatalogKeyCode { get; set; } = string.Empty;
+    public string KeyNumber { get; set; } = string.Empty;
+
+    [BindProperty]
+    public string MedecoKeyCode { get; set; } = string.Empty;
 
     [BindProperty]
     public string TypeCode { get; set; } = string.Empty;
@@ -30,9 +33,12 @@ public sealed class RegisterModel : PageModel
     {
         try
         {
-            await _createKeyAsset.ExecuteAsync(CatalogKeyCode, TypeCode, cancellationToken).ConfigureAwait(false);
-            SuccessMessage = $"Key {CatalogKeyCode} was registered.";
-            CatalogKeyCode = string.Empty;
+            await _createKeyAsset.ExecuteAsync(KeyNumber, MedecoKeyCode, TypeCode, cancellationToken)
+                .ConfigureAwait(false);
+            SuccessMessage =
+                $"Physical copy MEDECO {MedecoKeyCode} was registered under KEY # {KeyNumber}.";
+            KeyNumber = string.Empty;
+            MedecoKeyCode = string.Empty;
             TypeCode = string.Empty;
             ModelState.Clear();
         }

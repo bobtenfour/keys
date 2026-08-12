@@ -71,10 +71,10 @@
                 <a asp-page="/Catalog/Register">Register</a>
             }
         </li>
-        <li class="@(s.HasKeyRoomAssignment ? "is-done" : null)">
-            <span>Key↔Room assignments</span>
-            <span>@(s.HasKeyRoomAssignment ? "Yes" : "Optional")</span>
-            @if (s.HasKey && !s.HasKeyRoomAssignment)
+        <li class="@(s.HasKeyAccessPatternRoomAssignment ? "is-done" : null)">
+            <span>KEY #↔Room assignments</span>
+            <span>@(s.HasKeyAccessPatternRoomAssignment ? "Yes" : "Optional")</span>
+            @if (s.HasKey && !s.HasKeyAccessPatternRoomAssignment)
             {
                 <a asp-page="/Catalog/Keys">Assign</a>
             }

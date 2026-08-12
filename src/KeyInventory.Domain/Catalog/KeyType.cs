@@ -17,12 +17,12 @@ public sealed class KeyType
         IsActive = true;
     }
 
-    public void Retire(bool hasActiveKeyAssets)
+    public void Retire(bool hasActiveKeyAccessPatterns)
     {
-        if (hasActiveKeyAssets)
+        if (hasActiveKeyAccessPatterns)
         {
             throw new InvalidOperationException(
-                "KeyType cannot be retired while active KeyAsset records require it for new catalog assignment.");
+                "KeyType cannot be retired while active KEY # records require it for new catalog assignment.");
         }
 
         IsActive = false;

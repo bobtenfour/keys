@@ -121,7 +121,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Key</th>
+                        <th>KEY #</th>
+                        <th>MEDECO</th>
                         <th>Issued</th>
                         <th>Due</th>
                         <th></th>
@@ -131,7 +132,8 @@
                 @foreach (var item in Model.IssuedKeys)
                 {
                     <tr>
-                        <td>@item.CatalogKeyCode</td>
+                        <td>@item.KeyNumber</td>
+                        <td>@item.MedecoKeyCode</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.IssuedAtUtc)</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.DueAtUtc)</td>
                         <td><a asp-page="/Operations/Receive" asp-route-issueReference="@item.LoanCode">Receive</a></td>

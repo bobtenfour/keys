@@ -121,8 +121,7 @@ public sealed class LoanReturnDomainInvariantTests
         string borrowerPartyReference = "party-1",
         DateTimeOffset? dueAtUtc = null)
     {
-        KeyType keyType = new("mechanical");
-        KeyAsset keyAsset = new("key-1", keyType);
+        KeyAsset keyAsset = CatalogTestFactory.CreateCopy("key-1", "01", "mechanical");
         return new Loan(loanCode, keyAsset, borrowerPartyReference, IssueAt, dueAtUtc ?? DueAt);
     }
 }

@@ -58,13 +58,14 @@ public sealed class ReportExportsWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "rx")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("RX-KEY-1", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("RX-KEY-2", "electronic", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("RX-KEY-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await createKey.ExecuteAsync("RX-KEY-2", "01", "electronic", CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 1, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-rx-1",
                 "RX-KEY-1",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,
@@ -75,6 +76,7 @@ public sealed class ReportExportsWorkflowTests : IAsyncLifetime
         await issue.ExecuteAsync(
                 "loan-rx-2",
                 "RX-KEY-2",
+                "01",
                 seeded.MemberCode,
                 "Department",
                 seeded.DepartmentCode,
