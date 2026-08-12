@@ -38,12 +38,16 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 ## OPERATOR-EXPERIENCE-1 Product Experience
 - Product is single-site: no Organization or Building administration, selectors, columns, or prerequisites.
 - Workforce Members show person identity, Type, Department, Status, and actions; no Organization or Responsible Manager fields.
-- Navigation is task-oriented: Setup/Administration (Departments, Rooms, Workforce Members, Work Assignments, Audit Trail); Key/Catalog; Daily custody; Lookup; Reporting.
-- First-use readiness and prerequisite-aware empty states use Application-owned readiness/eligibility signals; Web must not duplicate Domain eligibility formulas.
-- Major tasks explain purpose, missing prerequisites, why required, where to create them, and what becomes possible next.
+- Navigation is task-oriented: Administration (Departments, Rooms, Workforce Members, Work Assignments, Audit Trail); Key/Catalog; Daily custody; Lookup; Reporting.
+- Application-owned readiness/eligibility remains the sole business readiness authority; Web must not duplicate Domain eligibility formulas or invent a second readiness engine.
+- First-time configuration is a transient installation state, not a permanent application capability or navigation surface. Home must not present a permanent first-time setup section, setup checklist, onboarding wizard, or Administration/Catalog duplicate of setup cards.
+- Home is an operational dashboard (metrics, Daily custody, Recent Activity). Permanent onboarding/setup presentation is forbidden on Home.
+- Administration and Catalog expose ordinary capabilities (not labeled or structured as permanent setup steps).
+- When an operator opens a capability whose mandatory prerequisites are missing, communicate those missing prerequisites contextually at that capability boundary using Application readiness/eligibility signals, with authorized routes to resolve them. Once prerequisites exist, obsolete onboarding/setup messaging must not remain.
+- The logical empty-installation dependency sequence belongs in the operator User Guide (including the dependency diagram); documentation does not justify permanent setup UI.
 - One shared human-readable date/time presentation authority covers Home, Administration, Issue/Receive, Active Loans, History, member details, Audit Trail, Reports, and CSV/XLSX/PDF; raw SQL/ISO/UTC serialization is forbidden in normal operator UI; persisted UTC is unchanged.
 - Successful create uses server-side lifecycle: success confirmation, clean form state, logical next action; failed validation retains input; no field-by-field JavaScript clearing.
-- User Guide in `documentation/operator/` supplements the UI after runtime finalization and must present the same dependency model as the UI (including WorkAssignment as mandatory for Issue Key).
+- User Guide in `documentation/operator/` must present the same dependency model as Application readiness (including WorkAssignment as mandatory for Issue Key).
 
 ## KEY-ACCESS-COPY-1 Product Experience
 - Catalog distinguishes KEY # (shared access pattern) from MEDECO Key Code (physical copy under that KEY #).

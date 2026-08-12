@@ -2,6 +2,10 @@ using KeyInventory.Application.Readiness;
 
 namespace KeyInventory.Web.Presentation;
 
+/// <summary>
+/// Web presentation over Application-owned <see cref="OperationalReadinessSnapshot"/>.
+/// Does not evaluate eligibility; maps snapshot signals to contextual Issue Key messaging only.
+/// </summary>
 public sealed class OperationalReadinessViewModel
 {
     public OperationalReadinessViewModel(OperationalReadinessSnapshot snapshot)
@@ -11,21 +15,13 @@ public sealed class OperationalReadinessViewModel
 
     public OperationalReadinessSnapshot Snapshot { get; }
 
-    public bool IsFirstUse =>
-        !Snapshot.HasDepartment
-        || !Snapshot.HasRoom
-        || !Snapshot.HasKeyType
-        || !Snapshot.HasWorkforceMember
-        || !Snapshot.HasWorkAssignment
-        || !Snapshot.HasKey;
-
     public string NextActionTitle
     {
         get
         {
             if (Snapshot.CanIssueKey)
             {
-                return "Issue your first key";
+                return "Issue Key";
             }
 
             if (!Snapshot.HasDepartment)
@@ -58,7 +54,7 @@ public sealed class OperationalReadinessViewModel
                 return "Register a key";
             }
 
-            return "Review setup";
+            return "Review Administration and Catalog";
         }
     }
 
@@ -68,40 +64,40 @@ public sealed class OperationalReadinessViewModel
         {
             if (Snapshot.CanIssueKey)
             {
-                return "Setup prerequisites are satisfied. Issue Key to begin daily custody.";
+                return "Issue Key prerequisites are satisfied.";
             }
 
             if (!Snapshot.HasDepartment)
             {
-                return "Departments group workforce members and support department-based issue justification.";
+                return "A department is required before workforce members can be created.";
             }
 
             if (!Snapshot.HasRoom)
             {
-                return "Rooms are places workforce members work and keys may open.";
+                return "A room is required before work assignments can be created.";
             }
 
             if (!Snapshot.HasKeyType)
             {
-                return "Key types classify physical keys before registration.";
+                return "A key type is required before a KEY # / physical copy can be registered.";
             }
 
             if (!Snapshot.HasWorkforceMember)
             {
-                return "A workforce member represents a person eligible to receive keys.";
+                return "An active workforce member is required before Issue Key.";
             }
 
             if (!Snapshot.HasWorkAssignment)
             {
-                return "Work assignments link a workforce member to a room and are required before Issue Key.";
+                return "A work assignment (member to room) is required before Issue Key.";
             }
 
             if (!Snapshot.HasKey)
             {
-                return "Register at least one key in the catalog before issuing.";
+                return "At least one registered physical key copy is required before Issue Key.";
             }
 
-            return "Complete remaining setup tasks below.";
+            return "One or more Issue Key prerequisites are missing.";
         }
     }
 

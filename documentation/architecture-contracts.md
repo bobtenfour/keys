@@ -123,7 +123,7 @@ Runtime composition belongs to the application host. Service registration must n
 - The first WorkforceMember may be created when no other WorkforceMember exists; bootstrap mutual-manager pairs and ResponsibleManager requirements are forbidden.
 - PartyCode and WorkforceMemberCode are internal system identifiers generated once on the Application/Domain creation path as opaque values with stable prefixes (`PARTY-{GUID}`, `WM-{GUID}`), persisted immutably, available for internal references/diagnostics, and not required as normal operator UI inputs; sequences, counters, configurable code-generation engines, database-specific generators, and user-configurable formats are forbidden for these identifiers.
 - Key-issue eligibility retains the requirement for at least one active WorkAssignment after Organization/ResponsibleManager removal unless a later human decision changes that rule.
-- OPERATOR-EXPERIENCE-1 owns active single-site and first-use experience authority for this boundary.
+- OPERATOR-EXPERIENCE-1 owns active single-site structural simplification for this boundary; active first-use/onboarding presentation authority is governed by product-experience-contract.md (Application readiness remains business authority; permanent Home setup presentation is not required).
 
 ## Operator Audit Boundary Contract
 - OPERATOR-AUDIT-1 authorizes one append-only operational audit authority (`OperatorAuditRecord`) persisted on the existing SQL Server `KeyInventoryDbContext`.

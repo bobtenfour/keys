@@ -290,5 +290,14 @@ After OPERATOR-EXPERIENCE-1 reaches Implementation Complete with closure evidenc
 - Evidence: OPERATOR-EXPERIENCE-1 was Implementation Complete; single-site product decisions (Organization/Building removed as active concepts; ResponsibleManager removed; global Department/RoomNumber uniqueness; Party UIN governed correction; Application readiness/first-use UX; human-readable date/time presentation; post-create lifecycle; mutability matrix; OperatorExperience1SingleSite migration/data-preservation; normalized relational ownership; User Guide contract matching the dependency model) remained within approved scope; no Tenant/Site/Facility/Campus/LocationRoot replacements, bootstrap/fake personnel, workflow-engine/wizard frameworks, generic CRUD, Web DbContext persistence, or successor-slice preparation were introduced; architectural review complete; build PASS; tests PASS.
 - Deciding authority role: Human Architectural Governance.
 
+## Active Presentation Amendment (does not rewrite Acceptance Record)
+- Decision: SUPERSEDE permanent first-use/onboarding Home presentation only.
+- Date: 2026-08-11.
+- Authority: Human Governance via active `documentation/product-experience-contract.md`.
+- Scope: Presentation only. Application-owned readiness/eligibility remains business authority. Issue eligibility and Domain/Application prerequisite rules are unchanged.
+- Supersedes for active product experience: permanent Home first-time setup section; permanent Home readiness checklist; permanent Administration onboarding/setup panels that duplicate setup as a lasting capability surface.
+- Active rule: Home is operational; prerequisite feedback is contextual at capability boundaries; empty-installation sequence belongs in the operator User Guide.
+- Historical Accepted evidence above remains unchanged.
+
 ## Next Allowed Slice
 STOP

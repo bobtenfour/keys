@@ -3,81 +3,68 @@
     var s = Model.Snapshot;
 }
 
-<section class="card readiness-panel" aria-labelledby="readiness-title">
-    <h2 id="readiness-title" class="section-title">Setup readiness</h2>
+@if (!s.CanIssueKey)
+{
+    <section class="card readiness-panel" aria-labelledby="issue-prereq-title">
+        <h2 id="issue-prereq-title" class="section-title">Issue Key unavailable</h2>
+        <p class="lede">@Model.NextActionDescription</p>
 
-    @if (s.CanIssueKey)
-    {
-        <p class="lede">You can issue keys. Daily custody operations are available.</p>
-    }
-    else
-    {
-        <p class="lede">Complete setup before Issue Key. Department, Room, and Key Type can be created in any order.</p>
-    }
-
-    <div class="readiness-next">
-        <strong>Next:</strong> @Model.NextActionDescription
-        <div class="form-actions">
-            <a class="btn btn-primary" asp-page="@Model.NextActionPage">@Model.NextActionTitle</a>
+        <div class="readiness-next">
+            <strong>Resolve next:</strong> @Model.NextActionTitle
+            <div class="form-actions">
+                <a class="btn btn-primary" asp-page="@Model.NextActionPage">@Model.NextActionTitle</a>
+            </div>
         </div>
-    </div>
 
-    <ul class="readiness-checklist">
-        <li class="@(s.HasDepartment ? "is-done" : "is-missing")">
-            <span>Departments</span>
-            <span>@s.DepartmentCount</span>
+        <ul class="readiness-checklist">
             @if (!s.HasDepartment)
             {
-                <a asp-page="/Administration/Departments/Add">Create</a>
+                <li class="is-missing">
+                    <span>Department</span>
+                    <span>Required</span>
+                    <a asp-page="/Administration/Departments/Add">Create</a>
+                </li>
             }
-        </li>
-        <li class="@(s.HasRoom ? "is-done" : "is-missing")">
-            <span>Rooms</span>
-            <span>@s.RoomCount</span>
             @if (!s.HasRoom)
             {
-                <a asp-page="/Administration/Rooms/Add">Create</a>
+                <li class="is-missing">
+                    <span>Room</span>
+                    <span>Required</span>
+                    <a asp-page="/Administration/Rooms/Add">Create</a>
+                </li>
             }
-        </li>
-        <li class="@(s.HasKeyType ? "is-done" : "is-missing")">
-            <span>Key types</span>
-            <span>@s.KeyTypeCount</span>
             @if (!s.HasKeyType)
             {
-                <a asp-page="/Catalog/KeyTypes">Create</a>
+                <li class="is-missing">
+                    <span>Key type</span>
+                    <span>Required</span>
+                    <a asp-page="/Catalog/KeyTypes">Create</a>
+                </li>
             }
-        </li>
-        <li class="@(s.HasWorkforceMember ? "is-done" : "is-missing")">
-            <span>Workforce members</span>
-            <span>@s.WorkforceMemberCount</span>
             @if (!s.HasWorkforceMember)
             {
-                <a asp-page="/Administration/WorkforceMembers/Add">Create</a>
+                <li class="is-missing">
+                    <span>Workforce member</span>
+                    <span>Required</span>
+                    <a asp-page="/Administration/WorkforceMembers/Add">Create</a>
+                </li>
             }
-        </li>
-        <li class="@(s.HasWorkAssignment ? "is-done" : "is-missing")">
-            <span>Work assignments</span>
-            <span>@s.WorkAssignmentCount</span>
             @if (!s.HasWorkAssignment)
             {
-                <a asp-page="/Administration/WorkAssignments/Add">Create</a>
+                <li class="is-missing">
+                    <span>Work assignment</span>
+                    <span>Required</span>
+                    <a asp-page="/Administration/WorkAssignments/Add">Create</a>
+                </li>
             }
-        </li>
-        <li class="@(s.HasKey ? "is-done" : "is-missing")">
-            <span>Registered keys</span>
-            <span>@s.KeyCount</span>
             @if (!s.HasKey)
             {
-                <a asp-page="/Catalog/Register">Register</a>
+                <li class="is-missing">
+                    <span>Registered key</span>
+                    <span>Required</span>
+                    <a asp-page="/Catalog/Register">Register</a>
+                </li>
             }
-        </li>
-        <li class="@(s.HasKeyAccessPatternRoomAssignment ? "is-done" : null)">
-            <span>KEY #↔Room assignments</span>
-            <span>@(s.HasKeyAccessPatternRoomAssignment ? "Yes" : "Optional")</span>
-            @if (s.HasKey && !s.HasKeyAccessPatternRoomAssignment)
-            {
-                <a asp-page="/Catalog/Keys">Assign</a>
-            }
-        </li>
-    </ul>
-</section>
+        </ul>
+    </section>
+}

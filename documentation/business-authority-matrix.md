@@ -57,7 +57,8 @@ Prevent duplicated authority.
 | ResponsibleManager relationship | Removed from active model; key-inventory-domain-contract.md |
 | WorkAssignment to Room | key-inventory-domain-contract.md |
 | Key issue eligibility for WorkforceMember | key-inventory-domain-contract.md |
-| Single-site operator experience / first-use readiness | documentation/slices/OPERATOR-EXPERIENCE-1.md |
+| Single-site structural simplification / Application readiness query | documentation/slices/OPERATOR-EXPERIENCE-1.md |
+| First-use/onboarding presentation (no permanent Home setup UI) | product-experience-contract.md |
 | Human-readable operator date/time presentation | product-experience-contract.md |
 | Post-create form lifecycle | product-experience-contract.md |
 | Operator User Guide | documentation/slices/OPERATOR-EXPERIENCE-1.md |

@@ -1,5 +1,4 @@
 using KeyInventory.Application.Lookup;
-using KeyInventory.Application.Readiness;
 using KeyInventory.Application.Workflow;
 using KeyInventory.Web.Presentation;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -10,29 +9,22 @@ public sealed class IndexModel : PageModel
 {
     private readonly IOperationalKeyLookupUseCase _lookup;
     private readonly IListKeyAssetsUseCase _listKeyAssets;
-    private readonly IOperationalReadinessUseCase _readiness;
 
     public IndexModel(
         IOperationalKeyLookupUseCase lookup,
-        IListKeyAssetsUseCase listKeyAssets,
-        IOperationalReadinessUseCase readiness)
+        IListKeyAssetsUseCase listKeyAssets)
     {
         _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
         _listKeyAssets = listKeyAssets ?? throw new ArgumentNullException(nameof(listKeyAssets));
-        _readiness = readiness ?? throw new ArgumentNullException(nameof(readiness));
     }
 
     public int ActiveLoanCount { get; private set; }
     public int OverdueCount { get; private set; }
     public int KeysAvailableCount { get; private set; }
     public IReadOnlyList<OperationsActivityItem> RecentActivity { get; private set; } = [];
-    public OperationalReadinessViewModel Readiness { get; private set; } = null!;
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        OperationalReadinessSnapshot snapshot = await _readiness.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        Readiness = new OperationalReadinessViewModel(snapshot);
-
         IReadOnlyList<OperationalLoanDisplay> openLoans =
             await _lookup.ListOpenLoansWithHoldersAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<OperationalLoanDisplay> returnedLoans =

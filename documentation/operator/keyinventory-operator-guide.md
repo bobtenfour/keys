@@ -37,7 +37,7 @@ Rooms opened are recorded once on the KEY #. Every MEDECO copy under that KEY # 
 
 ## Dependency model (authoritative)
 
-The application readiness panel, this guide, and the diagram below use the same model.
+This guide and the Application readiness/eligibility model use the same dependency classifications. Initial configuration is documented here; Home is an operational dashboard and does not permanently host setup UI.
 
 | Relationship | Meaning |
 |---|---|
@@ -91,32 +91,31 @@ flowchart TB
 6. Register at least one **MEDECO** physical copy under that KEY #.
 7. **Issue Key** (person + KEY # + available MEDECO; Rooms derived) → **Active custody** → **Return** the same MEDECO copy when returned.
 
-![Home first-use readiness](images/01-home-first-use.png)
-
-After setup is complete, Home focuses on daily custody and recent activity:
+Home remains an operational dashboard (metrics, Daily custody, Recent Activity) during and after initial configuration:
 
 ![Home daily operations](images/01-home-operations.png)
 
-## First-time setup
+## Initial configuration (documentation sequence)
 
 ### Purpose
-Reach a state where Issue Key is possible without guessing prerequisites.
+Reach a state where Issue Key is possible without guessing prerequisites. This sequence belongs in documentation; it is not a permanent Home or Administration setup surface.
 
 ### Prerequisites
 Signed-in operator account.
 
 ### Where to go
-**Home** shows Setup readiness and First-time setup cards.  
-**Administration** holds Departments, Rooms, Workforce Members, Work Assignments, Audit Trail.  
-**Catalog** holds Key Types, Register Key, Key↔Room.
+**Administration** — Departments, Rooms, Workforce Members, Work Assignments, Audit Trail.  
+**Catalog** — Key Types, Register Key, KEY # ↔ Room.  
+**Operations → Issue Key** — when prerequisites are missing, Issue Key explains the missing Application-owned prerequisites and links to resolve them.
 
 ### Steps
-1. Open Home and read Setup readiness.
-2. Create missing items using the Create links.
-3. When readiness reports Issue Key is available, open **Operations → Issue Key**.
+1. Create **Department**, **Room**, and **Key Type** in any order (Administration / Catalog).
+2. Create the first **Workforce Member**, then a **Work Assignment**.
+3. Register a **KEY #** / **MEDECO** copy in Catalog (assign Room openings on the KEY # as needed).
+4. Open **Operations → Issue Key**. If anything mandatory is still missing, resolve the items listed there, then issue.
 
 ### Expected result
-Counts move above zero; Next action advances; Issue Key becomes usable.
+Issue Key becomes usable; Home stays focused on custody metrics and activity (no leftover onboarding checklist).
 
 ### Common problems
 - Issue blocked with no Work Assignment — create member-to-room assignment.
