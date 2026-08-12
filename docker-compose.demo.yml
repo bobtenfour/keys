@@ -2,6 +2,8 @@
 # Reuses existing dentalinventory-demo-sql via external network dentalinventory-demo_default.
 # Database: KeyInventoryDemo only. Never DentalInventoryDemo / DentalInventoryDev.
 # Does not define or modify the SQL Server container, /opt/Inv, or DentalInventory volumes.
+# Normal up is NON-DESTRUCTIVE. Explicit KeyInventoryDemo drop is a separate operator script
+# documented under RESET / RESEED DEMO in docker/README-demo.md (never in migrate/web startup; never wipe SQL volumes).
 name: keyinventory-demo
 
 services:
