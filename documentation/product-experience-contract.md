@@ -52,11 +52,19 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 ## KEY-ACCESS-COPY-1 Product Experience
 - Catalog distinguishes KEY # (shared access pattern) from MEDECO Key Code (physical copy under that KEY #).
 - Room openings are maintained at KEY # level; operators assign Room # values to a KEY #; physical copies do not present independent conflicting Room editors.
-- Issue Key identifies person, KEY #, available MEDECO/physical copy, and derived Rooms opened (read-only; not re-entered). Internal KeyAssetId is not an operator typing target.
+- Issue Key identifies **Key holder** (WorkforceMember / Party; label only—no KeyHolder entity), KEY #, available MEDECO/physical copy, and derived Rooms opened (read-only; not re-entered). Internal KeyAssetId is not an operator typing target.
 - Return / receive identifies the exact physical copy as KEY # + MEDECO (e.g. 66800 / 26 vs 66800 / 27).
 - Find Key and reports distinguish KEY #, MEDECO/copy, holder, Rooms opened, and issue/return state; screen/CSV/XLSX/PDF parity preserved.
 - Do not expose Transfer; do not invent New Key terminology beyond KEY # / MEDECO presentation required by this slice.
 - Operator guide must explain KEY # → Rooms opened and MEDECO → physical copy held, using the 66800 / 410D / MEDECO 26–28 example pattern; screenshots refresh only after runtime finalization.
+
+## Issue / Receive Interaction (active presentation)
+- A freshly opened Issue or Receive/Return operation must not silently select business choices for the operator, including when exactly one valid option exists.
+- Issue Key holder selection is search-on-demand: no full workforce load into HTML or JavaScript; Application returns a bounded set of eligible candidates matching name or UIN; Web must not evaluate eligibility or auto-select first/only match.
+- Issue initial business-choice state is empty for Key holder, KEY #, MEDECO, justification kind, Department, and Room. MEDECO options appear only after KEY # is selected. Rooms opened remain derived from KEY #.
+- Successful Issue and Receive use server-side PRG: success confirmation then clean new-operation state. Failed validation retains submitted values. No JavaScript field-by-field reset; no first/only-record defaults; no query-string carry of prior Issue business selections on a fresh Issue open.
+- Receive/Return initial Active issue selection is empty (`Select an issued key...`) unless the operator deliberately opens a specific issue deep-link. Option text uses `KEY # … / MEDECO … · Name — UIN …`.
+- Issued, Due, and Received remain operator-editable under Application loan/return timestamp parameters (UTC persistence unchanged). Operator entry uses shared `OperatorLocalTimestamp` conversion; absolute display uses shared `OperatorTimestampFormatter.ToAbsoluteDisplay` (`MMM d, yyyy · h:mm tt`). No page-local timestamp formatters; no ISO/raw UTC/offset presentation in normal operator UI.
 
 ## Applies When
 This document is required only for slices that create or modify UI, navigation, user workflows, messages, or product-facing behavior.

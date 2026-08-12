@@ -13,7 +13,10 @@ namespace KeyInventory.Web.Pages.Operations;
 
 public sealed class IssueModel : PageModel
 {
-    private static readonly JsonSerializerOptions JustificationJsonOptions = new()
+    private const string SuccessTempDataKey = "IssueSuccessMessage";
+    private const string SelectedHolderTempDataKey = "IssueSelectedHolderCode";
+
+    private static readonly JsonSerializerOptions KeyCopyJsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
@@ -21,29 +24,23 @@ public sealed class IssueModel : PageModel
     private readonly IIssueLoanUseCase _issueLoan;
     private readonly IListKeyAssetsUseCase _listKeyAssets;
     private readonly IListOpenLoansUseCase _listOpenLoans;
-    private readonly IOperationalKeyLookupUseCase _lookup;
-    private readonly IListWorkforceMembersUseCase _listMembers;
-    private readonly IListWorkAssignmentsUseCase _listAssignments;
-    private readonly IListRoomsUseCase _listRooms;
+    private readonly ISearchEligibleKeyHoldersUseCase _searchHolders;
+    private readonly IGetKeyHolderIssueOptionsUseCase _holderOptions;
     private readonly IOperationalReadinessUseCase _readiness;
 
     public IssueModel(
         IIssueLoanUseCase issueLoan,
         IListKeyAssetsUseCase listKeyAssets,
         IListOpenLoansUseCase listOpenLoans,
-        IOperationalKeyLookupUseCase lookup,
-        IListWorkforceMembersUseCase listMembers,
-        IListWorkAssignmentsUseCase listAssignments,
-        IListRoomsUseCase listRooms,
+        ISearchEligibleKeyHoldersUseCase searchHolders,
+        IGetKeyHolderIssueOptionsUseCase holderOptions,
         IOperationalReadinessUseCase readiness)
     {
         _issueLoan = issueLoan ?? throw new ArgumentNullException(nameof(issueLoan));
         _listKeyAssets = listKeyAssets ?? throw new ArgumentNullException(nameof(listKeyAssets));
         _listOpenLoans = listOpenLoans ?? throw new ArgumentNullException(nameof(listOpenLoans));
-        _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
-        _listMembers = listMembers ?? throw new ArgumentNullException(nameof(listMembers));
-        _listAssignments = listAssignments ?? throw new ArgumentNullException(nameof(listAssignments));
-        _listRooms = listRooms ?? throw new ArgumentNullException(nameof(listRooms));
+        _searchHolders = searchHolders ?? throw new ArgumentNullException(nameof(searchHolders));
+        _holderOptions = holderOptions ?? throw new ArgumentNullException(nameof(holderOptions));
         _readiness = readiness ?? throw new ArgumentNullException(nameof(readiness));
     }
 
@@ -60,7 +57,7 @@ public sealed class IssueModel : PageModel
     public string WorkforceMemberCode { get; set; } = string.Empty;
 
     [BindProperty]
-    public string JustificationKind { get; set; } = "Department";
+    public string JustificationKind { get; set; } = string.Empty;
 
     [BindProperty]
     public string JustificationCode { get; set; } = string.Empty;
@@ -71,19 +68,24 @@ public sealed class IssueModel : PageModel
     [BindProperty]
     public string DueLocalText { get; set; } = string.Empty;
 
+    [BindProperty]
+    public string HolderSearchText { get; set; } = string.Empty;
+
     public IReadOnlyList<SelectListItem> KeyNumberOptions { get; private set; } = [];
 
     public IReadOnlyList<SelectListItem> MedecoOptions { get; private set; } = [];
 
     public string OpenedRoomsDisplay { get; private set; } = "—";
 
-    public IReadOnlyList<SelectListItem> WorkforceMemberOptions { get; private set; } = [];
-
     public IReadOnlyList<SelectListItem> DepartmentOptions { get; private set; } = [];
 
     public IReadOnlyList<SelectListItem> RoomOptions { get; private set; } = [];
 
-    public string JustificationDataJson { get; private set; } = "{}";
+    public IReadOnlyList<EligibleKeyHolderCandidate> HolderMatches { get; private set; } = [];
+
+    public string? SelectedHolderDisplay { get; private set; }
+
+    public bool HolderSearchPerformed { get; private set; }
 
     public string KeyCopyDataJson { get; private set; } = "{}";
 
@@ -95,29 +97,95 @@ public sealed class IssueModel : PageModel
 
     public string? ErrorMessage { get; private set; }
 
-    public async Task OnGetAsync(string? keyNumber, string? medecoKeyCode, CancellationToken cancellationToken)
+    public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrWhiteSpace(keyNumber))
+        if (TempData.TryGetValue(SuccessTempDataKey, out object? success) && success is string text)
         {
-            KeyNumber = keyNumber;
+            SuccessMessage = text;
         }
 
-        if (!string.IsNullOrWhiteSpace(medecoKeyCode))
+        ResetCleanBusinessChoices();
+        await LoadCatalogAndReadinessAsync(cancellationToken).ConfigureAwait(false);
+        IssuedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
+        DueLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow.AddDays(1));
+
+        if (TempData.Peek(SelectedHolderTempDataKey) is string selectedCode
+            && !string.IsNullOrWhiteSpace(selectedCode)
+            && string.IsNullOrWhiteSpace(SuccessMessage))
         {
-            MedecoKeyCode = medecoKeyCode;
+            WorkforceMemberCode = selectedCode;
+            await LoadSelectedHolderAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    public async Task<IActionResult> OnPostSearchHoldersAsync(CancellationToken cancellationToken)
+    {
+        TempData.Remove(SelectedHolderTempDataKey);
+        await LoadCatalogAndReadinessAsync(cancellationToken).ConfigureAwait(false);
+        EnsureDefaultTimestamps();
+        HolderSearchPerformed = true;
+        WorkforceMemberCode = string.Empty;
+        SelectedHolderDisplay = null;
+        JustificationKind = string.Empty;
+        JustificationCode = string.Empty;
+        DepartmentOptions = [];
+        RoomOptions = [];
+
+        HolderMatches = await _searchHolders
+            .ExecuteAsync(HolderSearchText, ISearchEligibleKeyHoldersUseCase.DefaultMaxResults, cancellationToken)
+            .ConfigureAwait(false);
+
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostSelectHolderAsync(CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(WorkforceMemberCode))
+        {
+            ErrorMessage = "Select a key holder.";
+            await LoadCatalogAndReadinessAsync(cancellationToken).ConfigureAwait(false);
+            EnsureDefaultTimestamps();
+            return Page();
         }
 
-        await LoadOptionsAsync(cancellationToken).ConfigureAwait(false);
-        IssuedLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow);
-        DueLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow.AddDays(1));
+        KeyHolderIssueOptions? options = await _holderOptions
+            .ExecuteAsync(WorkforceMemberCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (options is null)
+        {
+            ErrorMessage = "The selected key holder is not eligible to receive a key.";
+            await LoadCatalogAndReadinessAsync(cancellationToken).ConfigureAwait(false);
+            EnsureDefaultTimestamps();
+            return Page();
+        }
+
+        TempData[SelectedHolderTempDataKey] = WorkforceMemberCode;
+        return RedirectToPage();
+    }
+
+    public IActionResult OnPostClearHolder()
+    {
+        TempData.Remove(SelectedHolderTempDataKey);
+        return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        await LoadOptionsAsync(cancellationToken).ConfigureAwait(false);
+        await LoadCatalogAndReadinessAsync(cancellationToken).ConfigureAwait(false);
+        await LoadSelectedHolderAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
+            if (string.IsNullOrWhiteSpace(WorkforceMemberCode))
+            {
+                throw new InvalidOperationException("Select a key holder.");
+            }
+
+            if (string.IsNullOrWhiteSpace(JustificationKind))
+            {
+                throw new InvalidOperationException("Select whether the issue is for a Department or a Room.");
+            }
+
             if (!OperatorLocalTimestamp.TryParseToUtc(IssuedLocalText, out DateTimeOffset issuedAtUtc, out string? issuedError))
             {
                 throw new InvalidOperationException(issuedError ?? "Issued time is invalid.");
@@ -140,27 +208,55 @@ public sealed class IssueModel : PageModel
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            SuccessMessage =
-                $"{PartyHolderDisplayFormatter.FormatKeyCopy(KeyNumber, MedecoKeyCode)} was issued.";
-            LoanCode = string.Empty;
-            KeyNumber = string.Empty;
-            MedecoKeyCode = string.Empty;
-            WorkforceMemberCode = string.Empty;
-            JustificationCode = string.Empty;
-            IssuedLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow);
-            DueLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow.AddDays(1));
-            ModelState.Clear();
-            await LoadOptionsAsync(cancellationToken).ConfigureAwait(false);
+            TempData.Remove(SelectedHolderTempDataKey);
+            TempData[SuccessTempDataKey] =
+                $"{PartyHolderDisplayFormatter.FormatKeyCopy(KeyNumber, MedecoKeyCode)} was issued to {SelectedHolderDisplay}.";
+            return RedirectToPage();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
             ErrorMessage = exception.Message;
-        }
+            if (!string.IsNullOrWhiteSpace(WorkforceMemberCode))
+            {
+                TempData[SelectedHolderTempDataKey] = WorkforceMemberCode;
+            }
 
-        return Page();
+            return Page();
+        }
     }
 
-    private async Task LoadOptionsAsync(CancellationToken cancellationToken)
+    private void ResetCleanBusinessChoices()
+    {
+        LoanCode = string.Empty;
+        KeyNumber = string.Empty;
+        MedecoKeyCode = string.Empty;
+        WorkforceMemberCode = string.Empty;
+        JustificationKind = string.Empty;
+        JustificationCode = string.Empty;
+        HolderSearchText = string.Empty;
+        HolderMatches = [];
+        HolderSearchPerformed = false;
+        SelectedHolderDisplay = null;
+        DepartmentOptions = [];
+        RoomOptions = [];
+        OpenedRoomsDisplay = "—";
+        MedecoOptions = [];
+    }
+
+    private void EnsureDefaultTimestamps()
+    {
+        if (string.IsNullOrWhiteSpace(IssuedLocalText))
+        {
+            IssuedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
+        }
+
+        if (string.IsNullOrWhiteSpace(DueLocalText))
+        {
+            DueLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow.AddDays(1));
+        }
+    }
+
+    private async Task LoadCatalogAndReadinessAsync(CancellationToken cancellationToken)
     {
         OperationalReadinessSnapshot snapshot = await _readiness.ExecuteAsync(cancellationToken).ConfigureAwait(false);
         Readiness = new OperationalReadinessViewModel(snapshot);
@@ -189,7 +285,7 @@ public sealed class IssueModel : PageModel
                 },
                 StringComparer.OrdinalIgnoreCase);
 
-        KeyCopyDataJson = JsonSerializer.Serialize(byKeyNumber, JustificationJsonOptions);
+        KeyCopyDataJson = JsonSerializer.Serialize(byKeyNumber, KeyCopyJsonOptions);
 
         KeyNumberOptions = byKeyNumber.Keys
             .OrderBy(key => key, StringComparer.OrdinalIgnoreCase)
@@ -214,80 +310,57 @@ public sealed class IssueModel : PageModel
         {
             OpenedRoomsDisplay = "—";
             MedecoOptions = [];
+            if (!string.IsNullOrWhiteSpace(KeyNumber))
+            {
+                // Keep operator-entered KEY # for validation retention, but clear MEDECO options.
+                MedecoKeyCode = string.IsNullOrWhiteSpace(MedecoKeyCode) ? string.Empty : MedecoKeyCode;
+            }
         }
+    }
 
-        IReadOnlyList<WorkforceMemberIdentityDisplay> members = await _lookup
-            .ListActiveWorkforceMembersWithIdentityAsync(cancellationToken)
-            .ConfigureAwait(false);
-        WorkforceMemberOptions = members
-            .Select(member => new SelectListItem(
-                PartyHolderDisplayFormatter.Format(member.FirstName, member.LastName, member.Uin),
-                member.WorkforceMemberCode,
-                string.Equals(member.WorkforceMemberCode, WorkforceMemberCode, StringComparison.Ordinal)))
-            .ToArray();
-
-        IReadOnlyList<WorkforceMemberListItem> memberRows = await _listMembers.ExecuteAsync(cancellationToken)
-            .ConfigureAwait(false);
-        IReadOnlyList<WorkAssignmentListItem> assignments = await _listAssignments.ExecuteAsync(cancellationToken)
-            .ConfigureAwait(false);
-        IReadOnlyList<RoomListItem> rooms = await _listRooms.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        Dictionary<string, RoomListItem> roomsByCode = rooms
-            .Where(room => room.IsActive)
-            .ToDictionary(room => room.RoomCode, StringComparer.OrdinalIgnoreCase);
-
-        Dictionary<string, MemberJustificationOptions> byMember = new(StringComparer.OrdinalIgnoreCase);
-        foreach (WorkforceMemberListItem member in memberRows.Where(item =>
-                     string.Equals(item.Status, "Active", StringComparison.Ordinal)))
+    private async Task LoadSelectedHolderAsync(CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(WorkforceMemberCode))
         {
-            List<JustificationChoice> departmentChoices =
-            [
-                new JustificationChoice(member.DepartmentCode, member.DepartmentCode)
-            ];
-
-            List<JustificationChoice> roomChoices = assignments
-                .Where(item =>
-                    item.IsActive
-                    && string.Equals(item.WorkforceMemberCode, member.WorkforceMemberCode, StringComparison.Ordinal))
-                .Select(item =>
-                {
-                    if (!roomsByCode.TryGetValue(item.RoomCode, out RoomListItem? room))
-                    {
-                        return new JustificationChoice(item.RoomCode, item.RoomCode);
-                    }
-
-                    return new JustificationChoice(item.RoomCode, RoomDisplayFormatter.Format(room));
-                })
-                .GroupBy(choice => choice.Code, StringComparer.OrdinalIgnoreCase)
-                .Select(group => group.First())
-                .OrderBy(choice => choice.Label, StringComparer.Ordinal)
-                .ToList();
-
-            byMember[member.WorkforceMemberCode] = new MemberJustificationOptions(departmentChoices, roomChoices);
-        }
-
-        JustificationDataJson = JsonSerializer.Serialize(byMember, JustificationJsonOptions);
-
-        if (!string.IsNullOrWhiteSpace(WorkforceMemberCode)
-            && byMember.TryGetValue(WorkforceMemberCode, out MemberJustificationOptions? selected))
-        {
-            DepartmentOptions = selected.Departments
-                .Select(choice => new SelectListItem(
-                    choice.Label,
-                    choice.Code,
-                    string.Equals(choice.Code, JustificationCode, StringComparison.OrdinalIgnoreCase)))
-                .ToArray();
-            RoomOptions = selected.Rooms
-                .Select(choice => new SelectListItem(
-                    choice.Label,
-                    choice.Code,
-                    string.Equals(choice.Code, JustificationCode, StringComparison.OrdinalIgnoreCase)))
-                .ToArray();
-        }
-        else
-        {
+            SelectedHolderDisplay = null;
             DepartmentOptions = [];
             RoomOptions = [];
+            return;
         }
+
+        KeyHolderIssueOptions? options = await _holderOptions
+            .ExecuteAsync(WorkforceMemberCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (options is null)
+        {
+            SelectedHolderDisplay = null;
+            DepartmentOptions = [];
+            RoomOptions = [];
+            ErrorMessage ??= "The selected key holder is not eligible to receive a key.";
+            WorkforceMemberCode = string.Empty;
+            return;
+        }
+
+        SelectedHolderDisplay = PartyHolderDisplayFormatter.Format(
+            options.Holder.FirstName,
+            options.Holder.LastName,
+            options.Holder.Uin);
+
+        DepartmentOptions = options.Departments
+            .Select(choice => new SelectListItem(
+                choice.Label,
+                choice.Code,
+                string.Equals(choice.Code, JustificationCode, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(JustificationKind, "Department", StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
+
+        RoomOptions = options.Rooms
+            .Select(choice => new SelectListItem(
+                choice.Label,
+                choice.Code,
+                string.Equals(choice.Code, JustificationCode, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(JustificationKind, "Room", StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
     }
 
     private sealed record MedecoChoice(string Code, string Label);
@@ -295,10 +368,4 @@ public sealed class IssueModel : PageModel
     private sealed record KeyNumberIssueOptions(
         string Rooms,
         IReadOnlyList<MedecoChoice> Medecos);
-
-    private sealed record JustificationChoice(string Code, string Label);
-
-    private sealed record MemberJustificationOptions(
-        IReadOnlyList<JustificationChoice> Departments,
-        IReadOnlyList<JustificationChoice> Rooms);
 }

@@ -26,11 +26,29 @@ public static class OperatorLocalTimestamp
             return false;
         }
 
-        if (!DateTime.TryParse(
-                localControlValue,
+        string normalized = localControlValue.Trim().Replace("·", " ", StringComparison.Ordinal);
+        while (normalized.Contains("  ", StringComparison.Ordinal))
+        {
+            normalized = normalized.Replace("  ", " ", StringComparison.Ordinal);
+        }
+
+        if (!DateTime.TryParseExact(
+                normalized,
+                [
+                    ControlFormat,
+                    "MMM d, yyyy h:mm tt",
+                    "MMM dd, yyyy h:mm tt",
+                    "M/d/yyyy h:mm tt",
+                    "MM/dd/yyyy h:mm tt"
+                ],
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
-                out DateTime localParsed))
+                out DateTime localParsed)
+            && !DateTime.TryParse(
+                normalized,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
+                out localParsed))
         {
             error = "Enter a valid local date and time.";
             return false;
@@ -41,4 +59,7 @@ public static class OperatorLocalTimestamp
         utcValue = new DateTimeOffset(utcDateTime, TimeSpan.Zero);
         return true;
     }
+
+    public static string ToOperatorEntryValue(DateTimeOffset utcValue)
+        => OperatorTimestampFormatter.ToAbsoluteDisplay(utcValue);
 }

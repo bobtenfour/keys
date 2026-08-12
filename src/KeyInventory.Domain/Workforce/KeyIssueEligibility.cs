@@ -7,20 +7,20 @@ namespace KeyInventory.Domain.Workforce;
 /// </summary>
 public static class KeyIssueEligibility
 {
-    public static void EnsureEligible(
+    /// <summary>
+    /// Structural prerequisites for a person to be considered as a key-issue candidate
+    /// before a specific Department/Room justification is chosen.
+    /// </summary>
+    public static void EnsureIssueCandidate(
         WorkforceMember member,
         Party party,
         Department department,
-        IReadOnlyCollection<WorkAssignment> activeAssignments,
-        KeyIssueJustificationKind justificationKind,
-        string justificationCode)
+        IReadOnlyCollection<WorkAssignment> activeAssignments)
     {
         ArgumentNullException.ThrowIfNull(member);
         ArgumentNullException.ThrowIfNull(party);
         ArgumentNullException.ThrowIfNull(department);
         ArgumentNullException.ThrowIfNull(activeAssignments);
-
-        string normalizedJustification = WorkforceText.Require(justificationCode, nameof(justificationCode));
 
         if (member.Status != WorkforceMemberStatus.Active)
         {
@@ -60,6 +60,20 @@ public static class KeyIssueEligibility
         {
             throw new InvalidOperationException("At most one active WorkAssignment may be primary.");
         }
+    }
+
+    public static void EnsureEligible(
+        WorkforceMember member,
+        Party party,
+        Department department,
+        IReadOnlyCollection<WorkAssignment> activeAssignments,
+        KeyIssueJustificationKind justificationKind,
+        string justificationCode)
+    {
+        EnsureIssueCandidate(member, party, department, activeAssignments);
+
+        string normalizedJustification = WorkforceText.Require(justificationCode, nameof(justificationCode));
+        WorkAssignment[] active = activeAssignments.Where(assignment => assignment.IsActive).ToArray();
 
         if (justificationKind is KeyIssueJustificationKind.None)
         {

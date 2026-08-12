@@ -29,16 +29,16 @@ public sealed class OperatorUxBoundaryTests
         string view = Read("src/KeyInventory.Web/Pages/Operations/Issue.cshtml");
         Assert.Contains("KEY #\r\n", view, StringComparison.Ordinal);
         Assert.Contains("MEDECO Key Code\r\n", view, StringComparison.Ordinal);
-        Assert.Contains("Issue to\r\n", view, StringComparison.Ordinal);
+        Assert.Contains("Key holder", view, StringComparison.Ordinal);
         Assert.Contains("For\r\n", view, StringComparison.Ordinal);
         Assert.Contains("Issued\r\n", view, StringComparison.Ordinal);
         Assert.Contains("Due\r\n", view, StringComparison.Ordinal);
-        Assert.Contains("datetime-local", view, StringComparison.Ordinal);
+        Assert.Contains("OperatorTimestampFormatter.ToAbsoluteDisplay", view, StringComparison.Ordinal);
         Assert.DoesNotContain("Issued at (UTC)", view, StringComparison.Ordinal);
         Assert.DoesNotContain("yyyy-MM-ddTHH:mm:sszzz", view, StringComparison.Ordinal);
         Assert.DoesNotContain("Justification code", view, StringComparison.Ordinal);
         Assert.Contains("Loan code", view, StringComparison.Ordinal);
-        Assert.Contains("issue-justification-data", view, StringComparison.Ordinal);
+        Assert.Contains("issue-key-copy-data", view, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -59,8 +59,8 @@ public sealed class OperatorUxBoundaryTests
         string code = Read("src/KeyInventory.Web/Pages/Operations/Issue.cshtml.cs");
         Assert.DoesNotContain("KeyInventoryDbContext", code, StringComparison.Ordinal);
         Assert.DoesNotContain("KeyIssueEligibility", code, StringComparison.Ordinal);
-        Assert.Contains("IListWorkforceMembersUseCase", code, StringComparison.Ordinal);
-        Assert.Contains("IListWorkAssignmentsUseCase", code, StringComparison.Ordinal);
+        Assert.Contains("ISearchEligibleKeyHoldersUseCase", code, StringComparison.Ordinal);
+        Assert.Contains("IGetKeyHolderIssueOptionsUseCase", code, StringComparison.Ordinal);
         Assert.Contains("OperatorLocalTimestamp", code, StringComparison.Ordinal);
     }
 

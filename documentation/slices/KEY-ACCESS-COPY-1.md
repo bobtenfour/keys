@@ -163,15 +163,21 @@ KeySeries remains a non-operational Domain classification seed only; this slice 
 
 ## Issue UX Contract
 Operator identifies:
-1. Person / holder (human-readable identity + UIN)
+1. Key holder (WorkforceMember / Party; human-readable identity + UIN; no KeyHolder entity)
 2. KEY #
 3. Available physical copy / MEDECO under that KEY #
 4. Rooms opened (derived from KEY #; read-only; not re-entered)
 
 Do not expose internal KeyAssetId as a typing target.
 
+### Active presentation note (does not rewrite Acceptance Record)
+Key holder selection is bounded search-on-demand over Application-eligible candidates (name/UIN). Fresh Issue must not auto-select holder, KEY #, MEDECO, or justification. See product-experience-contract.md Issue / Receive Interaction.
+
 ## Return UX Contract
 Operator identifies the exact physical copy as KEY # + MEDECO (and existing Loan selection path), distinguishing e.g. 66800/26 from 66800/27. Lifecycle remains existing Return completion of an Open Loan.
+
+### Active presentation note (does not rewrite Acceptance Record)
+Fresh Receive must not auto-select first/only active issue. Deliberate deep-link selection remains allowed. See product-experience-contract.md Issue / Receive Interaction.
 
 ## Lookup Contract
 Existing Find/lookup Application authorities must answer without a second search store:

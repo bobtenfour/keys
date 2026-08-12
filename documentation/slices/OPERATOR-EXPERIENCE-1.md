@@ -299,5 +299,13 @@ After OPERATOR-EXPERIENCE-1 reaches Implementation Complete with closure evidenc
 - Active rule: Home is operational; prerequisite feedback is contextual at capability boundaries; empty-installation sequence belongs in the operator User Guide.
 - Historical Accepted evidence above remains unchanged.
 
+## Active Presentation Amendment — Issue / Receive interaction (does not rewrite Acceptance Record)
+- Decision: SUPERSEDE Issue/Receive auto-selection and unbounded holder dropdown presentation only.
+- Date: 2026-08-11.
+- Authority: Human Governance via active `documentation/product-experience-contract.md` (Issue / Receive Interaction).
+- Scope: Presentation/interaction only. Application eligibility, KeyAsset custody, KEY # / MEDECO model, UTC persistence, and loan/return invariants unchanged.
+- Active rules: clean initial Issue/Receive business-choice state; bounded Application-owned eligible key-holder search; PRG clean post-success state; shared absolute operator timestamp display with operator-editable Issued/Due/Received via shared local-time conversion.
+- Historical Accepted evidence above remains unchanged.
+
 ## Next Allowed Slice
 STOP

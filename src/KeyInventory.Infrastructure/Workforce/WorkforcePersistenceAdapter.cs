@@ -283,6 +283,45 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
             .ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<EligibleKeyHolderCandidate>> SearchEligibleKeyHoldersAsync(
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(searchText) || maxResults < 1)
+        {
+            return [];
+        }
+
+        string term = searchText.Trim();
+        int bound = Math.Min(maxResults, ISearchEligibleKeyHoldersUseCase.DefaultMaxResults);
+
+        return await (
+                from member in _dbContext.WorkforceMembers.AsNoTracking()
+                join party in _dbContext.Parties.AsNoTracking() on member.PartyCode equals party.PartyCode
+                join department in _dbContext.Departments.AsNoTracking()
+                    on member.DepartmentCode equals department.DepartmentCode
+                where member.Status == nameof(WorkforceMemberStatus.Active)
+                    && party.IsActive
+                    && department.IsActive
+                    && _dbContext.WorkAssignments.Any(assignment =>
+                        assignment.WorkforceMemberCode == member.WorkforceMemberCode
+                        && assignment.IsActive)
+                    && (party.FirstName.Contains(term)
+                        || party.LastName.Contains(term)
+                        || (party.FirstName + " " + party.LastName).Contains(term)
+                        || party.Uin.Contains(term))
+                orderby party.LastName, party.FirstName, member.WorkforceMemberCode
+                select new EligibleKeyHolderCandidate(
+                    member.WorkforceMemberCode,
+                    party.FirstName,
+                    party.LastName,
+                    party.Uin))
+            .Take(bound)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public Task<bool> WorkAssignmentExistsAsync(string workAssignmentCode, CancellationToken cancellationToken)
     {
         return _dbContext.WorkAssignments.AnyAsync(

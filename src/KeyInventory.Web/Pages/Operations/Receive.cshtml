@@ -7,7 +7,7 @@
 
 <header class="page-header">
     <h1>Receive Key</h1>
-    <p class="lede">Bring an issued key back under organizational control.</p>
+    <p class="lede">Bring an issued physical key copy back under organizational control.</p>
 </header>
 
 <section class="card form-card">
@@ -40,16 +40,19 @@
     {
         <form method="post" class="form-grid">
             <label>
+                Active issue
+                <select asp-for="IssueReference" asp-items="Model.ActiveIssueOptions" required>
+                    <option value="">Select an issued key...</option>
+                </select>
+            </label>
+            <label>
                 Receive reference
                 <input asp-for="ReceiveReference" autocomplete="off" required />
             </label>
             <label>
-                Active issue
-                <select asp-for="IssueReference" asp-items="Model.ActiveIssueOptions" required></select>
-            </label>
-            <label>
                 Received
-                <input asp-for="ReceivedLocalText" type="datetime-local" required />
+                <input asp-for="ReceivedLocalText" autocomplete="off" required />
+                <span class="hint">Operator local time. Example: @OperatorTimestampFormatter.ToAbsoluteDisplay(DateTimeOffset.UtcNow)</span>
             </label>
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Receive Key</button>

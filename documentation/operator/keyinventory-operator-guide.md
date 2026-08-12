@@ -303,13 +303,14 @@ Operations → Issue Key
 ![Issue Key](images/03-issue-key.png)
 
 ### Steps
-1. Select person (Issue to).
-2. Select **KEY #**, then an **available MEDECO** copy under that KEY #.
-3. Confirm **Rooms opened** shown as derived from the KEY # (do not re-enter Rooms).
-4. Choose For = Department or Room and the matching justification.
-5. Confirm Issued / Due (local date-time controls).
-6. Enter Loan code.
-7. Issue Key.
+1. Search **Key holder** by name or UIN (eligible matches only; nothing is preselected).
+2. Select the holder deliberately.
+3. Select **KEY #**, then an **available MEDECO** copy under that KEY # (MEDECO stays empty until KEY # is chosen).
+4. Confirm **Rooms opened** shown as derived from the KEY # (do not re-enter Rooms).
+5. Choose For = Department or Room and the matching justification (no default).
+6. Confirm Issued / Due as operator local times (human-readable entry).
+7. Enter Loan code.
+8. Issue Key — next Issue opens clean.
 
 ### Expected result
 Success message; Active custody shows KEY # + MEDECO for the open issue with human-readable times.
@@ -338,9 +339,10 @@ Open loan for the physical copy being returned.
 Operations → Active Loans → Receive/Return, or Operations → Receive Key
 
 ### Steps
-1. Identify the open issue by **KEY #** and **MEDECO** (for example 66800 / 26, not 66800 / 27).
-2. Confirm returned time with the local control.
-3. Complete return.
+1. Open Receive Key with no active issue preselected (or open a specific issue deliberately from Active Loans).
+2. Select the open issue labeled **KEY # / MEDECO · holder — UIN** (for example KEY # 66800 / MEDECO 26 · …).
+3. Enter Receive reference and Received (operator local time).
+4. Complete return — next Receive opens clean.
 
 ### Expected result
 That MEDECO copy leaves Active custody; appears in History as returned. Other MEDECO copies under the same KEY # are unaffected.

@@ -61,6 +61,15 @@ public interface IWorkforcePersistencePort
 
     Task<IReadOnlyList<WorkforceMemberListItem>> ListWorkforceMembersAsync(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Bounded name/UIN search of Active workforce members that may be issue candidates.
+    /// Application applies Domain eligibility; this port must not return unbounded workforce sets.
+    /// </summary>
+    Task<IReadOnlyList<EligibleKeyHolderCandidate>> SearchEligibleKeyHoldersAsync(
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken);
+
     Task<bool> WorkAssignmentExistsAsync(string workAssignmentCode, CancellationToken cancellationToken);
 
     Task AddWorkAssignmentAsync(WorkAssignment assignment, CancellationToken cancellationToken);

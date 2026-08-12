@@ -4,6 +4,15 @@ namespace KeyInventory.Web.Presentation;
 
 public static class OperatorTimestampFormatter
 {
+    /// <summary>
+    /// Absolute operator-facing local timestamp for display surfaces (not persistence formatting).
+    /// </summary>
+    public static string ToAbsoluteDisplay(DateTimeOffset valueUtc)
+    {
+        DateTimeOffset localValue = valueUtc.ToLocalTime();
+        return localValue.ToString("MMM d, yyyy · h:mm tt", CultureInfo.InvariantCulture);
+    }
+
     public static string ToFriendlyDisplay(DateTimeOffset valueUtc, DateTimeOffset? nowUtc = null)
     {
         DateTimeOffset now = nowUtc ?? DateTimeOffset.UtcNow;

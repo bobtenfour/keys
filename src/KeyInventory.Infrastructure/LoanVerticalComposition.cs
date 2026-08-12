@@ -61,6 +61,8 @@ public static class LoanVerticalComposition
         services.AddScoped<ICreateWorkforceMemberUseCase, CreateWorkforceMemberUseCase>();
         services.AddScoped<IRegisterWorkforceMemberUseCase, RegisterWorkforceMemberUseCase>();
         services.AddScoped<IListWorkforceMembersUseCase, ListWorkforceMembersUseCase>();
+        services.AddScoped<ISearchEligibleKeyHoldersUseCase, SearchEligibleKeyHoldersUseCase>();
+        services.AddScoped<IGetKeyHolderIssueOptionsUseCase, GetKeyHolderIssueOptionsUseCase>();
         services.AddScoped<ITerminateWorkforceMemberUseCase, TerminateWorkforceMemberUseCase>();
         services.AddScoped<IUpdateWorkforceMemberDepartmentUseCase, UpdateWorkforceMemberDepartmentUseCase>();
         services.AddScoped<IUpdateWorkforceMemberWorkforceTypeUseCase, UpdateWorkforceMemberWorkforceTypeUseCase>();

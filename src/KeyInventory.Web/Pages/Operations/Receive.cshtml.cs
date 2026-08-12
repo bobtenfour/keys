@@ -9,6 +9,8 @@ namespace KeyInventory.Web.Pages.Operations;
 
 public sealed class ReceiveModel : PageModel
 {
+    private const string SuccessTempDataKey = "ReceiveSuccessMessage";
+
     private readonly ICompleteReturnUseCase _completeReturn;
     private readonly IOperationalKeyLookupUseCase _lookup;
 
@@ -35,13 +37,16 @@ public sealed class ReceiveModel : PageModel
 
     public async Task OnGetAsync(string? issueReference, CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrWhiteSpace(issueReference))
+        if (TempData.TryGetValue(SuccessTempDataKey, out object? success) && success is string text)
         {
-            IssueReference = issueReference;
+            SuccessMessage = text;
         }
 
+        // Deliberate deep-link from Active Loans / Member Keys only. Never auto-pick first/only issue.
+        IssueReference = string.IsNullOrWhiteSpace(issueReference) ? string.Empty : issueReference.Trim();
+        ReceiveReference = string.Empty;
         await LoadActiveIssuesAsync(cancellationToken).ConfigureAwait(false);
-        ReceivedLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow);
+        ReceivedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
@@ -50,38 +55,50 @@ public sealed class ReceiveModel : PageModel
 
         try
         {
+            if (string.IsNullOrWhiteSpace(IssueReference))
+            {
+                throw new InvalidOperationException("Select the active issue being returned.");
+            }
+
             if (!OperatorLocalTimestamp.TryParseToUtc(ReceivedLocalText, out DateTimeOffset receivedAtUtc, out string? receivedError))
             {
                 throw new InvalidOperationException(receivedError ?? "Receive time is invalid.");
             }
 
+            string selectedLabel = ActiveIssueOptions
+                .FirstOrDefault(item => string.Equals(item.Value, IssueReference, StringComparison.Ordinal))
+                ?.Text
+                ?? IssueReference;
+
             await _completeReturn.ExecuteAsync(ReceiveReference, IssueReference, receivedAtUtc, cancellationToken)
                 .ConfigureAwait(false);
 
-            SuccessMessage = $"Key receive completed for issue {IssueReference}.";
-            ReceiveReference = string.Empty;
-            IssueReference = string.Empty;
-            ReceivedLocalText = OperatorLocalTimestamp.ToControlValue(DateTimeOffset.UtcNow);
-            ModelState.Clear();
-            await LoadActiveIssuesAsync(cancellationToken).ConfigureAwait(false);
+            TempData[SuccessTempDataKey] = $"Received {selectedLabel}.";
+            return RedirectToPage();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
             ErrorMessage = exception.Message;
-        }
+            if (string.IsNullOrWhiteSpace(ReceivedLocalText))
+            {
+                ReceivedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
+            }
 
-        return Page();
+            return Page();
+        }
     }
 
     private async Task LoadActiveIssuesAsync(CancellationToken cancellationToken)
     {
         IReadOnlyList<OperationalLoanDisplay> openItems =
             await _lookup.ListOpenLoansWithHoldersAsync(cancellationToken).ConfigureAwait(false);
+
         ActiveIssueOptions = openItems
             .Select(item => new SelectListItem(
                 $"{PartyHolderDisplayFormatter.FormatKeyCopy(item.KeyNumber, item.MedecoKeyCode)} · {PartyHolderDisplayFormatter.Format(item.HolderFirstName, item.HolderLastName, item.HolderUin)}",
                 item.LoanCode,
-                string.Equals(item.LoanCode, IssueReference, StringComparison.Ordinal)))
+                !string.IsNullOrWhiteSpace(IssueReference)
+                    && string.Equals(item.LoanCode, IssueReference, StringComparison.Ordinal)))
             .ToArray();
     }
 }
