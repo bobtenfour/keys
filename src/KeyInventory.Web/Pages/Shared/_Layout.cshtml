@@ -9,6 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] · KeyInventory</title>
     <link rel="stylesheet" href="~/css/site.css" />
+    @RenderSection("Styles", required: false)
 </head>
 <body>
     <header class="site-header">
@@ -24,13 +25,14 @@
                     <a asp-page="/Catalog/Keys" class="@(section == "catalog" ? "is-active" : null)">Catalog</a>
                     <a asp-page="/Reports/Index" class="@(section == "reports" ? "is-active" : null)">Reports</a>
                     <a asp-page="/Administration/Index" class="@(section == "administration" ? "is-active" : null)">Administration</a>
+                    <a asp-page="/Help" class="@(section == "help" ? "is-active" : null)">Help</a>
                 </nav>
                 <div class="header-tools">
                     <form class="global-search" method="get" asp-page="/Operations/Find" role="search" aria-label="Search keys">
                         <input type="search"
                                name="q"
-                               placeholder="Search by KEY #, MEDECO, or type..."
-                               aria-label="Search by KEY #, MEDECO, or type"
+                               placeholder="Search by KEY #, MEDECO, Key Type, or Room #..."
+                               aria-label="Search by KEY #, MEDECO, Key Type, or Room #"
                                value="@Context.Request.Query["q"]" />
                         <button type="submit">Search</button>
                     </form>

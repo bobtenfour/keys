@@ -55,6 +55,7 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 - Issue Key identifies **Key holder** (WorkforceMember / Party; label only—no KeyHolder entity), KEY #, available MEDECO/physical copy, and derived Rooms opened (read-only; not re-entered). Internal KeyAssetId is not an operator typing target.
 - Return / receive identifies the exact physical copy as KEY # + MEDECO (e.g. 66800 / 26 vs 66800 / 27).
 - Find Key and reports distinguish KEY #, MEDECO/copy, holder, Rooms opened, and issue/return state; screen/CSV/XLSX/PDF parity preserved.
+- Find Key (header search and `/Operations/Find`) accepts KEY #, MEDECO, Key Type, or Room # through the existing Application lookup authority; Room # reverse-search returns KEY # values that open that room via KeyAccessPattern↔Room (sole Room-access authority).
 - Do not expose Transfer; do not invent New Key terminology beyond KEY # / MEDECO presentation required by this slice.
 - Operator guide must explain KEY # → Rooms opened and MEDECO → physical copy held, using the 66800 / 410D / MEDECO 26–28 example pattern; screenshots refresh only after runtime finalization.
 
@@ -81,6 +82,14 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 - Successful Issue and Receive use server-side PRG: success confirmation then clean new-operation state. Failed validation retains submitted values. No JavaScript field-by-field reset; no first/only-record defaults; no query-string carry of prior Issue business selections on a fresh Issue open.
 - Receive/Return initial Active issue selection is empty (`Select an issued key...`) unless the operator deliberately opens a specific issue deep-link. Option text uses `KEY # … / MEDECO … · Name — UIN …`.
 - Issued, Due, and Received remain operator-editable under Application loan/return timestamp parameters (UTC persistence unchanged). Operator entry uses shared `OperatorLocalTimestamp` conversion; absolute display uses shared `OperatorTimestampFormatter.ToAbsoluteDisplay` (`MMM d, yyyy · h:mm tt`). No page-local timestamp formatters; no ISO/raw UTC/offset presentation in normal operator UI.
+
+## Help Presentation (active)
+- `/Help` is operator-invoked reference guidance in the existing Razor Pages shell; it is not Home onboarding, first-time setup UI, or a permanent readiness surface.
+- Help is presentation-only: static guidance, deterministic inline SVG diagrams, real runtime screenshots, and links to authoritative capability pages. It must not query DbContext, evaluate readiness/eligibility, reconstruct lifecycle capabilities, or contain alternate business rules.
+- Task-oriented launcher and chapter navigation (Orient / Configure / Operate / Govern) are required; do not resurrect a permanent Home setup checklist or duplicate Application readiness engines.
+- Structural concepts use SVG/CSS; actual application surfaces use captured local runtime screenshots under `wwwroot/images/help/`. No Mermaid runtime, no external diagram libraries, no AI-generated application screenshots.
+- Help must match current KEY # / MEDECO, Find Room # reverse-search, Issue/Receive interaction, lifecycle, Audit Trail, and Reports behavior; contextual links go to capability owners (`/Administration/*`, `/Catalog/*`, `/Operations/*`, `/Reports`).
+- Responsive and accessible presentation is required (semantic headings, keyboard-accessible anchors, useful alt text, diagram text explanations, color not sole semantic signal).
 
 ## Applies When
 This document is required only for slices that create or modify UI, navigation, user workflows, messages, or product-facing behavior.

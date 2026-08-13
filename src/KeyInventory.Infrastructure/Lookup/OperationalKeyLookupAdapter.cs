@@ -46,12 +46,19 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
                 group => group.Key,
                 group => (group.First().LoanCode, group.First().BorrowerPartyReference));
 
+        // Room reverse-search uses operator-facing RoomNumber → RoomCode → KEY #↔Room
+        // (sole Room-access authority). Partial Contains matches KEY # / MEDECO / Type semantics.
         List<KeyAssetEntity> keys = await _dbContext.KeyAssets.AsNoTracking()
             .Include(key => key.AccessPattern)
             .Where(key =>
                 key.KeyNumber.Contains(pattern)
                 || key.MedecoKeyCode.Contains(pattern)
-                || key.AccessPattern.KeyTypeCode.Contains(pattern))
+                || key.AccessPattern.KeyTypeCode.Contains(pattern)
+                || _dbContext.KeyAccessPatternRoomAssignments.Any(assignment =>
+                    assignment.KeyNumber == key.KeyNumber
+                    && _dbContext.Rooms.Any(room =>
+                        room.RoomCode == assignment.RoomCode
+                        && room.RoomNumber.Contains(pattern))))
             .OrderBy(key => key.KeyNumber)
             .ThenBy(key => key.MedecoKeyCode)
             .ToListAsync(cancellationToken)

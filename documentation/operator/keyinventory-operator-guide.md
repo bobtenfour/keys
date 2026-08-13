@@ -1,7 +1,8 @@
 # KeyInventory Operator Guide
 
-Concise guide for day-to-day key custody at a single-site KeyInventory installation.  
-Screenshots currently reflect the OPERATOR-EXPERIENCE-1 runtime and will be refreshed after KEY-ACCESS-COPY-1 runtime finalization. Do not treat outdated screenshot labels as authority over KEY # / MEDECO vocabulary below.
+Concise guide for day-to-day key custody at a single-site KeyInventory installation.
+
+In-application **Help** (`/Help`) is the operator-invoked visual reference for the same operational story: organization of records, KEY # / MEDECO, Issue → Active custody → Receive, Find (including Room # reverse-search), lifecycle, Audit Trail, and Reports. This markdown guide remains the portable documentation form; it does not duplicate Help HTML.
 
 ## What KeyInventory does
 
@@ -276,7 +277,7 @@ KEY # and active Room.
 Room assignment is on the KEY #, not repeated on each physical copy.
 
 ### Where to go
-Catalog → KEY # ↔ Room (runtime label after KEY-ACCESS-COPY-1)
+Catalog → Keys → **KEY # Rooms** (`/Catalog/KeyRooms`)
 
 ### Steps
 1. Select KEY # and Room #.
@@ -355,17 +356,20 @@ That MEDECO copy leaves Active custody; appears in History as returned. Other ME
 Answer KEY #-level and copy-level questions without a separate search system.
 
 ### Where to go
-Home search or Operations Find Key surfaces.
+Header search or Operations → Find Key (`/Operations/Find`).
 
 ### Prerequisites
 Catalog data (KEY # Room openings and MEDECO copies).
+
+### How to search
+One search box accepts **KEY #**, **MEDECO**, **Key Type**, or **Room #** (operator-facing room number). Matching is the same partial-match style used for KEY # / MEDECO / type. Searching a Room # returns every KEY # that opens that room (including multi-room / master KEY # values), with each MEDECO copy’s availability and current holder.
 
 ### What you should be able to answer
 - What Room # values does KEY # 66800 open?
 - What MEDECO copies exist under KEY # 66800? Which are available or issued?
 - Who holds MEDECO 28 under KEY # 66800?
-- Which KEY # / MEDECO does a person currently hold?
-- Which KEY # values open Room X?
+- Which KEY # / MEDECO does a person currently hold? (Member Keys / Details / Keys by Member report)
+- Which KEY # values open Room X? (search Find by that Room #)
 
 ---
 
@@ -428,12 +432,14 @@ Timestamps appear in readable `yyyy-MM-dd HH:mm UTC` form in exports; on-screen 
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| Cannot Issue | Missing Work Assignment or Key | Complete readiness checklist |
-| Cannot add Workforce Member | No Department | Create Department |
-| Cannot add Work Assignment | Missing member or room | Create both first |
+| Cannot find person at Issue | Inactive member, missing Work Assignment, or search terms | Verify active Workforce Member + Work Assignment; search by name or UIN |
+| No MEDECO available | None registered, or all issued/unavailable | Register a copy or return an open issue |
+| Cannot Issue | Missing governed prerequisites | Use the contextual resolution links on Issue Key |
+| Cannot delete Department | Relationships or history block Delete | Retire when Delete is unavailable |
+| Cannot return | No matching open loan / wrong copy | Select the open KEY # / MEDECO issue on Receive |
+| KEY # missing expected Room | Room not assigned to that KEY # | Assign under Catalog → KEY # Rooms |
 | Duplicate Room number | Global uniqueness | Choose a different number |
 | UIN correction fails | UIN already used | Use a free UIN |
-| Looking for Organization/Building | Removed from product | Use Departments and Rooms only |
 
 ---
 

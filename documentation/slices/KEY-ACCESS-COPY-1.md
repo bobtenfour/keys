@@ -187,6 +187,9 @@ Existing Find/lookup Application authorities must answer without a second search
 - Which KEY # / MEDECO a person currently holds
 - Which KEY # values open Room #
 
+### Active implementation note (does not rewrite Acceptance Record)
+Room reverse-search (“Which KEY # values open Room #?”) is satisfied by the existing `IOperationalKeyLookupUseCase` / Find path (2026-08-12 structural contract closure). Operators search by operator-facing **Room #** (`RoomNumber`); traversal is RoomNumber → RoomCode → KeyAccessPatternRoomAssignment → KEY # → MEDECO copies / custody. No second search store, no Web DbContext, no KeyAsset↔Room authority. In-application `/Help` documents this Find behavior as presentation-only operator reference (no second lookup authority).
+
 ## Reporting Contract
 Existing REPORTS-1 (+ CSV/XLSX/PDF parity) must distinguish KEY #, MEDECO/physical copy, Holder, Rooms opened, Issue/Return state. No REPORTS-2.
 

@@ -1,0 +1,591 @@
+@page
+@model KeyInventory.Web.Pages.HelpModel
+@{
+    ViewData["Title"] = "Help";
+    ViewData["NavSection"] = "help";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/help.css" />
+}
+
+<div class="help-page">
+    <details class="help-toc">
+        <summary>On this page</summary>
+        <span class="help-toc-title">On this page</span>
+        <nav aria-label="Help table of contents">
+            <div class="toc-chapter">
+                <a href="#orient">Orient</a>
+                <ul class="toc-sub">
+                    <li><a href="#start-here">Start here</a></li>
+                    <li><a href="#organized">How KeyInventory is organized</a></li>
+                    <li><a href="#initial-config">Initial configuration</a></li>
+                </ul>
+            </div>
+            <div class="toc-chapter">
+                <a href="#configure">Configure</a>
+                <ul class="toc-sub">
+                    <li><a href="#departments-rooms">Departments &amp; rooms</a></li>
+                    <li><a href="#workforce">Workforce &amp; assignments</a></li>
+                    <li><a href="#key-types">Key types</a></li>
+                    <li><a href="#key-medeco">KEY # &amp; MEDECO</a></li>
+                    <li><a href="#key-rooms">Rooms opened by a KEY #</a></li>
+                    <li><a href="#registering-keys">Registering keys</a></li>
+                </ul>
+            </div>
+            <div class="toc-chapter">
+                <a href="#operate">Operate</a>
+                <ul class="toc-sub">
+                    <li><a href="#issuing">Issue a key</a></li>
+                    <li><a href="#current-custody">Active custody</a></li>
+                    <li><a href="#returning">Return a key</a></li>
+                    <li><a href="#finding">Find Key</a></li>
+                </ul>
+            </div>
+            <div class="toc-chapter">
+                <a href="#govern">Govern</a>
+                <ul class="toc-sub">
+                    <li><a href="#lifecycle">Lifecycle &amp; corrections</a></li>
+                    <li><a href="#audit">Audit Trail</a></li>
+                    <li><a href="#reports">Reports &amp; exports</a></li>
+                    <li><a href="#blockers">Common blockers</a></li>
+                    <li><a href="#complete-workflow">Complete workflow</a></li>
+                </ul>
+            </div>
+        </nav>
+    </details>
+
+    <div class="help-main">
+        <header class="help-header">
+            <h1>Help</h1>
+            <p class="lede">Learn how KeyInventory is organized, configure the records it depends on, and complete daily key-control operations.</p>
+        </header>
+
+        <section class="help-tasks" aria-labelledby="help-tasks-heading">
+            <h2 id="help-tasks-heading">What do you need to do?</h2>
+            <ul class="help-task-list">
+                <li>
+                    <span>
+                        <a class="task-link" href="#departments-rooms">Add or edit a department</a>
+                        <span class="task-note">Department code is the business identifier you type and may edit later.</span>
+                    </span>
+                    <a class="open-page" asp-page="/Administration/Departments/Index">Open Departments →</a>
+                </li>
+                <li>
+                    <span>
+                        <a class="task-link" href="#departments-rooms">Add or edit a room</a>
+                        <span class="task-note">Room # is operator-facing; the system keeps a stable internal room identity.</span>
+                    </span>
+                    <a class="open-page" asp-page="/Administration/Rooms/Index">Open Rooms →</a>
+                </li>
+                <li>
+                    <span>
+                        <a class="task-link" href="#workforce">Register a workforce member</a>
+                        <span class="task-note">Requires an active department first.</span>
+                    </span>
+                    <a class="open-page" asp-page="/Administration/WorkforceMembers/Index">Open Workforce Members →</a>
+                </li>
+                <li>
+                    <span>
+                        <a class="task-link" href="#registering-keys">Register a KEY # and MEDECO copy</a>
+                        <span class="task-note">Create the access pattern, assign rooms, then register each physical copy.</span>
+                    </span>
+                    <a class="open-page" asp-page="/Catalog/Register">Open Register Key →</a>
+                </li>
+                <li>
+                    <span>
+                        <a class="task-link" href="#key-rooms">Assign rooms to a KEY #</a>
+                        <span class="task-note">Every MEDECO copy under that KEY # opens the same rooms.</span>
+                    </span>
+                    <a class="open-page" asp-page="/Catalog/KeyRooms">Open KEY # Rooms →</a>
+                </li>
+                <li>
+                    <span>
+                        <a class="task-link" href="#issuing">Issue a key to someone</a>
+                        <span class="task-note">Search for an eligible holder; select KEY # and available MEDECO deliberately.</span>
+                    </span>
+                    <a class="open-page" asp-page="/Operations/Issue">Open Issue Key →</a>
+                </li>
+                <li>
+                    <span>
+                        <a class="task-link" href="#returning">Receive a returned key</a>
+                        <span class="task-note">Return the exact MEDECO copy that was issued.</span>
+                    </span>
+                    <a class="open-page" asp-page="/Operations/Receive">Open Receive Key →</a>
+                </li>
+                <li>
+                    <span>
+                        <a class="task-link" href="#finding">Look up a key, copy, holder, or room</a>
+                        <span class="task-note">Search by KEY #, MEDECO, Key Type, or Room #.</span>
+                    </span>
+                    <a class="open-page" asp-page="/Operations/Find">Open Find Key →</a>
+                </li>
+                <li>
+                    <span>
+                        <a class="task-link" href="#reports">Run a report or export</a>
+                        <span class="task-note">Filter on screen, then download CSV, Excel, or PDF.</span>
+                    </span>
+                    <a class="open-page" asp-page="/Reports/Index">Open Reports →</a>
+                </li>
+            </ul>
+        </section>
+
+        <article id="orient" class="help-chapter">
+            <h2>Orient</h2>
+
+            <section id="start-here" class="help-section">
+                <h3>Start here</h3>
+                <p>KeyInventory helps a key custodian maintain <strong>KEY #</strong> access patterns and the <strong>Room #</strong> values each KEY # opens, register <strong>MEDECO</strong> physical copies under a KEY #, issue and return exact copies to people, see who currently holds each copy, correct authorized records, and review audit history and reports.</p>
+                <p>Departments and Rooms belong directly to this installation. Home is the operational dashboard; open Help when you need reference guidance.</p>
+                <div class="help-diagram-note"><strong>Example:</strong> KEY # <code>66800</code> opens Room <code>410D</code>. Physical copies MEDECO <code>26</code>, <code>27</code>, and <code>28</code> share that access. Issue and return always name the exact MEDECO copy — for example KEY # 66800 / MEDECO 26 — not merely the KEY #.</div>
+            </section>
+
+            <section id="organized" class="help-section">
+                <h3>How KeyInventory is organized</h3>
+                <p>Use the primary navigation for daily work:</p>
+                <ul>
+                    <li><strong>Home</strong> — operational dashboard: custody metrics and recent activity.</li>
+                    <li><strong>Operations</strong> — Issue Key, Receive Key, Active Loans, History, Find Key.</li>
+                    <li><strong>Catalog</strong> — Keys, Key Types, Register Key, KEY # Rooms.</li>
+                    <li><strong>Reports</strong> — read-only views with CSV, Excel, and PDF export.</li>
+                    <li><strong>Administration</strong> — Departments, Rooms, Workforce Members, Work Assignments, Audit Trail.</li>
+                </ul>
+                <p>When a capability’s prerequisites are missing, the page explains what is still required and links to resolve it. Home stays an operational dashboard — not a permanent setup wizard.</p>
+            </section>
+
+            <section id="initial-config" class="help-section">
+                <h3>Initial configuration</h3>
+                <p>Initial records can be built in parallel where contracts allow. This sequence lives in Help and the operator guide — not as a permanent Home or Administration setup surface, and not as a readiness checklist.</p>
+                <div class="help-legend" aria-hidden="true">
+                    <span><i class="lg-parallel"></i> Parallel</span>
+                    <span><i class="lg-mandatory"></i> Mandatory</span>
+                    <span><i class="lg-optional"></i> Optional</span>
+                    <span><i class="lg-consequence"></i> Consequence</span>
+                </div>
+                <div class="help-diagram-frame" role="img" aria-label="System flow: parallel Department, Room, and Key Type setup; mandatory paths to Workforce Member, Work Assignment, KEY #, MEDECO copy, Issue, Active custody, Return, and History">
+                    <svg viewBox="0 0 720 300" width="720" height="300" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="p-opt" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 6L6 0" stroke="#5E6A7D" stroke-width="1"/></pattern>
+                        </defs>
+                        <rect x="8" y="8" width="704" height="284" rx="8" fill="#F5F7FA" stroke="#D9DEE8"/>
+                        <text x="20" y="28" fill="#00205B" font-size="11" font-weight="700">HELP-DIAGRAM-01 · System flow</text>
+                        <rect x="24" y="44" width="88" height="36" rx="4" fill="#e8eef7" stroke="#00205B"/><text x="68" y="66" text-anchor="middle" fill="#0B1F3A" font-size="10">Department</text>
+                        <rect x="24" y="92" width="88" height="36" rx="4" fill="#e8eef7" stroke="#00205B"/><text x="68" y="114" text-anchor="middle" fill="#0B1F3A" font-size="10">Room</text>
+                        <rect x="24" y="140" width="88" height="36" rx="4" fill="#e8eef7" stroke="#00205B"/><text x="68" y="162" text-anchor="middle" fill="#0B1F3A" font-size="10">Key Type</text>
+                        <text x="68" y="192" text-anchor="middle" fill="#5E6A7D" font-size="9">Parallel</text>
+                        <rect x="148" y="68" width="100" height="36" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="198" y="90" text-anchor="middle" fill="#0B1F3A" font-size="10">Workforce</text>
+                        <rect x="148" y="120" width="100" height="36" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="198" y="142" text-anchor="middle" fill="#0B1F3A" font-size="10">Work Assign</text>
+                        <rect x="280" y="44" width="88" height="36" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="324" y="66" text-anchor="middle" fill="#0B1F3A" font-size="10">KEY #</text>
+                        <rect x="280" y="92" width="88" height="36" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="324" y="114" text-anchor="middle" fill="#0B1F3A" font-size="10">KEY #↔Room</text>
+                        <rect x="280" y="140" width="88" height="36" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="324" y="162" text-anchor="middle" fill="#0B1F3A" font-size="10">MEDECO copy</text>
+                        <rect x="412" y="92" width="88" height="36" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="456" y="114" text-anchor="middle" fill="#0B1F3A" font-size="10">Issue Key</text>
+                        <rect x="528" y="68" width="88" height="36" rx="4" fill="#e8f5e9" stroke="#00859B"/><text x="572" y="90" text-anchor="middle" fill="#0B1F3A" font-size="10">Active</text>
+                        <rect x="528" y="120" width="88" height="36" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="572" y="142" text-anchor="middle" fill="#0B1F3A" font-size="10">Receive</text>
+                        <rect x="640" y="92" width="68" height="36" rx="4" fill="#e8f5e9" stroke="#00859B"/><text x="674" y="114" text-anchor="middle" fill="#0B1F3A" font-size="10">History</text>
+                        <path d="M112 62H148M112 110H148M112 158H198M112 110H198" stroke="#00859B" stroke-width="1.5" marker-end="url(#none)"/>
+                        <path d="M112 62H198M248 86H280M248 138H280M248 86H324M324 80V128M324 128H412M368 158H412M456 110H528M500 128H528M572 104V120M616 110H640" stroke="#00859B" stroke-width="1.5" fill="none"/>
+                        <path d="M112 62H148" stroke="#00859B" stroke-width="1.5"/><path d="M112 110H148" stroke="#00859B" stroke-width="1.5"/>
+                        <path d="M112 62H198" stroke="#00859B" stroke-width="1.5"/><path d="M112 110H198" stroke="#00859B" stroke-width="1.5"/>
+                        <path d="M248 86H280" stroke="#00859B" stroke-width="1.5"/><path d="M248 138H280" stroke="#00859B" stroke-width="1.5"/>
+                        <path d="M324 80V128" stroke="#00859B" stroke-width="1.5"/><path d="M368 158H412" stroke="#00859B" stroke-width="1.5"/>
+                        <path d="M456 110H528" stroke="#00859B" stroke-width="1.5"/><path d="M572 104V120" stroke="#00859B" stroke-width="1.5"/>
+                        <path d="M616 110H640" stroke="#00859B" stroke-width="1.5"/>
+                        <text x="130" y="58" fill="#00859B" font-size="8">mand.</text>
+                        <text x="130" y="106" fill="#00859B" font-size="8">mand.</text>
+                        <text x="390" y="106" fill="#00859B" font-size="8">mand.</text>
+                        <text x="510" y="84" fill="#00859B" font-size="8">conseq.</text>
+                    </svg>
+                </div>
+                <p><strong>Minimum first-use path:</strong></p>
+                <ol>
+                    <li>Sign in.</li>
+                    <li>Create <strong>Department</strong>, <strong>Room #</strong>, and <strong>Key Type</strong> in any order.</li>
+                    <li>Create the first <strong>Workforce Member</strong> (no second person required).</li>
+                    <li>Create a <strong>Work Assignment</strong> (member ↔ room) — required before Issue.</li>
+                    <li>Create a <strong>KEY #</strong> (with Key Type) and assign <strong>Room #</strong> openings to that KEY #.</li>
+                    <li>Register at least one <strong>MEDECO</strong> physical copy under that KEY #.</li>
+                    <li><strong>Issue Key</strong> → <strong>Active custody</strong> → <strong>Return</strong> the same MEDECO copy when returned.</li>
+                </ol>
+                <p class="help-diagram-note"><strong>Operational dependencies:</strong> Department → Workforce Member; Room + Workforce Member → Work Assignment; Key Type → KEY # → MEDECO; KEY # ↔ Room establishes what the key opens. Issue requires the governed prerequisites.</p>
+                <div class="help-links">
+                    <a asp-page="/Administration/Departments/Index">Departments</a>
+                    <a asp-page="/Administration/Rooms/Index">Rooms</a>
+                    <a asp-page="/Administration/WorkforceMembers/Index">Workforce Members</a>
+                    <a asp-page="/Catalog/KeyTypes">Key Types</a>
+                    <a asp-page="/Catalog/Register">Register Key</a>
+                </div>
+            </section>
+        </article>
+
+        <article id="configure" class="help-chapter">
+            <h2>Configure</h2>
+
+            <section id="departments-rooms" class="help-section">
+                <h3>Departments &amp; rooms</h3>
+                <p><strong>Departments</strong> name organizational units used for membership and department-based issue justification. The <strong>department code</strong> is what you type and may edit; the system keeps a stable internal department identity you never need to manage.</p>
+                <p><strong>Rooms</strong> define places for work assignments and rooms opened by keys. <strong>Room #</strong> is operator-facing and editable; the system assigns a stable internal room identity automatically. Room numbers are unique across the whole installation.</p>
+                <div class="help-links">
+                    <a asp-page="/Administration/Departments/Index">Departments</a>
+                    <a asp-page="/Administration/Rooms/Index">Rooms</a>
+                </div>
+            </section>
+
+            <section id="workforce" class="help-section">
+                <h3>Workforce &amp; assignments</h3>
+                <p><strong>Workforce Member</strong> is the person represented in workforce administration. Each member needs an active department. No second member is required to add the first person.</p>
+                <p><strong>Work Assignment</strong> is the governed current relationship used by issue eligibility (member ↔ room). An active assignment is <strong>mandatory before Issue Key</strong>.</p>
+                <p><strong>Key holder</strong> is an operational role while an eligible person holds a physical MEDECO copy — not a separate record type you administer.</p>
+                <div class="help-diagram-frame" role="img" aria-label="Workforce model: Workforce Member to Work Assignment to eligible holder to physical key custody">
+                    <svg viewBox="0 0 640 130" width="640" height="130" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="4" width="632" height="122" rx="8" fill="#F5F7FA" stroke="#D9DEE8"/>
+                        <text x="16" y="22" fill="#00205B" font-size="11" font-weight="700">HELP-DIAGRAM-04 · Workforce model</text>
+                        <rect x="16" y="44" width="120" height="40" rx="4" fill="#e8eef7" stroke="#00205B"/><text x="76" y="68" text-anchor="middle" fill="#0B1F3A" font-size="10">Workforce Member</text>
+                        <rect x="160" y="44" width="120" height="40" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="220" y="68" text-anchor="middle" fill="#0B1F3A" font-size="10">Work Assignment</text>
+                        <rect x="304" y="44" width="140" height="40" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="374" y="62" text-anchor="middle" fill="#0B1F3A" font-size="10">Eligible holder</text><text x="374" y="76" text-anchor="middle" fill="#5E6A7D" font-size="8">(Issue search)</text>
+                        <rect x="468" y="44" width="148" height="40" rx="4" fill="#e8f5e9" stroke="#00859B"/><text x="542" y="62" text-anchor="middle" fill="#0B1F3A" font-size="10">Physical custody</text><text x="542" y="76" text-anchor="middle" fill="#5E6A7D" font-size="8">KEY # + MEDECO</text>
+                        <path d="M136 64H160M280 64H304M444 64H468" stroke="#00859B" stroke-width="1.5"/>
+                        <text x="148" y="58" fill="#00859B" font-size="8">mand.</text>
+                        <text x="16" y="110" fill="#5E6A7D" font-size="9">Room also participates in Work Assignment. Key holder is a role during custody — not a separate entity.</text>
+                    </svg>
+                </div>
+                <div class="help-links">
+                    <a asp-page="/Administration/WorkforceMembers/Index">Workforce Members</a>
+                    <a asp-page="/Administration/WorkAssignments/Index">Work Assignments</a>
+                </div>
+            </section>
+
+            <section id="key-types" class="help-section">
+                <h3>Key types</h3>
+                <p>Key Types classify access patterns at the KEY # level. Create types under Catalog → Key Types, or enter a new type when registering a KEY #. Retire a type when it should no longer be used; delete only when no KEY # references it.</p>
+                <div class="help-links"><a asp-page="/Catalog/KeyTypes">Key Types</a></div>
+            </section>
+
+            <section id="key-medeco" class="help-section">
+                <h3>KEY # &amp; MEDECO</h3>
+                <table class="help-matrix">
+                    <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>KEY #</strong></td><td>Shared access number. Associated with the set of Rooms that open. Many physical copies may share one KEY #.</td></tr>
+                        <tr><td><strong>MEDECO Key Code</strong></td><td>Identifies the specific physical key copy issued to a person. Unique within a KEY #; may repeat under a different KEY #.</td></tr>
+                        <tr><td><strong>Room #</strong></td><td>Operator-facing room identifier.</td></tr>
+                    </tbody>
+                </table>
+                <div class="help-diagram-frame" role="img" aria-label="KEY # 66800 hierarchy: opens Room 410D; MEDECO copies 26, 27, 28">
+                    <svg viewBox="0 0 400 180" width="400" height="180" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="4" width="392" height="172" rx="8" fill="#F5F7FA" stroke="#D9DEE8"/>
+                        <text x="16" y="22" fill="#00205B" font-size="11" font-weight="700">HELP-DIAGRAM-02 · KEY # 66800</text>
+                        <rect x="140" y="36" width="120" height="36" rx="4" fill="#e8eef7" stroke="#00205B"/><text x="200" y="58" text-anchor="middle" fill="#0B1F3A" font-size="11" font-weight="700">KEY # 66800</text>
+                        <rect x="160" y="88" width="80" height="28" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="200" y="106" text-anchor="middle" fill="#0B1F3A" font-size="10">Room 410D</text>
+                        <rect x="40" y="132" width="64" height="28" rx="4" fill="#fff" stroke="#00859B"/><text x="72" y="150" text-anchor="middle" fill="#0B1F3A" font-size="10">MED 26</text>
+                        <rect x="168" y="132" width="64" height="28" rx="4" fill="#fff" stroke="#00859B"/><text x="200" y="150" text-anchor="middle" fill="#0B1F3A" font-size="10">MED 27</text>
+                        <rect x="296" y="132" width="64" height="28" rx="4" fill="#fff" stroke="#00859B"/><text x="328" y="150" text-anchor="middle" fill="#0B1F3A" font-size="10">MED 28</text>
+                        <path d="M200 72V88M200 116V132M72 132V116H328" stroke="#5E6A7D" stroke-width="1.5"/>
+                    </svg>
+                </div>
+                <figure class="help-figure">
+                    <img class="help-shot" src="~/images/help/01-catalog-keys.png" alt="Catalog Keys list showing KEY # values, Key Types, and MEDECO copies with availability status" />
+                    <figcaption>Catalog Keys — KEY # access patterns and physical copies under each pattern.</figcaption>
+                </figure>
+            </section>
+
+            <section id="key-rooms" class="help-section">
+                <h3>Rooms opened by a KEY #</h3>
+                <p>Record which Room # values a KEY # opens once, at the KEY # level. Every MEDECO copy under that KEY # opens the same rooms — copies do not carry independent room assignments.</p>
+                <p>A <strong>master key</strong> is simply a KEY # associated with multiple rooms — no special hierarchy engine.</p>
+                <div class="help-diagram-frame" role="img" aria-label="MASTER1 multi-room: one KEY # opens rooms 410D, 411A, 412B, and 420C">
+                    <svg viewBox="0 0 420 160" width="420" height="160" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="4" width="412" height="152" rx="8" fill="#F5F7FA" stroke="#D9DEE8"/>
+                        <text x="16" y="22" fill="#00205B" font-size="11" font-weight="700">HELP-DIAGRAM-03 · Multi-room KEY #</text>
+                        <rect x="140" y="36" width="140" height="32" rx="4" fill="#e8eef7" stroke="#00205B"/><text x="210" y="56" text-anchor="middle" fill="#0B1F3A" font-size="10" font-weight="700">KEY # MASTER1</text>
+                        <rect x="24" y="96" width="72" height="28" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="60" y="114" text-anchor="middle" fill="#0B1F3A" font-size="10">410D</text>
+                        <rect x="116" y="96" width="72" height="28" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="152" y="114" text-anchor="middle" fill="#0B1F3A" font-size="10">411A</text>
+                        <rect x="208" y="96" width="72" height="28" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="244" y="114" text-anchor="middle" fill="#0B1F3A" font-size="10">412B</text>
+                        <rect x="300" y="96" width="72" height="28" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="336" y="114" text-anchor="middle" fill="#0B1F3A" font-size="10">420C</text>
+                        <path d="M210 68V96M60 96V80H336" stroke="#5E6A7D" stroke-width="1.5"/>
+                    </svg>
+                </div>
+                <p class="help-diagram-note">Find by Room # returns every KEY # that opens that room — including MASTER1 for each room it opens. No special master-key search path.</p>
+                <div class="help-links"><a asp-page="/Catalog/KeyRooms">KEY # Rooms</a></div>
+            </section>
+
+            <section id="registering-keys" class="help-section">
+                <h3>Registering keys</h3>
+                <p>From Catalog → Register Key:</p>
+                <ol>
+                    <li>Ensure a Key Type exists (or enter a new one).</li>
+                    <li>Create the <strong>KEY #</strong> (shared access number).</li>
+                    <li>Assign <strong>Room #</strong> openings to that KEY #.</li>
+                    <li>Register each <strong>MEDECO</strong> physical copy under that KEY #.</li>
+                </ol>
+                <div class="help-links">
+                    <a asp-page="/Catalog/Register">Register Key</a>
+                    <a asp-page="/Catalog/Keys">Browse Keys</a>
+                </div>
+            </section>
+        </article>
+
+        <article id="operate" class="help-chapter">
+            <h2>Operate</h2>
+
+            <section id="issuing" class="help-section">
+                <h3>Issue a key</h3>
+                <p>Hand an available MEDECO physical copy to an eligible person. Prerequisites: active workforce member with department, at least one active work assignment, and an available MEDECO copy under a KEY #.</p>
+                <ol class="help-steps">
+                    <li>Search <strong>Key holder</strong> by name or UIN — eligible matches only; nothing is preselected.</li>
+                    <li>Select the holder deliberately.</li>
+                    <li>Select <strong>KEY #</strong>, then an <strong>available MEDECO</strong> copy (MEDECO stays empty until KEY # is chosen).</li>
+                    <li>Confirm <strong>Rooms opened</strong> shown as derived from the KEY # — do not re-enter rooms.</li>
+                    <li>Choose For = Department or Room and the matching justification (no default).</li>
+                    <li>Confirm Issued / Due as operator local times.</li>
+                    <li>Enter <strong>Loan code</strong> (required).</li>
+                    <li>Issue Key — next Issue opens clean.</li>
+                </ol>
+                <div class="help-diagram-frame" role="img" aria-label="Issue flow: holder, KEY #, MEDECO, derived rooms, justification, loan code">
+                    <svg viewBox="0 0 480 72" width="480" height="72" xmlns="http://www.w3.org/2000/svg">
+                        <text x="8" y="14" fill="#00205B" font-size="10" font-weight="700">HELP-DIAGRAM-05 · Issue</text>
+                        <rect x="8" y="24" width="68" height="28" rx="3" fill="#e6f4f7" stroke="#00859B"/><text x="42" y="42" text-anchor="middle" fill="#0B1F3A" font-size="9">Holder</text>
+                        <rect x="88" y="24" width="56" height="28" rx="3" fill="#e8eef7" stroke="#00205B"/><text x="116" y="42" text-anchor="middle" fill="#0B1F3A" font-size="9">KEY #</text>
+                        <rect x="156" y="24" width="56" height="28" rx="3" fill="#fff" stroke="#00859B"/><text x="184" y="42" text-anchor="middle" fill="#0B1F3A" font-size="9">MEDECO</text>
+                        <rect x="224" y="24" width="56" height="28" rx="3" fill="#e8f5e9" stroke="#00859B"/><text x="252" y="42" text-anchor="middle" fill="#0B1F3A" font-size="9">Rooms</text>
+                        <rect x="292" y="24" width="68" height="28" rx="3" fill="#e6f4f7" stroke="#00859B"/><text x="326" y="42" text-anchor="middle" fill="#0B1F3A" font-size="9">Justify</text>
+                        <rect x="372" y="24" width="56" height="28" rx="3" fill="#e6f4f7" stroke="#00859B"/><text x="400" y="42" text-anchor="middle" fill="#0B1F3A" font-size="9">Loan #</text>
+                        <rect x="440" y="24" width="32" height="28" rx="3" fill="#e8f5e9" stroke="#00859B"/><text x="456" y="42" text-anchor="middle" fill="#0B1F3A" font-size="9">✓</text>
+                        <path d="M76 38H88M144 38H156M212 38H224M280 38H292M360 38H372M428 38H440" stroke="#5E6A7D" stroke-width="1.2"/>
+                    </svg>
+                </div>
+                <figure class="help-figure">
+                    <img class="help-shot" src="~/images/help/02-issue-key.png" alt="Issue Key form with key holder search, KEY # and MEDECO selection, derived rooms, and loan code field" />
+                    <figcaption>Issue Key — deliberate holder and copy selection; rooms derived from KEY #.</figcaption>
+                </figure>
+                <div class="help-links"><a asp-page="/Operations/Issue">Issue Key</a></div>
+            </section>
+
+            <section id="current-custody" class="help-section">
+                <h3>Active custody</h3>
+                <p>See who holds which MEDECO copy. Active Loans lists every open issue with KEY #, MEDECO, holder, and times. Different MEDECO copies under the same KEY # can be issued simultaneously — each copy tracks its own custody.</p>
+                <figure class="help-figure">
+                    <img class="help-shot" src="~/images/help/03-active-loans.png" alt="Active Loans list showing issued KEY # and MEDECO pairs with current holders and due dates" />
+                    <figcaption>Active Loans — open custody for each issued physical copy.</figcaption>
+                </figure>
+                <div class="help-links">
+                    <a asp-page="/Operations/Active">Active Loans</a>
+                    <a asp-page="/Operations/History">History</a>
+                </div>
+            </section>
+
+            <section id="returning" class="help-section">
+                <h3>Return a key</h3>
+                <p>Complete return of the exact MEDECO copy that was issued. Other copies under the same KEY # are unaffected.</p>
+                <ol class="help-steps">
+                    <li>Open Receive Key with no active issue preselected (or open a specific issue from Active Loans).</li>
+                    <li>Select the open issue labeled <strong>KEY # / MEDECO · holder — UIN</strong>.</li>
+                    <li>Enter Receive reference and Received (operator local time).</li>
+                    <li>Complete return — next Receive opens clean.</li>
+                </ol>
+                <div class="help-diagram-frame" role="img" aria-label="Return copy independence: returning MEDECO 26 leaves MEDECO 27 issued under KEY # 66800">
+                    <svg viewBox="0 0 420 130" width="420" height="130" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="4" width="412" height="122" rx="8" fill="#F5F7FA" stroke="#D9DEE8"/>
+                        <text x="16" y="22" fill="#00205B" font-size="11" font-weight="700">HELP-DIAGRAM-06 · Return &amp; copy independence</text>
+                        <rect x="150" y="36" width="120" height="28" rx="4" fill="#e8eef7" stroke="#00205B"/><text x="210" y="54" text-anchor="middle" fill="#0B1F3A" font-size="10">KEY # 66800</text>
+                        <rect x="40" y="80" width="80" height="28" rx="4" fill="#e8f5e9" stroke="#00859B"/><text x="80" y="98" text-anchor="middle" fill="#0B1F3A" font-size="9">MED 26 returned</text>
+                        <rect x="170" y="80" width="80" height="28" rx="4" fill="#fff" stroke="#D50032"/><text x="210" y="98" text-anchor="middle" fill="#0B1F3A" font-size="9">MED 27 issued</text>
+                        <rect x="300" y="80" width="80" height="28" rx="4" fill="#fff" stroke="#D50032"/><text x="340" y="98" text-anchor="middle" fill="#0B1F3A" font-size="9">MED 28 issued</text>
+                        <path d="M210 64V80M80 80V68H340" stroke="#5E6A7D" stroke-width="1.5"/>
+                    </svg>
+                </div>
+                <div class="help-links"><a asp-page="/Operations/Receive">Receive Key</a></div>
+            </section>
+
+            <section id="finding" class="help-section">
+                <h3>Find Key</h3>
+                <p>One search box accepts <strong>KEY #</strong>, <strong>MEDECO</strong>, <strong>Key Type</strong>, or <strong>Room #</strong>. Matching uses the same partial-match style across those dimensions.</p>
+                <p>Searching a Room # returns every KEY # that opens that room (including multi-room master KEY # values), with each MEDECO copy’s availability and current holder.</p>
+                <p><strong>Questions Find answers:</strong></p>
+                <ul>
+                    <li>What Room # values does KEY # 66800 open?</li>
+                    <li>What MEDECO copies exist under KEY # 66800? Which are available or issued?</li>
+                    <li>Who holds MEDECO 28 under KEY # 66800?</li>
+                    <li>Which KEY # values open Room X? (search by that Room #)</li>
+                    <li>Which KEY # / MEDECO a person currently holds? (Member Keys / Details / Keys by Member report)</li>
+                </ul>
+                <figure class="help-figure">
+                    <img class="help-shot" src="~/images/help/04-find-key.png" alt="Find Key results showing KEY #, MEDECO, rooms opened, availability, and current holder" />
+                    <figcaption>Find Key — search by KEY #, MEDECO, Key Type, or Room #.</figcaption>
+                </figure>
+                <div class="help-links"><a asp-page="/Operations/Find">Find Key</a></div>
+            </section>
+        </article>
+
+        <article id="govern" class="help-chapter">
+            <h2>Govern</h2>
+
+            <section id="lifecycle" class="help-section">
+                <h3>Lifecycle &amp; corrections</h3>
+                <p>Operators may correct authorized business records. Lifecycle rules vary by entity — edit where mutable; delete only when unused and unreferenced; otherwise retire, end, or terminate.</p>
+                <div class="help-lifecycle-strip">
+                    <article><h4>Delete</h4><p>Permanent removal. Only when no governed relationships or history block it.</p></article>
+                    <article><h4>Retire</h4><p>Preserve the record and history while preventing future operational use.</p></article>
+                    <article><h4>Terminate</h4><p>End a Workforce Member’s operational lifecycle.</p></article>
+                    <article><h4>End</h4><p>End a Work Assignment relationship.</p></article>
+                    <article><h4>Activate</h4><p>Restore a retired record where supported.</p></article>
+                    <article><h4>Remove</h4><p>Remove a governed relationship such as KEY # ↔ Room.</p></article>
+                </div>
+                <div class="help-diagram-frame" role="img" aria-label="Lifecycle paths: unused may delete; used may retire, end, or terminate; retired may activate; relationships may be removed">
+                    <svg viewBox="0 0 680 150" width="680" height="150" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="4" width="672" height="142" rx="8" fill="#F5F7FA" stroke="#D9DEE8"/>
+                        <text x="16" y="22" fill="#00205B" font-size="11" font-weight="700">HELP-DIAGRAM-07 · Record lifecycle</text>
+                        <rect x="20" y="40" width="140" height="36" rx="4" fill="#e8f5e9" stroke="#00859B"/><text x="90" y="62" text-anchor="middle" fill="#0B1F3A" font-size="10">Unused / unreferenced</text>
+                        <rect x="200" y="40" width="140" height="36" rx="4" fill="#e6f4f7" stroke="#00859B"/><text x="270" y="62" text-anchor="middle" fill="#0B1F3A" font-size="10">Used / referenced</text>
+                        <rect x="380" y="40" width="100" height="36" rx="4" fill="#e8eef7" stroke="#00205B"/><text x="430" y="62" text-anchor="middle" fill="#0B1F3A" font-size="10">Retired</text>
+                        <rect x="520" y="40" width="140" height="36" rx="4" fill="#F5F7FA" stroke="#5E6A7D" stroke-dasharray="4 2"/><text x="590" y="62" text-anchor="middle" fill="#5E6A7D" font-size="10">Relationship</text>
+                        <text x="90" y="96" text-anchor="middle" fill="#5E6A7D" font-size="9">Edit where mutable</text>
+                        <text x="90" y="112" text-anchor="middle" fill="#5E6A7D" font-size="9">Delete where authorized</text>
+                        <text x="270" y="96" text-anchor="middle" fill="#5E6A7D" font-size="9">Edit where mutable</text>
+                        <text x="270" y="112" text-anchor="middle" fill="#5E6A7D" font-size="9">Retire / Terminate / End</text>
+                        <text x="430" y="96" text-anchor="middle" fill="#5E6A7D" font-size="9">Activate where supported</text>
+                        <text x="590" y="96" text-anchor="middle" fill="#5E6A7D" font-size="9">Remove / End</text>
+                        <text x="590" y="112" text-anchor="middle" fill="#5E6A7D" font-size="9">by relationship semantics</text>
+                        <text x="16" y="136" fill="#5E6A7D" font-size="9">Actions differ by record type — use the matrix below for the record in front of you.</text>
+                    </svg>
+                </div>
+                <table class="help-matrix">
+                    <thead><tr><th>Record</th><th>Edit</th><th>Delete</th><th>Lifecycle</th></tr></thead>
+                    <tbody>
+                        <tr><td>Department</td><td>Code</td><td>Unused only</td><td>Retire when referenced; Activate yes</td></tr>
+                        <tr><td>Room</td><td>Room # / description</td><td>Unused only</td><td>Retire where permitted; Activate yes</td></tr>
+                        <tr><td>Workforce Member</td><td>Details</td><td>Unused only</td><td>Terminate (no generic Retire)</td></tr>
+                        <tr><td>Work Assignment</td><td>Governed primary</td><td>Active unused where allowed</td><td>End</td></tr>
+                        <tr><td>Key Type</td><td>—</td><td>When no KEY #</td><td>Retire / Activate</td></tr>
+                        <tr><td>KEY #</td><td>—</td><td>No copies / room relationships</td><td>Retire / Activate</td></tr>
+                        <tr><td>MEDECO</td><td>—</td><td>When no loan history</td><td>Retire / Activate</td></tr>
+                        <tr><td>KEY # ↔ Room</td><td>—</td><td>—</td><td>Remove relationship</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="audit" class="help-section">
+                <h3>Audit Trail</h3>
+                <p>See who performed which business action. Filter by date, operator, action, or subject; export CSV, Excel, or PDF of the filtered result. Available filters may be a subset of all recorded actions.</p>
+                <p><strong>Example audit entries:</strong></p>
+                <ul>
+                    <li>Key issued</li>
+                    <li>Key returned</li>
+                    <li>Department code changed</li>
+                    <li>KEY # created</li>
+                    <li>Physical key copy registered</li>
+                    <li>KEY # ↔ Room assignment added or removed</li>
+                </ul>
+                <figure class="help-figure">
+                    <img class="help-shot" src="~/images/help/05-audit-trail.png" alt="Audit Trail list with date, operator, action, subject, and details columns with filter controls" />
+                    <figcaption>Audit Trail — operator business mutations with export.</figcaption>
+                </figure>
+                <div class="help-links"><a asp-page="/Administration/AuditTrail">Audit Trail</a></div>
+            </section>
+
+            <section id="reports" class="help-section">
+                <h3>Reports &amp; exports</h3>
+                <p>Filter on screen, then download <strong>CSV</strong>, <strong>Excel</strong>, or <strong>PDF</strong>. Timestamps in exports use readable <code>yyyy-MM-dd HH:mm UTC</code> form; on-screen lists use friendly local presentation.</p>
+                <ul>
+                    <li><a asp-page="/Reports/CurrentKeyHolders">Current Key Holders</a> — who holds each issued key now</li>
+                    <li><a asp-page="/Reports/KeysByWorkforceMember">Keys by Member</a> — issued keys and return history for one person</li>
+                    <li><a asp-page="/Reports/ActiveLoans">Active Loans</a> — all currently issued keys</li>
+                    <li><a asp-page="/Reports/OverdueKeys">Overdue Keys</a> — open loans past due</li>
+                    <li><a asp-page="/Reports/KeyHistory">Key History</a> — issue and return history for one key</li>
+                    <li><a asp-page="/Reports/OutstandingByWorkforceStatus">Outstanding by Status</a> — members who still hold keys</li>
+                    <li><a asp-page="/Reports/KeyCatalog">Key Catalog</a> — registered keys and Available/Issued state</li>
+                </ul>
+                <div class="help-links"><a asp-page="/Reports/Index">All Reports</a></div>
+            </section>
+
+            <section id="blockers" class="help-section">
+                <h3>Common blockers</h3>
+                <div class="help-blockers">
+                    <article class="help-blocker">
+                        <h4>Cannot find person at Issue</h4>
+                        <dl>
+                            <dt>Likely cause</dt><dd>Inactive member, missing Work Assignment, or search terms that do not match.</dd>
+                            <dt>What to do</dt><dd>Verify an active Workforce Member with a valid Work Assignment, then search by name or UIN.</dd>
+                        </dl>
+                    </article>
+                    <article class="help-blocker">
+                        <h4>No MEDECO available</h4>
+                        <dl>
+                            <dt>Likely cause</dt><dd>No physical copies registered, or all copies are currently issued or unavailable.</dd>
+                            <dt>What to do</dt><dd>Register a MEDECO copy under the KEY #, or return an open issue.</dd>
+                        </dl>
+                    </article>
+                    <article class="help-blocker">
+                        <h4>Cannot issue</h4>
+                        <dl>
+                            <dt>Likely cause</dt><dd>Governed readiness or eligibility prerequisites are incomplete.</dd>
+                            <dt>What to do</dt><dd>Use the contextual resolution links on Issue Key — do not invent a separate checklist here.</dd>
+                        </dl>
+                    </article>
+                    <article class="help-blocker">
+                        <h4>Cannot delete Department</h4>
+                        <dl>
+                            <dt>Likely cause</dt><dd>Governed relationships or history block permanent removal.</dd>
+                            <dt>What to do</dt><dd>Retire the department when Delete is unavailable.</dd>
+                        </dl>
+                    </article>
+                    <article class="help-blocker">
+                        <h4>Cannot return</h4>
+                        <dl>
+                            <dt>Likely cause</dt><dd>No matching open loan, or the wrong physical copy is selected.</dd>
+                            <dt>What to do</dt><dd>Select the open KEY # / MEDECO issue on Receive Key.</dd>
+                        </dl>
+                    </article>
+                    <article class="help-blocker">
+                        <h4>KEY # missing expected Room</h4>
+                        <dl>
+                            <dt>Likely cause</dt><dd>The Room is not assigned to that KEY #.</dd>
+                            <dt>What to do</dt><dd>Assign the Room under Catalog → KEY # Rooms.</dd>
+                        </dl>
+                    </article>
+                </div>
+            </section>
+
+            <section id="complete-workflow" class="help-section">
+                <h3>Complete workflow</h3>
+                <p>Reinforcement of the same dependency model — configure people and keys, then operate custody, then govern with history.</p>
+                <div class="help-diagram-frame" role="img" aria-label="Complete workflow: configure people, configure keys, operate custody, govern with history audit and reports">
+                    <svg viewBox="0 0 680 200" width="680" height="200" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="4" width="672" height="192" rx="8" fill="#F5F7FA" stroke="#D9DEE8"/>
+                        <text x="16" y="22" fill="#00205B" font-size="11" font-weight="700">Complete workflow · same grammar as HELP-DIAGRAM-01</text>
+                        <text x="24" y="46" fill="#5E6A7D" font-size="9" font-weight="700">CONFIGURE PEOPLE</text>
+                        <rect x="24" y="54" width="88" height="28" rx="3" fill="#e8eef7" stroke="#00205B"/><text x="68" y="72" text-anchor="middle" fill="#0B1F3A" font-size="9">Department</text>
+                        <rect x="128" y="54" width="100" height="28" rx="3" fill="#e6f4f7" stroke="#00859B"/><text x="178" y="72" text-anchor="middle" fill="#0B1F3A" font-size="9">Workforce</text>
+                        <rect x="244" y="54" width="100" height="28" rx="3" fill="#e6f4f7" stroke="#00859B"/><text x="294" y="72" text-anchor="middle" fill="#0B1F3A" font-size="9">Work Assign</text>
+                        <path d="M112 68H128M228 68H244" stroke="#00859B" stroke-width="1.4"/>
+                        <text x="360" y="46" fill="#5E6A7D" font-size="9" font-weight="700">CONFIGURE KEYS</text>
+                        <rect x="360" y="54" width="64" height="28" rx="3" fill="#e8eef7" stroke="#00205B"/><text x="392" y="72" text-anchor="middle" fill="#0B1F3A" font-size="9">Key Type</text>
+                        <rect x="440" y="54" width="56" height="28" rx="3" fill="#e6f4f7" stroke="#00859B"/><text x="468" y="72" text-anchor="middle" fill="#0B1F3A" font-size="9">KEY #</text>
+                        <rect x="512" y="54" width="64" height="28" rx="3" fill="#e6f4f7" stroke="#00859B"/><text x="544" y="72" text-anchor="middle" fill="#0B1F3A" font-size="9">MEDECO</text>
+                        <rect x="592" y="54" width="64" height="28" rx="3" fill="#e8eef7" stroke="#00205B"/><text x="624" y="72" text-anchor="middle" fill="#0B1F3A" font-size="9">Rooms</text>
+                        <path d="M424 68H440M496 68H512" stroke="#00859B" stroke-width="1.4"/>
+                        <path d="M468 82V96H624V82" stroke="#5E6A7D" stroke-width="1.2" fill="none" stroke-dasharray="3 2"/>
+                        <text x="24" y="118" fill="#5E6A7D" font-size="9" font-weight="700">OPERATE</text>
+                        <rect x="24" y="126" width="100" height="28" rx="3" fill="#e6f4f7" stroke="#00859B"/><text x="74" y="144" text-anchor="middle" fill="#0B1F3A" font-size="9">Eligible holder</text>
+                        <rect x="140" y="126" width="72" height="28" rx="3" fill="#e6f4f7" stroke="#00859B"/><text x="176" y="144" text-anchor="middle" fill="#0B1F3A" font-size="9">Issue</text>
+                        <rect x="228" y="126" width="72" height="28" rx="3" fill="#e8f5e9" stroke="#00859B"/><text x="264" y="144" text-anchor="middle" fill="#0B1F3A" font-size="9">Custody</text>
+                        <rect x="316" y="126" width="72" height="28" rx="3" fill="#e6f4f7" stroke="#00859B"/><text x="352" y="144" text-anchor="middle" fill="#0B1F3A" font-size="9">Return</text>
+                        <path d="M124 140H140M212 140H228M300 140H316" stroke="#00859B" stroke-width="1.4"/>
+                        <text x="420" y="118" fill="#5E6A7D" font-size="9" font-weight="700">GOVERN</text>
+                        <rect x="420" y="126" width="64" height="28" rx="3" fill="#e8eef7" stroke="#00205B"/><text x="452" y="144" text-anchor="middle" fill="#0B1F3A" font-size="9">History</text>
+                        <rect x="500" y="126" width="56" height="28" rx="3" fill="#e8eef7" stroke="#00205B"/><text x="528" y="144" text-anchor="middle" fill="#0B1F3A" font-size="9">Audit</text>
+                        <rect x="572" y="126" width="72" height="28" rx="3" fill="#e8eef7" stroke="#00205B"/><text x="608" y="144" text-anchor="middle" fill="#0B1F3A" font-size="9">Reports</text>
+                        <path d="M484 140H500M556 140H572" stroke="#5E6A7D" stroke-width="1.4"/>
+                        <text x="24" y="180" fill="#5E6A7D" font-size="9">Rooms are recorded on the KEY #; custody tracks each MEDECO independently; Find includes Room # reverse-search.</text>
+                    </svg>
+                </div>
+                <div class="help-links">
+                    <a asp-page="/Operations/Issue">Issue Key</a>
+                    <a asp-page="/Operations/Receive">Receive Key</a>
+                    <a asp-page="/Operations/Find">Find Key</a>
+                    <a asp-page="/Reports/Index">Reports</a>
+                    <a asp-page="/Administration/AuditTrail">Audit Trail</a>
+                </div>
+            </section>
+        </article>
+    </div>
+</div>
