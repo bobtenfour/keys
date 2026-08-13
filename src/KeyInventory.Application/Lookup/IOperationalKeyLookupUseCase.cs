@@ -1,8 +1,9 @@
 namespace KeyInventory.Application.Lookup;
 
 /// <summary>
-/// Application-owned operational lookup/read authority consumed by Find Key, header search,
+/// Application-owned operational key lookup/read authority consumed by Operations → Find Key,
 /// operational identity surfaces, and Workforce Member issued-key paths.
+/// Header global search is owned by <see cref="IGlobalOperatorSearchUseCase"/>.
 /// </summary>
 public interface IOperationalKeyLookupUseCase
 {

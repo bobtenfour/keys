@@ -350,13 +350,38 @@ That MEDECO copy leaves Active custody; appears in History as returned. Other ME
 
 ---
 
+## Header search (global operational search)
+
+### Purpose
+Answer practical questions about a person, Room, KEY #, or MEDECO copy by composing current operational facts from existing authorities.
+
+### Where to go
+Header search → Search Results (`/Search`).
+
+### How to search
+One box accepts **name**, **UIN**, **Room #**, **KEY #**, or **MEDECO**. No search-type dropdown. Results are typed groups (People, Rooms, KEY #, MEDECO) — only groups with matches appear.
+
+### Person results
+Show Full Name, UIN, Department, status, and **Keys currently issued** (open custody only). For each current physical copy: KEY #, MEDECO, Rooms opened by that KEY #. A person with no current keys is still a valid result (`None`). History is not listed here.
+
+### Room / KEY # / MEDECO results
+- Room #: description when available; KEY # values that open it.
+- KEY #: Rooms opened; MEDECO copies with Available/Issued and holder when issued.
+- MEDECO: always with parent KEY # (not globally unique); Rooms via KEY #; custody/holder.
+
+### Zero results
+`No results found for "…"` plus guidance to search by name, UIN, Room #, KEY #, or MEDECO.
+
+---
+
 ## Find Key
 
 ### Purpose
-Answer KEY #-level and copy-level questions without a separate search system.
+Key-specific search for KEY # / MEDECO / Key Type / Room # questions.
 
 ### Where to go
-Header search or Operations → Find Key (`/Operations/Find`).
+Operations → Find Key (`/Operations/Find`).  
+(Header search is global operational search — not Find Key.)
 
 ### Prerequisites
 Catalog data (KEY # Room openings and MEDECO copies).
@@ -368,8 +393,8 @@ One search box accepts **KEY #**, **MEDECO**, **Key Type**, or **Room #** (opera
 - What Room # values does KEY # 66800 open?
 - What MEDECO copies exist under KEY # 66800? Which are available or issued?
 - Who holds MEDECO 28 under KEY # 66800?
-- Which KEY # / MEDECO does a person currently hold? (Member Keys / Details / Keys by Member report)
 - Which KEY # values open Room X? (search Find by that Room #)
+- Which KEY # / MEDECO a person currently holds? (prefer header person search, Member Keys, or Keys by Member report)
 
 ---
 

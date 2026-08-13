@@ -1,0 +1,274 @@
+@page
+@using KeyInventory.Application.Catalog
+@using KeyInventory.Application.Lookup
+@using KeyInventory.Web.Presentation
+@model KeyInventory.Web.Pages.SearchModel
+@{
+    ViewData["Title"] = "Search Results";
+    ViewData["NavSection"] = "search";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Search Results</h1>
+    @if (Model.SearchSubmitted)
+    {
+        <p class="lede">Search results for “@Model.Query”</p>
+    }
+    else
+    {
+        <p class="lede">Search by name, UIN, Room #, KEY #, or MEDECO.</p>
+    }
+</header>
+
+<section class="card form-card">
+    <form method="get" asp-page="/Search" class="form-grid" role="search">
+        <label>
+            Search
+            <input type="search"
+                   name="q"
+                   value="@Model.Query"
+                   placeholder="Search name, UIN, Room #, KEY #, or MEDECO..."
+                   aria-label="Search name, UIN, Room #, KEY #, or MEDECO" />
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Search</button>
+        </div>
+    </form>
+</section>
+
+@if (Model.SearchSubmitted)
+{
+    @if (!Model.Results.HasAnyResults)
+    {
+        <section class="empty-state" style="margin-top: 1rem;">
+            <strong>No results found for “@Model.Query”</strong>
+            <p>Search by name, UIN, Room #, KEY #, or MEDECO.</p>
+        </section>
+    }
+    else
+    {
+        @if (Model.Results.People.Count > 0)
+        {
+            <section class="card search-group" aria-labelledby="search-people-heading">
+                <h2 id="search-people-heading">People</h2>
+                @foreach (var person in Model.Results.People)
+                {
+                    <article class="search-hit">
+                        <header class="search-hit-header">
+                            <h3>@person.FirstName @person.LastName</h3>
+                            <p class="search-hit-meta">
+                                UIN @person.Uin
+                                · Department @person.DepartmentCode
+                                · @person.Status
+                            </p>
+                            <div class="form-actions">
+                                <a class="btn btn-secondary"
+                                   asp-page="/Administration/WorkforceMembers/Details"
+                                   asp-route-member="@person.WorkforceMemberCode">Member details</a>
+                                <a class="btn btn-secondary"
+                                   asp-page="/Operations/MemberKeys"
+                                   asp-route-member="@person.WorkforceMemberCode">Member keys</a>
+                            </div>
+                        </header>
+                        <h4>Keys currently issued</h4>
+                        @if (person.CurrentKeys.Count == 0)
+                        {
+                            <p class="muted">None</p>
+                        }
+                        else
+                        {
+                            <div class="table-shell">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>KEY #</th>
+                                            <th>MEDECO</th>
+                                            <th>Rooms opened</th>
+                                            <th>Issued</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach (var key in person.CurrentKeys)
+                                    {
+                                        <tr>
+                                            <td>@key.KeyNumber</td>
+                                            <td>@key.MedecoKeyCode</td>
+                                            <td>
+                                                @{
+                                                    string rooms = KeyOpenedRoomDisplayFormatter.Format(key.OpenedRooms);
+                                                }
+                                                @(string.IsNullOrEmpty(rooms) ? "—" : rooms)
+                                            </td>
+                                            <td>@OperatorTimestampFormatter.ToAbsoluteDisplay(key.IssuedAtUtc)</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </article>
+                }
+            </section>
+        }
+
+        @if (Model.Results.Rooms.Count > 0)
+        {
+            <section class="card search-group" aria-labelledby="search-rooms-heading">
+                <h2 id="search-rooms-heading">Rooms</h2>
+                @foreach (var room in Model.Results.Rooms)
+                {
+                    <article class="search-hit">
+                        <header class="search-hit-header">
+                            <h3>Room @room.RoomNumber</h3>
+                            @if (!string.IsNullOrWhiteSpace(room.Description))
+                            {
+                                <p class="search-hit-meta">@room.Description</p>
+                            }
+                            <div class="form-actions">
+                                <a class="btn btn-secondary" asp-page="/Administration/Rooms/Index">Rooms</a>
+                            </div>
+                        </header>
+                        <h4>Opened by</h4>
+                        @if (room.OpeningKeyNumbers.Count == 0)
+                        {
+                            <p class="muted">No KEY # currently assigned to this Room.</p>
+                        }
+                        else
+                        {
+                            <ul class="search-key-list">
+                                @foreach (string keyNumber in room.OpeningKeyNumbers)
+                                {
+                                    <li>
+                                        KEY # @keyNumber
+                                        <a asp-page="/Catalog/KeyRooms" asp-route-keyNumber="@keyNumber">KEY # Rooms</a>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </article>
+                }
+            </section>
+        }
+
+        @if (Model.Results.KeyNumbers.Count > 0)
+        {
+            <section class="card search-group" aria-labelledby="search-keys-heading">
+                <h2 id="search-keys-heading">KEY #</h2>
+                @foreach (var key in Model.Results.KeyNumbers)
+                {
+                    <article class="search-hit">
+                        <header class="search-hit-header">
+                            <h3>KEY # @key.KeyNumber</h3>
+                            <p class="search-hit-meta">
+                                Type @key.TypeCode
+                                · Rooms opened:
+                                @{
+                                    string rooms = KeyOpenedRoomDisplayFormatter.Format(key.OpenedRooms);
+                                }
+                                @(string.IsNullOrEmpty(rooms) ? "—" : rooms)
+                            </p>
+                            <div class="form-actions">
+                                <a class="btn btn-secondary" asp-page="/Catalog/Keys">Catalog Keys</a>
+                                <a class="btn btn-secondary" asp-page="/Catalog/KeyRooms" asp-route-keyNumber="@key.KeyNumber">KEY # Rooms</a>
+                            </div>
+                        </header>
+                        <h4>Physical copies</h4>
+                        @if (key.Copies.Count == 0)
+                        {
+                            <p class="muted">No MEDECO copies registered.</p>
+                        }
+                        else
+                        {
+                            <div class="table-shell">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>MEDECO</th>
+                                            <th>Status</th>
+                                            <th>Key holder</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach (var copy in key.Copies)
+                                    {
+                                        <tr>
+                                            <td>@copy.MedecoKeyCode</td>
+                                            <td>
+                                                @if (string.Equals(copy.AvailabilityStatus, OperationalKeyAvailability.Issued, StringComparison.Ordinal))
+                                                {
+                                                    <span class="badge badge-attention">Issued</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-success">Available</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @(copy.CurrentHolder is null
+                                                    ? "—"
+                                                    : PartyHolderDisplayFormatter.Format(copy.CurrentHolder))
+                                            </td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </article>
+                }
+            </section>
+        }
+
+        @if (Model.Results.MedecoCopies.Count > 0)
+        {
+            <section class="card search-group" aria-labelledby="search-medeco-heading">
+                <h2 id="search-medeco-heading">MEDECO Key Code</h2>
+                <div class="table-shell">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>KEY #</th>
+                                <th>MEDECO</th>
+                                <th>Type</th>
+                                <th>Rooms opened</th>
+                                <th>Status</th>
+                                <th>Key holder</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var copy in Model.Results.MedecoCopies)
+                        {
+                            <tr>
+                                <td>@copy.KeyNumber</td>
+                                <td>@copy.MedecoKeyCode</td>
+                                <td>@copy.TypeCode</td>
+                                <td>
+                                    @{
+                                        string rooms = KeyOpenedRoomDisplayFormatter.Format(copy.OpenedRooms);
+                                    }
+                                    @(string.IsNullOrEmpty(rooms) ? "—" : rooms)
+                                </td>
+                                <td>
+                                    @if (string.Equals(copy.AvailabilityStatus, OperationalKeyAvailability.Issued, StringComparison.Ordinal))
+                                    {
+                                        <span class="badge badge-attention">Issued</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-success">Available</span>
+                                    }
+                                </td>
+                                <td>
+                                    @(copy.CurrentHolder is null
+                                        ? "—"
+                                        : PartyHolderDisplayFormatter.Format(copy.CurrentHolder))
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        }
+    }
+}

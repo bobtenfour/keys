@@ -635,6 +635,61 @@ tbody tr:last-child td { border-bottom: 0; }
     color: var(--ki-color-brand-primary);
 }
 
+.search-group {
+    margin-top: var(--ki-space-lg);
+}
+
+.search-group > h2 {
+    margin: 0 0 var(--ki-space-md);
+    font-size: 1.15rem;
+    color: var(--ki-color-brand-primary);
+}
+
+.search-hit {
+    padding: var(--ki-space-md) 0;
+    border-top: 1px solid var(--ki-color-border-default);
+}
+
+.search-hit:first-of-type { border-top: 0; padding-top: 0; }
+
+.search-hit-header h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1.05rem;
+}
+
+.search-hit h4 {
+    margin: 0.85rem 0 0.4rem;
+    font-size: var(--ki-font-size-sm);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--ki-color-text-muted);
+}
+
+.search-hit-meta {
+    margin: 0 0 0.65rem;
+    color: var(--ki-color-text-muted);
+    font-size: var(--ki-font-size-sm);
+}
+
+.search-key-list {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.search-key-list li {
+    margin: 0.25rem 0;
+}
+
+.search-key-list a {
+    margin-left: 0.5rem;
+    font-size: var(--ki-font-size-sm);
+}
+
+.muted {
+    color: var(--ki-color-text-muted);
+    font-size: var(--ki-font-size-sm);
+}
+
 .activity-list {
     list-style: none;
     margin: 0;

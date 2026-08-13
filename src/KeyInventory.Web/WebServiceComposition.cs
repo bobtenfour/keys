@@ -32,6 +32,7 @@ public static class WebServiceComposition
             options.Conventions.AuthorizeFolder("/Reports");
             options.Conventions.AuthorizePage("/Index");
             options.Conventions.AuthorizePage("/Help");
+            options.Conventions.AuthorizePage("/Search");
             options.Conventions.AllowAnonymousToPage("/Account/Login");
             options.Conventions.AllowAnonymousToPage("/Account/AccessDenied");
             options.Conventions.AllowAnonymousToPage("/Error");

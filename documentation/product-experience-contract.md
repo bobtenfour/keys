@@ -55,9 +55,20 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 - Issue Key identifies **Key holder** (WorkforceMember / Party; label only—no KeyHolder entity), KEY #, available MEDECO/physical copy, and derived Rooms opened (read-only; not re-entered). Internal KeyAssetId is not an operator typing target.
 - Return / receive identifies the exact physical copy as KEY # + MEDECO (e.g. 66800 / 26 vs 66800 / 27).
 - Find Key and reports distinguish KEY #, MEDECO/copy, holder, Rooms opened, and issue/return state; screen/CSV/XLSX/PDF parity preserved.
-- Find Key (header search and `/Operations/Find`) accepts KEY #, MEDECO, Key Type, or Room # through the existing Application lookup authority; Room # reverse-search returns KEY # values that open that room via KeyAccessPattern↔Room (sole Room-access authority).
+- Operations → Find Key (`/Operations/Find`) remains key-specific search: KEY #, MEDECO, Key Type, or Room # through the existing Application key lookup authority; Room # reverse-search returns KEY # values that open that room via KeyAccessPattern↔Room (sole Room-access authority).
 - Do not expose Transfer; do not invent New Key terminology beyond KEY # / MEDECO presentation required by this slice.
 - Operator guide must explain KEY # → Rooms opened and MEDECO → physical copy held, using the 66800 / 410D / MEDECO 26–28 example pattern; screenshots refresh only after runtime finalization.
+
+## Global Operator Search (active)
+- Header search is global operational search (`/Search`), not Find Key. One Application orchestration boundary (`IGlobalOperatorSearchUseCase`) composes typed results from existing authorities. No second search store, no Web DbContext, no full-table Web filtering.
+- One search field accepts name, UIN, Room #, KEY #, or MEDECO. Placeholder: `Search name, UIN, Room #, KEY #, or MEDECO...`. No search-type dropdown. Search runs only on submit; no preload; no auto-select/auto-redirect.
+- Results are typed groups rendered only when populated: People, Rooms, KEY #, MEDECO Key Code.
+- Person result: Full Name, UIN, Department (current workforce membership), workforce status, and **Keys currently issued** from open Loan custody only — each with KEY #, MEDECO, Rooms opened (from KEY #). Person with zero current keys is still a valid result (`None`). History/Audit are not embedded.
+- Room result: Room #, description when available, KEY # values that open it via KeyAccessPattern↔Room.
+- KEY # result: type, Rooms opened, physical MEDECO copies with Available/Issued and holder identity when issued.
+- MEDECO result: always includes parent KEY # (MEDECO is not globally unique), Rooms via KEY #, custody state/holder.
+- Zero results: single global empty state (`No results found for "…"`) with guidance to search by name, UIN, Room #, KEY #, or MEDECO — not Find Key’s “No matching keys / Browse Keys” pattern.
+- Bounds: explicit maximum per category (aligned with existing Application search conventions).
 
 ## Administration / Catalog Record Lifecycle (active)
 - Unreferenced Administration/Catalog records may be permanently deleted when Application determines they have no business relationships and no historical/operational references that must be preserved.
