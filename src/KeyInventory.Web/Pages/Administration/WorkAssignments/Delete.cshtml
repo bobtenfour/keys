@@ -1,0 +1,41 @@
+@page
+@model KeyInventory.Web.Pages.Administration.WorkAssignments.DeleteModel
+@{
+    ViewData["Title"] = "Delete Work Assignment";
+    ViewData["NavSection"] = "administration";
+    var item = Model.Item!;
+}
+
+<header class="page-header page-header-compact">
+    <p class="eyebrow"><a asp-page="./Index">Work Assignments</a></p>
+    <h1>Delete work assignment</h1>
+    <p class="lede">Delete work assignment &quot;@item.WorkAssignmentCode&quot;?</p>
+</header>
+
+<section class="card form-card destructive-panel">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <p>
+        Member: <strong>@Model.MemberDisplay</strong><br />
+        Room: <strong>@Model.RoomDisplay</strong>
+    </p>
+    <p>
+        This permanently removes the assignment when the member has no loan history.
+        Prefer End when history must be preserved.
+    </p>
+
+    <form method="post" class="form-grid">
+        <input type="hidden" asp-for="WorkAssignmentCode" />
+        <label class="checkbox">
+            <input asp-for="ConfirmDelete" />
+            I confirm permanent deletion of work assignment &quot;@item.WorkAssignmentCode&quot;
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Delete work assignment</button>
+            <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
+        </div>
+    </form>
+</section>

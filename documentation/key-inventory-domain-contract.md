@@ -308,16 +308,20 @@ Organization is not an active aggregate, selector, membership owner, or eligibil
 ### Department
 Purpose: organizational unit used for WorkforceMember membership and key-issue justification within this single-site installation.
 
-Identity: Department is identified by one department code that is unique across all Department records.
+Identity (active, 2026-08-12 Human Governance): Department is identified by one immutable internal **DepartmentId**. **DepartmentCode** is a unique operator-facing business identifier and may be edited without changing DepartmentId or destroying relationships. Uniqueness of DepartmentCode does not make DepartmentCode entity identity.
 
-Ownership: Workforce Eligibility boundary owns Department creation, activation, and retirement for this scope.
+Ownership: Workforce Eligibility boundary owns Department creation, activation, retirement, and authorized DepartmentCode change for this scope.
 
 Relationships:
 - A Department does not reference Organization.
+- Live WorkforceMember membership references Department by DepartmentId.
+- Issue justification persists a historical snapshot of the authorizing DepartmentId (and operator-readable code in audit Details) and must not be treated as a mutable live FK rewritten on rename.
 
 Invariants:
-- A Department must have a non-empty department code.
-- Only an active Department may be used for active WorkforceMember membership or Department-based key-issue justification.
+- A Department must have a non-empty DepartmentId and a non-empty DepartmentCode.
+- DepartmentCode is unique across all Department records.
+- Only an active Department may be used for active WorkforceMember membership or new Department-based key-issue justification.
+- Renaming DepartmentCode must not delete/recreate the Department, must not rewrite Party/Loan/Return rows except where those rows store live DepartmentId (membership), and must not rewrite immutable OperatorAuditRecord history.
 
 ### WorkforceMember
 Purpose: workforce relationship and key-eligibility record for WorkforceType Employee or Contractor. WorkforceMember is not person identity.
@@ -426,7 +430,7 @@ Invariants:
 - Different KeyAsset copies under the same KEY # may each have an Open Loan simultaneously.
 - A Loan must reference a Party borrower without owning Party profile or lifecycle.
 - When Workforce Eligibility is in force for issue authorization, the borrowing Party must be the Party of a WorkforceMember that satisfies Key Issue Eligibility Rules at issue time.
-- When Workforce Eligibility is in force, issue justification must reference the authorizing Department or Room without transferring ownership of those authorities into Loan.
+- When Workforce Eligibility is in force, issue justification must reference the authorizing Department or Room without transferring ownership of those authorities into Loan; the Loan persists an immutable historical snapshot for interpretability and referential integrity after business-identifier edits: Department → DepartmentId + event-time DepartmentCode snapshot; Room → RoomCode. OperatorAuditRecord Details for KeyIssued are append-only display history and must not be used as runtime relational delete authority; legacy Details→DepartmentId linkage requires Human-authorized migration provenance extract or Human mapping (`documentation/department-historical-justification-provenance-2026-08-12.md`).
 - A Loan issue timestamp is required.
 - A Loan due timestamp is required and must be later than the issue timestamp.
 - A Loan may be Open, Returned, or Cancelled.

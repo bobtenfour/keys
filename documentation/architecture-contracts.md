@@ -13,7 +13,7 @@ Do not reintroduce Organization or Building as active configurable business conc
 Do not introduce policy engines, generalized authorization engines, workflow engines, event platforms, or extensibility frameworks unless a concrete KeyInventory business requirement later proves they are necessary.
 Workforce Eligibility evaluates legitimate active-worker key issue eligibility; it is not a generalized access-control or key-authorization policy engine.
 Room must not be expanded into Campus or enterprise location hierarchies without a future explicit business requirement.
-Key Catalog owns KEY # / KeyAccessPattern identity, physical KeyAsset copies (MEDECO within KEY #), and current KeyAccessPattern-to-Room opening assignments; Location owns Room identity; keys associate to places only through Rooms via KEY #.
+Key Catalog owns KEY # / KeyAccessPattern identity, physical KeyAsset copies (MEDECO within KEY #), and current KeyAccessPattern-to-Room opening assignments; Location owns Room identity (RoomCode technical + RoomNumber business); Workforce Eligibility owns Department identity (DepartmentId technical + DepartmentCode business); keys associate to places only through Rooms via KEY #.
 KeyAccessPattern↔Room is the operational authority for which Rooms a KEY # opens; every physical copy under that KEY # derives the same Room set; Lock must not be required or used as an intermediate room-opening authority.
 KeyAsset must not own independent Room openings after KEY-ACCESS-COPY-1; dual KeyAsset↔Room authority is forbidden.
 KeySeries must not be elevated or used as KEY # / Room-access / copy identity authority.

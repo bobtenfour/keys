@@ -13,14 +13,19 @@ public sealed class WorkforceMemberConfiguration : IEntityTypeConfiguration<Work
         builder.Property(entity => entity.WorkforceMemberCode).HasMaxLength(128);
         builder.Property(entity => entity.PartyCode).HasMaxLength(128);
         builder.Property(entity => entity.WorkforceType).HasMaxLength(32).IsRequired();
-        builder.Property(entity => entity.DepartmentCode).HasMaxLength(128);
+        builder.Property(entity => entity.DepartmentId).IsRequired();
         builder.Property(entity => entity.Status).HasMaxLength(32).IsRequired();
         builder.HasOne(entity => entity.Party)
             .WithMany()
             .HasForeignKey(entity => entity.PartyCode)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(entity => entity.Department)
+            .WithMany()
+            .HasForeignKey(entity => entity.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(entity => entity.PartyCode)
             .HasFilter("[Status] = 'Active'")
             .IsUnique();
+        builder.HasIndex(entity => entity.DepartmentId);
     }
 }

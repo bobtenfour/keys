@@ -11,6 +11,8 @@ public sealed class KeyInventoryDbContextFactory : IDesignTimeDbContextFactory<K
         string connectionString = ResolveConnectionString();
         DbContextOptionsBuilder<KeyInventoryDbContext> optionsBuilder = new();
         optionsBuilder.UseSqlServer(connectionString);
+        optionsBuilder.ReplaceService<Microsoft.EntityFrameworkCore.Migrations.IMigrationCommandExecutor,
+            Migrations.KeyInventoryMigrationCommandExecutor>();
         return new KeyInventoryDbContext(optionsBuilder.Options);
     }
 

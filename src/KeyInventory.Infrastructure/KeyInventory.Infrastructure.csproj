@@ -19,4 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\KeyInventory.Application\KeyInventory.Application.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="KeyInventory.ArchitectureTests" />
+  </ItemGroup>
 </Project>

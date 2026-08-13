@@ -1,5 +1,6 @@
 @page
 @using KeyInventory.Application.Catalog
+@using KeyInventory.Application.Lookup
 @model KeyInventory.Web.Pages.Catalog.KeysModel
 @{
     ViewData["Title"] = "Keys";
@@ -8,8 +9,17 @@
 
 <header class="page-header page-header-compact">
     <h1>Keys</h1>
-    <p class="lede">Physical MEDECO copies under KEY # access patterns.</p>
+    <p class="lede">KEY # access patterns and physical MEDECO copies.</p>
 </header>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+}
 
 <section class="card">
     <div class="toolbar">
@@ -17,6 +27,70 @@
         <a class="btn btn-secondary" asp-page="/Operations/Issue">Issue Key</a>
     </div>
 
+    <h2 class="section-title">KEY # access patterns</h2>
+    @if (Model.AccessPatterns.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No KEY # patterns</strong>
+            Register a physical copy to create a KEY #.
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>KEY #</th>
+                        <th>Type</th>
+                        <th>Physical copies</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var pattern in Model.AccessPatterns)
+                {
+                    <tr>
+                        <td>@pattern.KeyNumber</td>
+                        <td>@pattern.TypeCode</td>
+                        <td>@pattern.PhysicalCopyCount</td>
+                        <td>@(pattern.IsActive ? "Active" : "Retired")</td>
+                        <td class="table-actions">
+                            <a class="btn btn-secondary"
+                               asp-page="/Catalog/KeyRooms"
+                               asp-route-keyNumber="@pattern.KeyNumber">Rooms</a>
+                            @if (pattern.Capabilities.CanDelete)
+                            {
+                                <a class="btn btn-danger"
+                                   asp-page="/Catalog/Keys/DeletePattern"
+                                   asp-route-keyNumber="@pattern.KeyNumber">Delete</a>
+                            }
+                            @if (pattern.Capabilities.CanRetire)
+                            {
+                                <form method="post" asp-page-handler="RetirePattern" style="display:inline">
+                                    <input type="hidden" name="keyNumber" value="@pattern.KeyNumber" />
+                                    <button type="submit" class="btn btn-secondary">Retire</button>
+                                </form>
+                            }
+                            @if (pattern.Capabilities.CanActivate)
+                            {
+                                <form method="post" asp-page-handler="ActivatePattern" style="display:inline">
+                                    <input type="hidden" name="keyNumber" value="@pattern.KeyNumber" />
+                                    <button type="submit" class="btn btn-secondary">Activate</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="card">
+    <h2 class="section-title">Physical MEDECO copies</h2>
     @if (Model.Keys.Count == 0)
     {
         <div class="empty-state">
@@ -35,7 +109,7 @@
                         <th>Type</th>
                         <th>Rooms opened</th>
                         <th>Status</th>
-                        <th></th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,15 +121,19 @@
                         <td>@key.TypeCode</td>
                         <td>
                             @{
-                                string rooms = KeyOpenedRoomDisplayFormatter.Format(key.OpenedRooms);
+                                IReadOnlyList<KeyOpenedRoomItem> opened =
+                                    Model.OpenedRoomsByAssetId.TryGetValue(key.KeyAssetId, out var rooms)
+                                        ? rooms
+                                        : [];
+                                string roomsText = KeyOpenedRoomDisplayFormatter.Format(opened);
                             }
-                            @if (string.IsNullOrEmpty(rooms))
+                            @if (string.IsNullOrEmpty(roomsText))
                             {
                                 <span>—</span>
                             }
                             else
                             {
-                                @rooms
+                                @roomsText
                             }
                         </td>
                         <td>
@@ -63,7 +141,10 @@
                             {
                                 <span class="badge badge-warning">Inactive</span>
                             }
-                            else if (Model.IssuedKeyAssetIds.Contains(key.KeyAssetId))
+                            else if (string.Equals(
+                                         key.AvailabilityStatus,
+                                         OperationalKeyAvailability.Issued,
+                                         StringComparison.Ordinal))
                             {
                                 <span class="badge badge-attention">Issued</span>
                             }
@@ -72,8 +153,30 @@
                                 <span class="badge badge-success">Available</span>
                             }
                         </td>
-                        <td>
-                            <a asp-page="/Catalog/KeyRooms" asp-route-keyNumber="@key.KeyNumber">Rooms</a>
+                        <td class="table-actions">
+                            <a class="btn btn-secondary"
+                               asp-page="/Catalog/KeyRooms"
+                               asp-route-keyNumber="@key.KeyNumber">Rooms</a>
+                            @if (key.Capabilities.CanDelete)
+                            {
+                                <a class="btn btn-danger"
+                                   asp-page="/Catalog/Keys/Delete"
+                                   asp-route-keyAssetId="@key.KeyAssetId">Delete</a>
+                            }
+                            @if (key.Capabilities.CanRetire)
+                            {
+                                <form method="post" asp-page-handler="Retire" style="display:inline">
+                                    <input type="hidden" name="keyAssetId" value="@key.KeyAssetId" />
+                                    <button type="submit" class="btn btn-secondary">Retire</button>
+                                </form>
+                            }
+                            @if (key.Capabilities.CanActivate)
+                            {
+                                <form method="post" asp-page-handler="Activate" style="display:inline">
+                                    <input type="hidden" name="keyAssetId" value="@key.KeyAssetId" />
+                                    <button type="submit" class="btn btn-secondary">Activate</button>
+                                </form>
+                            }
                         </td>
                     </tr>
                 }

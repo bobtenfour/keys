@@ -3,6 +3,7 @@ using KeyInventory.Domain.Audit;
 using KeyInventory.Domain.Catalog;
 using KeyInventory.Domain.Identity;
 using KeyInventory.Domain.Loans;
+using KeyInventory.Domain.Workforce;
 using Xunit;
 
 namespace KeyInventory.ArchitectureTests;
@@ -74,12 +75,17 @@ public sealed class AuditDomainInvariantTests
     public void AuditEventMayOptionallyReferencePartyKeyAssetLoanOrReturnWithoutMutatingThem()
     {
         KeyAsset keyAsset = CatalogTestFactory.CreateCopy("key-1", "01", "mechanical");
+        Guid departmentId = Guid.Parse("44444444-4444-4444-4444-444444444444");
         Loan loan = new(
             "loan-1",
             keyAsset,
             "party-1",
             OccurredAt,
-            OccurredAt.AddDays(1));
+            OccurredAt.AddDays(1),
+            KeyIssueJustificationKind.Department,
+            departmentId,
+            "DEPT",
+            null);
         Return completedReturn = new("return-1", loan, OccurredAt.AddHours(1));
         LoanStatus statusAfterReturn = loan.Status;
         string keyNumber = keyAsset.KeyNumber;

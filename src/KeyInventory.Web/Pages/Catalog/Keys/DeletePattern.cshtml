@@ -1,0 +1,37 @@
+@page
+@model KeyInventory.Web.Pages.Catalog.Keys.DeletePatternModel
+@{
+    ViewData["Title"] = "Delete KEY #";
+    ViewData["NavSection"] = "catalog";
+    var item = Model.Item!;
+}
+
+<header class="page-header page-header-compact">
+    <p class="eyebrow"><a asp-page="/Catalog/Keys">Keys</a></p>
+    <h1>Delete KEY #</h1>
+    <p class="lede">Delete KEY # &quot;@item.KeyNumber&quot;?</p>
+</header>
+
+<section class="card form-card destructive-panel">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <p>
+        This permanently removes the KEY # access pattern because it has no physical copies and no
+        room assignments. Prefer Retire when history must be preserved.
+    </p>
+
+    <form method="post" class="form-grid">
+        <input type="hidden" asp-for="KeyNumber" />
+        <label class="checkbox">
+            <input asp-for="ConfirmDelete" />
+            I confirm permanent deletion of KEY # &quot;@item.KeyNumber&quot;
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Delete KEY #</button>
+            <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
+        </div>
+    </form>
+</section>

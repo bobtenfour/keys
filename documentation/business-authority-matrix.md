@@ -51,7 +51,8 @@ Prevent duplicated authority.
 | Room place authority and global RoomNumber uniqueness | key-inventory-domain-contract.md |
 | Workforce eligibility boundary | key-inventory-domain-contract.md |
 | Organization | Removed from active model; key-inventory-domain-contract.md |
-| Department membership for workforce (global DepartmentCode) | key-inventory-domain-contract.md |
+| Department membership for workforce (DepartmentId identity; global unique editable DepartmentCode) | key-inventory-domain-contract.md |
+| Logical entity identity vs business identifier normalization | key-inventory-erd.md |
 | WorkforceMember workforce relationship and eligibility | key-inventory-domain-contract.md |
 | WorkforceType Employee and Contractor | key-inventory-domain-contract.md |
 | ResponsibleManager relationship | Removed from active model; key-inventory-domain-contract.md |

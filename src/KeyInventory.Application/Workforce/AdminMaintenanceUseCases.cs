@@ -7,12 +7,12 @@ namespace KeyInventory.Application.Workforce;
 
 public interface IActivateDepartmentUseCase
 {
-    Task ExecuteAsync(string departmentCode, CancellationToken cancellationToken);
+    Task ExecuteAsync(Guid departmentId, CancellationToken cancellationToken);
 }
 
 public interface IRetireDepartmentUseCase
 {
-    Task ExecuteAsync(string departmentCode, CancellationToken cancellationToken);
+    Task ExecuteAsync(Guid departmentId, CancellationToken cancellationToken);
 }
 
 public interface IActivateRoomUseCase
@@ -91,11 +91,14 @@ public sealed class ActivateDepartmentUseCase : IActivateDepartmentUseCase
         _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
-    public async Task ExecuteAsync(string departmentCode, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(Guid departmentId, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(departmentCode);
+        if (departmentId == Guid.Empty)
+        {
+            throw new ArgumentException("DepartmentId is required.", nameof(departmentId));
+        }
 
-        Department? department = await _workforce.FindDepartmentAsync(departmentCode.Trim(), cancellationToken)
+        Department? department = await _workforce.FindDepartmentAsync(departmentId, cancellationToken)
             .ConfigureAwait(false);
         if (department is null)
         {
@@ -106,7 +109,8 @@ public sealed class ActivateDepartmentUseCase : IActivateDepartmentUseCase
         _audit.Stage(
             OperatorAuditActions.DepartmentActivated,
             OperatorAuditSubjects.Department,
-            department.DepartmentCode);
+            department.DepartmentCode,
+            $"DepartmentId={department.DepartmentId:D}");
         await _workforce.UpdateDepartmentAsync(department, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -122,12 +126,14 @@ public sealed class RetireDepartmentUseCase : IRetireDepartmentUseCase
         _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
-    public async Task ExecuteAsync(string departmentCode, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(Guid departmentId, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(departmentCode);
+        if (departmentId == Guid.Empty)
+        {
+            throw new ArgumentException("DepartmentId is required.", nameof(departmentId));
+        }
 
-        Department? department = await _workforce
-            .FindDepartmentAsync(departmentCode.Trim(), cancellationToken)
+        Department? department = await _workforce.FindDepartmentAsync(departmentId, cancellationToken)
             .ConfigureAwait(false);
         if (department is null)
         {
@@ -138,7 +144,8 @@ public sealed class RetireDepartmentUseCase : IRetireDepartmentUseCase
         _audit.Stage(
             OperatorAuditActions.DepartmentRetired,
             OperatorAuditSubjects.Department,
-            department.DepartmentCode);
+            department.DepartmentCode,
+            $"DepartmentId={department.DepartmentId:D}");
         await _workforce.UpdateDepartmentAsync(department, cancellationToken).ConfigureAwait(false);
     }
 }
@@ -225,19 +232,20 @@ public sealed class UpdateWorkforceMemberDepartmentUseCase : IUpdateWorkforceMem
         WorkforceMember member = await RequireActiveMemberAsync(workforceMemberCode.Trim(), cancellationToken)
             .ConfigureAwait(false);
 
-        Department? department = await _workforce.FindDepartmentAsync(departmentCode.Trim(), cancellationToken)
+        Department? department = await _workforce
+            .FindDepartmentByCodeAsync(departmentCode.Trim(), cancellationToken)
             .ConfigureAwait(false);
         if (department is null || !department.IsActive)
         {
             throw new InvalidOperationException("Department must exist and be active.");
         }
 
-        member.AssignDepartment(department.DepartmentCode);
+        member.AssignDepartment(department.DepartmentId);
         _audit.Stage(
             OperatorAuditActions.WorkforceMemberMaintained,
             OperatorAuditSubjects.WorkforceMember,
             member.WorkforceMemberCode,
-            $"Department={department.DepartmentCode}");
+            $"DepartmentId={department.DepartmentId:D}; Department={department.DepartmentCode}");
         await _workforce.UpdateWorkforceMemberAsync(member, cancellationToken).ConfigureAwait(false);
     }
 

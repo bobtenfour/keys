@@ -40,7 +40,7 @@
                         <th>Room</th>
                         <th>Primary</th>
                         <th>Status</th>
-                        <th></th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -69,6 +69,15 @@
                                         <button type="submit" class="btn btn-secondary">Clear primary</button>
                                     </form>
                                 }
+                            }
+                            @if (item.Capabilities.CanDelete)
+                            {
+                                <a class="btn btn-danger"
+                                   asp-page="./Delete"
+                                   asp-route-workAssignmentCode="@item.WorkAssignmentCode">Delete</a>
+                            }
+                            @if (item.Capabilities.CanEnd)
+                            {
                                 <form method="post" asp-page-handler="End" style="display:inline">
                                     <input type="hidden" name="workAssignmentCode" value="@item.WorkAssignmentCode" />
                                     <button type="submit" class="btn btn-secondary">End</button>

@@ -34,6 +34,7 @@ internal static class DomainWorkforceMapper
     {
         return new DepartmentEntity
         {
+            DepartmentId = department.DepartmentId,
             DepartmentCode = department.DepartmentCode,
             IsActive = department.IsActive
         };
@@ -41,7 +42,7 @@ internal static class DomainWorkforceMapper
 
     internal static Department ToDomain(DepartmentEntity entity)
     {
-        Department department = new(entity.DepartmentCode);
+        Department department = new(entity.DepartmentId, entity.DepartmentCode);
         if (!entity.IsActive)
         {
             department.Retire();
@@ -79,7 +80,7 @@ internal static class DomainWorkforceMapper
             WorkforceMemberCode = member.WorkforceMemberCode,
             PartyCode = member.PartyCode,
             WorkforceType = member.WorkforceType.ToString(),
-            DepartmentCode = member.DepartmentCode,
+            DepartmentId = member.DepartmentId,
             Status = member.Status.ToString()
         };
     }
@@ -91,7 +92,7 @@ internal static class DomainWorkforceMapper
             entity.WorkforceMemberCode,
             entity.PartyCode,
             workforceType,
-            entity.DepartmentCode);
+            entity.DepartmentId);
 
         if (string.Equals(entity.Status, nameof(WorkforceMemberStatus.Terminated), StringComparison.Ordinal))
         {

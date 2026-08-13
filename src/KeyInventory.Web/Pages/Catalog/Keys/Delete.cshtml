@@ -1,0 +1,37 @@
+@page
+@model KeyInventory.Web.Pages.Catalog.Keys.DeleteModel
+@{
+    ViewData["Title"] = "Delete Physical Key Copy";
+    ViewData["NavSection"] = "catalog";
+    var item = Model.Item!;
+}
+
+<header class="page-header page-header-compact">
+    <p class="eyebrow"><a asp-page="/Catalog/Keys">Keys</a></p>
+    <h1>Delete physical key copy</h1>
+    <p class="lede">Delete MEDECO &quot;@item.MedecoKeyCode&quot; under KEY # @item.KeyNumber?</p>
+</header>
+
+<section class="card form-card destructive-panel">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <p>
+        This permanently removes the physical MEDECO copy. Deletion is only allowed when the copy has no
+        loan history. Prefer Retire when history must be preserved.
+    </p>
+
+    <form method="post" class="form-grid">
+        <input type="hidden" asp-for="KeyAssetId" />
+        <label class="checkbox">
+            <input asp-for="ConfirmDelete" />
+            I confirm permanent deletion of MEDECO &quot;@item.MedecoKeyCode&quot; (KEY # @item.KeyNumber)
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Delete physical key copy</button>
+            <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
+        </div>
+    </form>
+</section>

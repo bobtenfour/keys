@@ -16,6 +16,10 @@
 </div>
 
 <section class="card admin-list-panel">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
     @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
     {
         <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
@@ -66,8 +70,33 @@
                         <td>@item.DepartmentCode</td>
                         <td>@item.Status</td>
                         <td class="table-actions">
-                            <a asp-page="./Details" asp-route-member="@item.WorkforceMemberCode">View/Edit</a>
-                            <a asp-page="/Operations/MemberKeys" asp-route-member="@item.WorkforceMemberCode">Issued Keys</a>
+                            @if (item.Capabilities.CanEdit)
+                            {
+                                <a class="btn btn-primary"
+                                   asp-page="./Details"
+                                   asp-route-member="@item.WorkforceMemberCode">Edit</a>
+                            }
+                            else
+                            {
+                                <a class="btn btn-secondary"
+                                   asp-page="./Details"
+                                   asp-route-member="@item.WorkforceMemberCode">Details</a>
+                            }
+                            <a class="btn btn-secondary"
+                               asp-page="/Operations/MemberKeys"
+                               asp-route-member="@item.WorkforceMemberCode">Issued Keys</a>
+                            @if (item.Capabilities.CanDelete)
+                            {
+                                <a class="btn btn-danger"
+                                   asp-page="./Delete"
+                                   asp-route-member="@item.WorkforceMemberCode">Delete</a>
+                            }
+                            @if (item.Capabilities.CanTerminate)
+                            {
+                                <a class="btn btn-secondary"
+                                   asp-page="./Details"
+                                   asp-route-member="@item.WorkforceMemberCode">Terminate</a>
+                            }
                         </td>
                     </tr>
                 }

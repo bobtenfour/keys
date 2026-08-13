@@ -7,6 +7,8 @@ namespace KeyInventory.ArchitectureTests;
 
 public sealed class WorkforceDomainInvariantTests
 {
+    private static readonly Guid DepartmentId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
     [Fact]
     public void PartyRequiresNineDigitUinAndNames()
     {
@@ -27,9 +29,9 @@ public sealed class WorkforceDomainInvariantTests
     [Fact]
     public void WorkforceMemberOwnsDepartmentRelationshipFields()
     {
-        WorkforceMember member = new("wm1", "p1", WorkforceType.Contractor, "dept");
+        WorkforceMember member = new("wm1", "p1", WorkforceType.Contractor, DepartmentId);
         Assert.Equal(WorkforceType.Contractor, member.WorkforceType);
-        Assert.Equal("dept", member.DepartmentCode);
+        Assert.Equal(DepartmentId, member.DepartmentId);
         Assert.Equal(WorkforceMemberStatus.Active, member.Status);
     }
 
@@ -47,8 +49,8 @@ public sealed class WorkforceDomainInvariantTests
     public void EligibilityAcceptsAuthorizedDepartmentAndRejectsTerminated()
     {
         Party party = new("p1", "Ada", "Lovelace", "123456789");
-        Department department = new("dept");
-        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, "dept");
+        Department department = new(DepartmentId, "dept");
+        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, DepartmentId);
         WorkAssignment[] assignments = [new("wa1", "wm1", "r1", isPrimary: true)];
 
         KeyIssueEligibility.EnsureEligible(
@@ -74,8 +76,8 @@ public sealed class WorkforceDomainInvariantTests
     public void EligibilityRejectsMissingAssignmentAndUnauthorizedRoom()
     {
         Party party = new("p1", "Ada", "Lovelace", "123456789");
-        Department department = new("dept");
-        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, "dept");
+        Department department = new(DepartmentId, "dept");
+        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, DepartmentId);
 
         Assert.Throws<InvalidOperationException>(() =>
             KeyIssueEligibility.EnsureEligible(
@@ -100,7 +102,7 @@ public sealed class WorkforceDomainInvariantTests
     [Fact]
     public void TerminationDoesNotMutateLoanReturnAuditCustodyOrLifecycleTypes()
     {
-        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, "dept");
+        WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, DepartmentId);
         member.Terminate();
         Assert.Equal(WorkforceMemberStatus.Terminated, member.Status);
         Assert.Null(typeof(WorkforceMember).GetMethod("AutoReturn"));

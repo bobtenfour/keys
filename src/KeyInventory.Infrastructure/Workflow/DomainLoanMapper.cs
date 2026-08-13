@@ -1,5 +1,6 @@
 using KeyInventory.Domain.Catalog;
 using KeyInventory.Domain.Loans;
+using KeyInventory.Domain.Workforce;
 using KeyInventory.Infrastructure.Data;
 
 namespace KeyInventory.Infrastructure.Workflow;
@@ -14,12 +15,23 @@ internal static class DomainLoanMapper
         }
 
         KeyAsset keyAsset = DomainCatalogMapper.ToDomain(entity.KeyAsset, openedRoomCodes);
-        return new Loan(
+        return ToDomain(entity, keyAsset, LoanStatus.Open);
+    }
+
+    internal static Loan ToDomain(LoanEntity entity, KeyAsset keyAsset, LoanStatus status)
+    {
+        KeyIssueJustificationKind kind = ParseJustificationKind(entity.JustificationKind);
+        return Loan.Rehydrate(
             entity.LoanCode,
             keyAsset,
             entity.BorrowerPartyReference,
             entity.IssuedAtUtc,
-            entity.DueAtUtc);
+            entity.DueAtUtc,
+            status,
+            kind,
+            entity.JustificationDepartmentId,
+            entity.JustificationDepartmentCodeSnapshot,
+            entity.JustificationRoomCode);
     }
 
     internal static LoanEntity ToEntity(Loan loan)
@@ -31,7 +43,13 @@ internal static class DomainLoanMapper
             BorrowerPartyReference = loan.BorrowerPartyReference,
             IssuedAtUtc = loan.IssuedAtUtc,
             DueAtUtc = loan.DueAtUtc,
-            Status = loan.Status.ToString()
+            Status = loan.Status.ToString(),
+            JustificationKind = loan.JustificationKind == KeyIssueJustificationKind.None
+                ? null
+                : loan.JustificationKind.ToString(),
+            JustificationDepartmentId = loan.JustificationDepartmentId,
+            JustificationDepartmentCodeSnapshot = loan.JustificationDepartmentCodeSnapshot,
+            JustificationRoomCode = loan.JustificationRoomCode
         };
     }
 
@@ -43,5 +61,21 @@ internal static class DomainLoanMapper
             LoanCode = completedReturn.Loan.LoanCode,
             ReturnedAtUtc = completedReturn.ReturnedAtUtc
         };
+    }
+
+    private static KeyIssueJustificationKind ParseJustificationKind(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return KeyIssueJustificationKind.None;
+        }
+
+        if (!Enum.TryParse(value, ignoreCase: true, out KeyIssueJustificationKind kind)
+            || kind == KeyIssueJustificationKind.None)
+        {
+            throw new InvalidOperationException($"Unsupported loan justification kind '{value}'.");
+        }
+
+        return kind;
     }
 }

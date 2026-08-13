@@ -37,7 +37,7 @@ public sealed class RegisterWorkforceMemberUseCase : IRegisterWorkforceMemberUse
         string departmentCode,
         CancellationToken cancellationToken)
     {
-        Department? department = await _workforce.FindDepartmentAsync(departmentCode, cancellationToken)
+        Department? department = await _workforce.FindDepartmentByCodeAsync(departmentCode, cancellationToken)
             .ConfigureAwait(false);
         if (department is null || !department.IsActive)
         {
@@ -57,7 +57,7 @@ public sealed class RegisterWorkforceMemberUseCase : IRegisterWorkforceMemberUse
             workforceMemberCode,
             party.PartyCode,
             CreateWorkforceMemberUseCase.ParseWorkforceType(workforceType),
-            department.DepartmentCode);
+            department.DepartmentId);
 
         _audit.Stage(
             OperatorAuditActions.WorkforceMemberCreated,

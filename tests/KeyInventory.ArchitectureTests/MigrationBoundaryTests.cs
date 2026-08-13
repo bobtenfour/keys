@@ -131,7 +131,12 @@ public sealed class MigrationBoundaryTests
 
         IEntityType departmentEntity = model.FindEntityType(typeof(DepartmentEntity))
             ?? throw new InvalidOperationException("DepartmentEntity was not found.");
-        Assert.Equal(["DepartmentCode"], departmentEntity.FindPrimaryKey()!.Properties.Select(property => property.Name));
+        Assert.Equal(["DepartmentId"], departmentEntity.FindPrimaryKey()!.Properties.Select(property => property.Name));
+        Assert.Contains(
+            departmentEntity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Count == 1
+                && index.Properties[0].Name == nameof(DepartmentEntity.DepartmentCode));
 
         IEntityType roomEntity = model.FindEntityType(typeof(RoomEntity))
             ?? throw new InvalidOperationException("RoomEntity was not found.");

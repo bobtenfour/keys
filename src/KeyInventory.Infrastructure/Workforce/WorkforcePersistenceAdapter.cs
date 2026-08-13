@@ -110,7 +110,7 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         return entity is null ? null : DomainWorkforceMapper.ToDomain(entity);
     }
 
-    public Task<bool> DepartmentExistsAsync(string departmentCode, CancellationToken cancellationToken)
+    public Task<bool> DepartmentExistsByCodeAsync(string departmentCode, CancellationToken cancellationToken)
     {
         return _dbContext.Departments.AnyAsync(entity => entity.DepartmentCode == departmentCode, cancellationToken);
     }
@@ -126,18 +126,61 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
     {
         ArgumentNullException.ThrowIfNull(department);
         DepartmentEntity? entity = await _dbContext.Departments
-            .FirstOrDefaultAsync(item => item.DepartmentCode == department.DepartmentCode, cancellationToken)
+            .FirstOrDefaultAsync(item => item.DepartmentId == department.DepartmentId, cancellationToken)
             .ConfigureAwait(false);
         if (entity is null)
         {
             throw new InvalidOperationException("The department was not found in persistence.");
         }
 
+        entity.DepartmentCode = department.DepartmentCode;
         entity.IsActive = department.IsActive;
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<Department?> FindDepartmentAsync(string departmentCode, CancellationToken cancellationToken)
+    public async Task DeleteDepartmentAsync(Guid departmentId, CancellationToken cancellationToken)
+    {
+        DepartmentEntity? entity = await _dbContext.Departments
+            .FirstOrDefaultAsync(item => item.DepartmentId == departmentId, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The department was not found in persistence.");
+        }
+
+        _dbContext.Departments.Remove(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task<int> CountWorkforceMembersForDepartmentAsync(
+        Guid departmentId,
+        CancellationToken cancellationToken)
+    {
+        return _dbContext.WorkforceMembers.CountAsync(
+            entity => entity.DepartmentId == departmentId,
+            cancellationToken);
+    }
+
+    public Task<int> CountLoansJustifiedByDepartmentAsync(
+        Guid departmentId,
+        CancellationToken cancellationToken)
+    {
+        return _dbContext.Loans.CountAsync(
+            entity => entity.JustificationDepartmentId == departmentId,
+            cancellationToken);
+    }
+
+    public async Task<Department?> FindDepartmentAsync(Guid departmentId, CancellationToken cancellationToken)
+    {
+        DepartmentEntity? entity = await _dbContext.Departments.AsNoTracking()
+            .FirstOrDefaultAsync(item => item.DepartmentId == departmentId, cancellationToken)
+            .ConfigureAwait(false);
+        return entity is null ? null : DomainWorkforceMapper.ToDomain(entity);
+    }
+
+    public async Task<Department?> FindDepartmentByCodeAsync(
+        string departmentCode,
+        CancellationToken cancellationToken)
     {
         DepartmentEntity? entity = await _dbContext.Departments.AsNoTracking()
             .FirstOrDefaultAsync(item => item.DepartmentCode == departmentCode, cancellationToken)
@@ -149,7 +192,10 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
     {
         return await _dbContext.Departments.AsNoTracking()
             .OrderBy(entity => entity.DepartmentCode)
-            .Select(entity => new DepartmentListItem(entity.DepartmentCode, entity.IsActive))
+            .Select(entity => new DepartmentListItem(
+                entity.DepartmentId,
+                entity.DepartmentCode,
+                entity.IsActive))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
@@ -186,6 +232,27 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         entity.Description = room.Description;
         entity.IsActive = room.IsActive;
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task DeleteRoomAsync(string roomCode, CancellationToken cancellationToken)
+    {
+        RoomEntity? entity = await _dbContext.Rooms
+            .FirstOrDefaultAsync(item => item.RoomCode == roomCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The room was not found in persistence.");
+        }
+
+        _dbContext.Rooms.Remove(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task<int> CountWorkAssignmentsForRoomAsync(string roomCode, CancellationToken cancellationToken)
+    {
+        return _dbContext.WorkAssignments.CountAsync(
+            entity => entity.RoomCode == roomCode,
+            cancellationToken);
     }
 
     public async Task<Room?> FindRoomAsync(string roomCode, CancellationToken cancellationToken)
@@ -248,9 +315,55 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         }
 
         entity.WorkforceType = member.WorkforceType.ToString();
-        entity.DepartmentCode = member.DepartmentCode;
+        entity.DepartmentId = member.DepartmentId;
         entity.Status = member.Status.ToString();
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task DeleteWorkforceMemberAsync(
+        string workforceMemberCode,
+        CancellationToken cancellationToken)
+    {
+        WorkforceMemberEntity? entity = await _dbContext.WorkforceMembers
+            .FirstOrDefaultAsync(item => item.WorkforceMemberCode == workforceMemberCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The workforce member was not found in persistence.");
+        }
+
+        _dbContext.WorkforceMembers.Remove(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task DeletePartyAsync(string partyCode, CancellationToken cancellationToken)
+    {
+        PartyEntity? entity = await _dbContext.Parties
+            .FirstOrDefaultAsync(item => item.PartyCode == partyCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The party was not found in persistence.");
+        }
+
+        _dbContext.Parties.Remove(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task<int> CountWorkforceMembersForPartyAsync(string partyCode, CancellationToken cancellationToken)
+    {
+        return _dbContext.WorkforceMembers.CountAsync(
+            entity => entity.PartyCode == partyCode,
+            cancellationToken);
+    }
+
+    public Task<int> CountWorkAssignmentsForMemberAsync(
+        string workforceMemberCode,
+        CancellationToken cancellationToken)
+    {
+        return _dbContext.WorkAssignments.CountAsync(
+            entity => entity.WorkforceMemberCode == workforceMemberCode,
+            cancellationToken);
     }
 
     public async Task<WorkforceMember?> FindWorkforceMemberAsync(
@@ -269,6 +382,8 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         return await (
                 from member in _dbContext.WorkforceMembers.AsNoTracking()
                 join party in _dbContext.Parties.AsNoTracking() on member.PartyCode equals party.PartyCode
+                join department in _dbContext.Departments.AsNoTracking()
+                    on member.DepartmentId equals department.DepartmentId
                 orderby party.LastName, party.FirstName, member.WorkforceMemberCode
                 select new WorkforceMemberListItem(
                     member.WorkforceMemberCode,
@@ -277,7 +392,7 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
                     party.LastName,
                     party.Uin,
                     member.WorkforceType,
-                    member.DepartmentCode,
+                    department.DepartmentCode,
                     member.Status))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -300,7 +415,7 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
                 from member in _dbContext.WorkforceMembers.AsNoTracking()
                 join party in _dbContext.Parties.AsNoTracking() on member.PartyCode equals party.PartyCode
                 join department in _dbContext.Departments.AsNoTracking()
-                    on member.DepartmentCode equals department.DepartmentCode
+                    on member.DepartmentId equals department.DepartmentId
                 where member.Status == nameof(WorkforceMemberStatus.Active)
                     && party.IsActive
                     && department.IsActive
@@ -349,6 +464,20 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
 
         entity.IsPrimary = assignment.IsPrimary;
         entity.IsActive = assignment.IsActive;
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task DeleteWorkAssignmentAsync(string workAssignmentCode, CancellationToken cancellationToken)
+    {
+        WorkAssignmentEntity? entity = await _dbContext.WorkAssignments
+            .FirstOrDefaultAsync(item => item.WorkAssignmentCode == workAssignmentCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The work assignment was not found in persistence.");
+        }
+
+        _dbContext.WorkAssignments.Remove(entity);
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 

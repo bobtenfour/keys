@@ -1,4 +1,4 @@
-using KeyInventory.Application.Workforce;
+using KeyInventory.Application.Lifecycle;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -6,24 +6,28 @@ namespace KeyInventory.Web.Pages.Administration.WorkforceMembers;
 
 public sealed class IndexModel : PageModel
 {
-    private readonly IListWorkforceMembersUseCase _listMembers;
+    private readonly IConfigurationLifecycleUseCase _lifecycle;
 
-    public IndexModel(IListWorkforceMembersUseCase listMembers)
+    public IndexModel(IConfigurationLifecycleUseCase lifecycle)
     {
-        _listMembers = listMembers ?? throw new ArgumentNullException(nameof(listMembers));
+        _lifecycle = lifecycle ?? throw new ArgumentNullException(nameof(lifecycle));
     }
 
     [BindProperty(SupportsGet = true)]
     public string? Q { get; set; }
 
-    public IReadOnlyList<WorkforceMemberListItem> Members { get; private set; } = [];
+    public IReadOnlyList<WorkforceMemberLifecycleItem> Members { get; private set; } = [];
 
     public string? SuccessMessage { get; private set; }
+
+    public string? ErrorMessage { get; private set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         SuccessMessage = TempData["SuccessMessage"] as string;
-        IReadOnlyList<WorkforceMemberListItem> all = await _listMembers.ExecuteAsync(cancellationToken)
+        ErrorMessage = TempData["ErrorMessage"] as string;
+        IReadOnlyList<WorkforceMemberLifecycleItem> all = await _lifecycle
+            .ListWorkforceMembersAsync(cancellationToken)
             .ConfigureAwait(false);
 
         if (string.IsNullOrWhiteSpace(Q))

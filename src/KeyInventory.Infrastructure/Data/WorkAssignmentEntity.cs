@@ -11,4 +11,8 @@ public sealed class WorkAssignmentEntity
     public bool IsPrimary { get; set; }
 
     public bool IsActive { get; set; }
+
+    public WorkforceMemberEntity WorkforceMember { get; set; } = null!;
+
+    public RoomEntity Room { get; set; } = null!;
 }

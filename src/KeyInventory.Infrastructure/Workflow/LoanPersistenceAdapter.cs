@@ -134,4 +134,34 @@ public sealed class LoanPersistenceAdapter : ILoanPersistencePort
             entity => entity.KeyAssetId == keyAssetId && entity.Status == nameof(LoanStatus.Open),
             cancellationToken);
     }
+
+    public Task<int> CountLoansForKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken)
+    {
+        return _dbContext.Loans.CountAsync(
+            entity => entity.KeyAssetId == keyAssetId,
+            cancellationToken);
+    }
+
+    public Task<int> CountLoansForPartyAsync(string partyCode, CancellationToken cancellationToken)
+    {
+        return _dbContext.Loans.CountAsync(
+            entity => entity.BorrowerPartyReference == partyCode,
+            cancellationToken);
+    }
+
+    public Task<int> CountLoansJustifiedByDepartmentAsync(
+        Guid departmentId,
+        CancellationToken cancellationToken)
+    {
+        return _dbContext.Loans.CountAsync(
+            entity => entity.JustificationDepartmentId == departmentId,
+            cancellationToken);
+    }
+
+    public Task<int> CountLoansJustifiedByRoomAsync(string roomCode, CancellationToken cancellationToken)
+    {
+        return _dbContext.Loans.CountAsync(
+            entity => entity.JustificationRoomCode == roomCode,
+            cancellationToken);
+    }
 }

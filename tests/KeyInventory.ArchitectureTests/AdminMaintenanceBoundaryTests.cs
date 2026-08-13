@@ -1,4 +1,6 @@
 using System.Reflection;
+using KeyInventory.Application.Lifecycle;
+using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Application.Workflow;
 using KeyInventory.Infrastructure;
@@ -22,7 +24,15 @@ public sealed class AdminMaintenanceBoundaryTests
             typeof(KeyInventory.Web.Pages.Administration.Rooms.IndexModel),
             typeof(KeyInventory.Web.Pages.Administration.WorkforceMembers.IndexModel),
             typeof(KeyInventory.Web.Pages.Administration.WorkAssignments.IndexModel),
-            typeof(KeyTypesModel)
+            typeof(KeyTypesModel),
+            typeof(KeysModel),
+            typeof(DeleteModel),
+            typeof(KeyInventory.Web.Pages.Administration.Rooms.DeleteModel),
+            typeof(KeyInventory.Web.Pages.Administration.WorkforceMembers.DeleteModel),
+            typeof(KeyInventory.Web.Pages.Administration.WorkAssignments.DeleteModel),
+            typeof(KeyInventory.Web.Pages.Catalog.KeyTypes.DeleteModel),
+            typeof(KeyInventory.Web.Pages.Catalog.Keys.DeleteModel),
+            typeof(KeyInventory.Web.Pages.Catalog.Keys.DeletePatternModel)
         ];
 
         foreach (Type pageModel in pageModels)
@@ -33,19 +43,24 @@ public sealed class AdminMaintenanceBoundaryTests
                     parameter.ParameterType.Name.Contains("DbContext", StringComparison.Ordinal)
                     || (parameter.ParameterType.Namespace?.StartsWith("KeyInventory.Infrastructure", StringComparison.Ordinal) ?? false)
                     || parameter.ParameterType == typeof(IWorkforcePersistencePort)
-                    || parameter.ParameterType == typeof(IKeyCatalogPersistencePort));
+                    || parameter.ParameterType == typeof(IKeyCatalogPersistencePort)
+                    || parameter.ParameterType == typeof(ILoanPersistencePort)
+                    || parameter.ParameterType == typeof(IOperatorAuditPersistencePort));
         }
 
         Assert.Contains(
             typeof(IndexModel).GetConstructors().Single().GetParameters(),
-            parameter => parameter.ParameterType == typeof(IActivateDepartmentUseCase));
+            parameter => parameter.ParameterType == typeof(IConfigurationLifecycleUseCase));
         Assert.Contains(
             typeof(KeyTypesModel).GetConstructors().Single().GetParameters(),
-            parameter => parameter.ParameterType == typeof(IRetireKeyTypeUseCase));
+            parameter => parameter.ParameterType == typeof(IConfigurationLifecycleUseCase));
+        Assert.Contains(
+            typeof(KeysModel).GetConstructors().Single().GetParameters(),
+            parameter => parameter.ParameterType == typeof(IConfigurationLifecycleUseCase));
     }
 
     [Fact]
-    public void SliceDoesNotIntroduceHardDeleteGenericCrudOrHistoryFramework()
+    public void SliceDoesNotIntroduceGenericCrudFrameworkOrHistoryRewriteStores()
     {
         Assembly[] assemblies =
         [
@@ -62,8 +77,6 @@ public sealed class AdminMaintenanceBoundaryTests
                 "GenericRepository",
                 "CrudController",
                 "CrudService",
-                "HardDelete",
-                "PhysicalDelete",
                 "AdminHistory",
                 "VersionStore",
                 "ArchiveStore",
@@ -74,18 +87,15 @@ public sealed class AdminMaintenanceBoundaryTests
 
         Assert.Empty(prohibited);
 
-        string[] deleteMethods = typeof(IWorkforcePersistencePort)
-            .GetMethods()
-            .Concat(typeof(IKeyCatalogPersistencePort).GetMethods())
-            .Select(method => method.Name)
-            .Where(name => name.Contains("Delete", StringComparison.OrdinalIgnoreCase)
-                || name.Contains("Remove", StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        Assert.Empty(deleteMethods);
+        // Permanent delete of unreferenced configuration records is Application-owned via
+        // IConfigurationLifecycleUseCase; raw ports may expose Restrict delete helpers.
+        Assert.Contains(
+            typeof(IConfigurationLifecycleUseCase).GetMethods().Select(method => method.Name),
+            name => name.StartsWith("Delete", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void CompositionRegistersMaintenanceUseCases()
+    public void CompositionRegistersMaintenanceAndLifecycleUseCases()
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
@@ -110,6 +120,7 @@ public sealed class AdminMaintenanceBoundaryTests
         Assert.NotNull(provider.GetService<IEndWorkAssignmentUseCase>());
         Assert.NotNull(provider.GetService<IMarkWorkAssignmentPrimaryUseCase>());
         Assert.NotNull(provider.GetService<ITerminateWorkforceMemberUseCase>());
+        Assert.NotNull(provider.GetService<IConfigurationLifecycleUseCase>());
     }
 
     private static bool ContainsAny(string value, params string[] terms)

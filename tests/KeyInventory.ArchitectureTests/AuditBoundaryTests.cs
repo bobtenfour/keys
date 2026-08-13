@@ -92,7 +92,10 @@ public sealed class AuditBoundaryTests
         string[] auditTypes = infrastructureAssembly
             .GetTypes()
             .Select(type => type.FullName ?? type.Name)
-            .Where(name => ContainsAny(name, "Audit"))
+            .Where(name => name.Contains("Audit", StringComparison.OrdinalIgnoreCase))
+            // Migration designer/snapshot and one-time provenance extract are not OperatorAudit persistence types.
+            .Where(name => !name.Contains(".Migrations.", StringComparison.Ordinal))
+            .Where(name => !name.Contains("ProvenanceExtract", StringComparison.Ordinal))
             .ToArray();
 
         Assert.NotEmpty(auditTypes);

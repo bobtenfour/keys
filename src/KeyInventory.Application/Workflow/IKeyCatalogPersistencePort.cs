@@ -25,11 +25,25 @@ public interface IKeyCatalogPersistencePort
 
     Task UpdateKeyTypeAsync(KeyType keyType, CancellationToken cancellationToken);
 
+    Task DeleteKeyTypeAsync(string typeCode, CancellationToken cancellationToken);
+
     Task<int> CountActiveKeyAccessPatternsForTypeAsync(string typeCode, CancellationToken cancellationToken);
+
+    Task<int> CountKeyAccessPatternsForTypeAsync(string typeCode, CancellationToken cancellationToken);
+
+    Task<int> CountAllKeyAccessPatternsForTypeAsync(string typeCode, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<KeyTypeListItem>> ListKeyTypesAsync(CancellationToken cancellationToken);
 
     Task AddKeyAssetAsync(KeyAsset keyAsset, CancellationToken cancellationToken);
+
+    Task UpdateKeyAssetAsync(KeyAsset keyAsset, CancellationToken cancellationToken);
+
+    Task DeleteKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken);
+
+    Task<int> CountKeyAssetsForKeyNumberAsync(string keyNumber, CancellationToken cancellationToken);
+
+    Task DeleteKeyAccessPatternAsync(string keyNumber, CancellationToken cancellationToken);
 
     Task<KeyAsset?> FindKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken);
 

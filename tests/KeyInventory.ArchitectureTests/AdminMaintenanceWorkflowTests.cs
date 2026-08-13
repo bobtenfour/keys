@@ -62,13 +62,15 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
         KeyInventoryDbContext db = scope.ServiceProvider.GetRequiredService<KeyInventoryDbContext>();
 
         await createDept.ExecuteAsync("am-dept", CancellationToken.None).ConfigureAwait(true);
+        Guid amDeptId = (await listDepts.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
+            .Single(item => item.DepartmentCode == "am-dept").DepartmentId;
         string roomCode = await createRoom.ExecuteAsync("101", "Lab", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("AM-KEY-1", "01", "am-type", CancellationToken.None).ConfigureAwait(true);
 
-        await retireDept.ExecuteAsync("am-dept", CancellationToken.None).ConfigureAwait(true);
+        await retireDept.ExecuteAsync(amDeptId, CancellationToken.None).ConfigureAwait(true);
         Assert.False((await listDepts.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.DepartmentCode == "am-dept").IsActive);
-        await activateDept.ExecuteAsync("am-dept", CancellationToken.None).ConfigureAwait(true);
+        await activateDept.ExecuteAsync(amDeptId, CancellationToken.None).ConfigureAwait(true);
         Assert.True((await listDepts.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.DepartmentCode == "am-dept").IsActive);
 
@@ -287,6 +289,10 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "am-flow")
             .ConfigureAwait(true);
+        Guid flowDeptId = (await scope.ServiceProvider.GetRequiredService<IListDepartmentsUseCase>()
+                .ExecuteAsync(CancellationToken.None)
+                .ConfigureAwait(true))
+            .Single(item => item.DepartmentCode == seeded.DepartmentCode).DepartmentId;
         await createKey.ExecuteAsync("am-flow-key", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 9, 19, 0, 0, TimeSpan.Zero);
@@ -302,8 +308,8 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
                 CancellationToken.None)
             .ConfigureAwait(true);
 
-        await retireDept.ExecuteAsync(seeded.DepartmentCode, CancellationToken.None).ConfigureAwait(true);
-        await activateDept.ExecuteAsync(seeded.DepartmentCode, CancellationToken.None).ConfigureAwait(true);
+        await retireDept.ExecuteAsync(flowDeptId, CancellationToken.None).ConfigureAwait(true);
+        await activateDept.ExecuteAsync(flowDeptId, CancellationToken.None).ConfigureAwait(true);
 
         IReadOnlyList<KeyLookupResult> found = await lookup.SearchKeysAsync("am-flow-key", CancellationToken.None)
             .ConfigureAwait(true);

@@ -9,7 +9,9 @@ public sealed class DepartmentConfiguration : IEntityTypeConfiguration<Departmen
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.ToTable("Departments");
-        builder.HasKey(entity => entity.DepartmentCode);
-        builder.Property(entity => entity.DepartmentCode).HasMaxLength(128);
+        builder.HasKey(entity => entity.DepartmentId);
+        builder.Property(entity => entity.DepartmentId).ValueGeneratedNever();
+        builder.Property(entity => entity.DepartmentCode).HasMaxLength(128).IsRequired();
+        builder.HasIndex(entity => entity.DepartmentCode).IsUnique();
     }
 }

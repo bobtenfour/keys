@@ -42,7 +42,7 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
         string departmentCode,
         CancellationToken cancellationToken)
     {
-        Party party = await EnsureMemberPrerequisitesAsync(
+        (Party party, Department department) = await EnsureMemberPrerequisitesAsync(
                 workforceMemberCode,
                 partyCode,
                 departmentCode,
@@ -53,7 +53,7 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
             workforceMemberCode,
             partyCode,
             ParseWorkforceType(workforceType),
-            departmentCode);
+            department.DepartmentId);
 
         _audit.Stage(
             OperatorAuditActions.WorkforceMemberCreated,
@@ -63,7 +63,7 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
         await _workforce.AddWorkforceMemberAsync(member, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<Party> EnsureMemberPrerequisitesAsync(
+    private async Task<(Party Party, Department Department)> EnsureMemberPrerequisitesAsync(
         string workforceMemberCode,
         string partyCode,
         string departmentCode,
@@ -86,14 +86,14 @@ public sealed class CreateWorkforceMemberUseCase : ICreateWorkforceMemberUseCase
             throw new InvalidOperationException("A Party may have at most one Active WorkforceMember.");
         }
 
-        Department? department = await _workforce.FindDepartmentAsync(departmentCode, cancellationToken)
+        Department? department = await _workforce.FindDepartmentByCodeAsync(departmentCode, cancellationToken)
             .ConfigureAwait(false);
         if (department is null || !department.IsActive)
         {
             throw new InvalidOperationException("The department was not found or is inactive.");
         }
 
-        return party;
+        return (party, department);
     }
 
     internal static WorkforceType ParseWorkforceType(string workforceType)

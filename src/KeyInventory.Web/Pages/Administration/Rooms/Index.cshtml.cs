@@ -1,4 +1,4 @@
-using KeyInventory.Application.Workforce;
+using KeyInventory.Application.Lifecycle;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -6,21 +6,14 @@ namespace KeyInventory.Web.Pages.Administration.Rooms;
 
 public sealed class IndexModel : PageModel
 {
-    private readonly IListRoomsUseCase _list;
-    private readonly IActivateRoomUseCase _activate;
-    private readonly IRetireRoomUseCase _retire;
+    private readonly IConfigurationLifecycleUseCase _lifecycle;
 
-    public IndexModel(
-        IListRoomsUseCase list,
-        IActivateRoomUseCase activate,
-        IRetireRoomUseCase retire)
+    public IndexModel(IConfigurationLifecycleUseCase lifecycle)
     {
-        _list = list ?? throw new ArgumentNullException(nameof(list));
-        _activate = activate ?? throw new ArgumentNullException(nameof(activate));
-        _retire = retire ?? throw new ArgumentNullException(nameof(retire));
+        _lifecycle = lifecycle ?? throw new ArgumentNullException(nameof(lifecycle));
     }
 
-    public IReadOnlyList<RoomListItem> Rooms { get; private set; } = [];
+    public IReadOnlyList<RoomLifecycleItem> Rooms { get; private set; } = [];
 
     public string? SuccessMessage { get; private set; }
 
@@ -29,14 +22,15 @@ public sealed class IndexModel : PageModel
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         SuccessMessage = TempData["SuccessMessage"] as string;
-        Rooms = await _list.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        ErrorMessage = TempData["ErrorMessage"] as string;
+        Rooms = await _lifecycle.ListRoomsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IActionResult> OnPostActivateAsync(string roomCode, CancellationToken cancellationToken)
     {
         try
         {
-            await _activate.ExecuteAsync(roomCode, cancellationToken).ConfigureAwait(false);
+            await _lifecycle.ActivateRoomAsync(roomCode, cancellationToken).ConfigureAwait(false);
             SuccessMessage = $"Room {roomCode} was activated.";
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
@@ -44,7 +38,7 @@ public sealed class IndexModel : PageModel
             ErrorMessage = exception.Message;
         }
 
-        Rooms = await _list.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        Rooms = await _lifecycle.ListRoomsAsync(cancellationToken).ConfigureAwait(false);
         return Page();
     }
 
@@ -52,7 +46,7 @@ public sealed class IndexModel : PageModel
     {
         try
         {
-            await _retire.ExecuteAsync(roomCode, cancellationToken).ConfigureAwait(false);
+            await _lifecycle.RetireRoomAsync(roomCode, cancellationToken).ConfigureAwait(false);
             SuccessMessage = $"Room {roomCode} was retired.";
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
@@ -60,7 +54,7 @@ public sealed class IndexModel : PageModel
             ErrorMessage = exception.Message;
         }
 
-        Rooms = await _list.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        Rooms = await _lifecycle.ListRoomsAsync(cancellationToken).ConfigureAwait(false);
         return Page();
     }
 }

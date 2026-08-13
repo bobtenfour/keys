@@ -1,4 +1,5 @@
 using KeyInventory.Application.Catalog;
+using KeyInventory.Application.Lifecycle;
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Application.Readiness;
@@ -24,7 +25,12 @@ public static class LoanVerticalComposition
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        services.AddDbContext<KeyInventoryDbContext>(options => options.UseSqlServer(connectionString));
+        services.AddDbContext<KeyInventoryDbContext>(options =>
+        {
+            options.UseSqlServer(connectionString);
+            options.ReplaceService<Microsoft.EntityFrameworkCore.Migrations.IMigrationCommandExecutor,
+                Data.Migrations.KeyInventoryMigrationCommandExecutor>();
+        });
         services.AddHttpContextAccessor();
         services.AddScoped<IOperatorIdentityAccessor, OperatorIdentityAccessor>();
         services.AddScoped<IOperatorAuditPersistencePort, OperatorAuditPersistenceAdapter>();
@@ -45,6 +51,7 @@ public static class LoanVerticalComposition
         services.AddScoped<IListPartiesUseCase, ListPartiesUseCase>();
         services.AddScoped<ICreateDepartmentUseCase, CreateDepartmentUseCase>();
         services.AddScoped<IListDepartmentsUseCase, ListDepartmentsUseCase>();
+        services.AddScoped<IUpdateDepartmentCodeUseCase, UpdateDepartmentCodeUseCase>();
         services.AddScoped<IActivateDepartmentUseCase, ActivateDepartmentUseCase>();
         services.AddScoped<IRetireDepartmentUseCase, RetireDepartmentUseCase>();
         services.AddScoped<ICreateRoomUseCase, CreateRoomUseCase>();
@@ -79,5 +86,6 @@ public static class LoanVerticalComposition
         services.AddSingleton<IReportExcelExporter, ClosedXmlReportExcelExporter>();
         services.AddSingleton<IReportPdfExporter, QuestPdfReportPdfExporter>();
         services.AddScoped<IOperationalReportsUseCase, OperationalReportsUseCase>();
+        services.AddScoped<IConfigurationLifecycleUseCase, ConfigurationLifecycleUseCase>();
     }
 }

@@ -40,7 +40,7 @@
                         <th>Type</th>
                         <th>Active keys</th>
                         <th>Status</th>
-                        <th></th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -48,17 +48,23 @@
                 {
                     <tr>
                         <td>@type.TypeCode</td>
-                        <td>@type.ActiveKeyAssetCount</td>
+                        <td>@type.ActiveKeyAccessPatternCount</td>
                         <td>@(type.IsActive ? "Active" : "Retired")</td>
-                        <td>
-                            @if (type.IsActive)
+                        <td class="table-actions">
+                            @if (type.Capabilities.CanDelete)
+                            {
+                                <a class="btn btn-danger"
+                                   asp-page="/Catalog/KeyTypes/Delete"
+                                   asp-route-typeCode="@type.TypeCode">Delete</a>
+                            }
+                            @if (type.Capabilities.CanRetire)
                             {
                                 <form method="post" asp-page-handler="Retire" style="display:inline">
                                     <input type="hidden" name="typeCode" value="@type.TypeCode" />
                                     <button type="submit" class="btn btn-secondary">Retire</button>
                                 </form>
                             }
-                            else
+                            @if (type.Capabilities.CanActivate)
                             {
                                 <form method="post" asp-page-handler="Activate" style="display:inline">
                                     <input type="hidden" name="typeCode" value="@type.TypeCode" />

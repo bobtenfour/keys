@@ -44,8 +44,7 @@ public static class KeyIssueEligibility
             throw new InvalidOperationException("Party must have FirstName, LastName, and UIN for key issue.");
         }
 
-        if (!department.IsActive
-            || !string.Equals(department.DepartmentCode, member.DepartmentCode, StringComparison.Ordinal))
+        if (!department.IsActive || member.DepartmentId != department.DepartmentId)
         {
             throw new InvalidOperationException("WorkforceMember Department must be active and assigned.");
         }
@@ -83,7 +82,10 @@ public static class KeyIssueEligibility
         switch (justificationKind)
         {
             case KeyIssueJustificationKind.Department:
-                if (!string.Equals(normalizedJustification, member.DepartmentCode, StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(
+                        normalizedJustification,
+                        department.DepartmentCode,
+                        StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidOperationException(
                         "Key issue justification Department must be the WorkforceMember authorized Department.");

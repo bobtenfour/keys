@@ -58,6 +58,22 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 - Do not expose Transfer; do not invent New Key terminology beyond KEY # / MEDECO presentation required by this slice.
 - Operator guide must explain KEY # → Rooms opened and MEDECO → physical copy held, using the 66800 / 410D / MEDECO 26–28 example pattern; screenshots refresh only after runtime finalization.
 
+## Administration / Catalog Record Lifecycle (active)
+- Unreferenced Administration/Catalog records may be permanently deleted when Application determines they have no business relationships and no historical/operational references that must be preserved.
+- Referenced or historically used records must not be permanently deleted; use Retire / End / Terminate / Remove where that entity supports those lifecycle operations.
+- Application owns editable / deletable / retireable / reactivatable eligibility; Web must not decide delete eligibility via DbContext relationship counting, client-side rules, or raw FK/SQL exceptions as the operator contract.
+- Delete execution must revalidate eligibility atomically; a relationship created between list rendering and delete execution must reject destructive deletion with a business-readable message.
+- Every row representing legitimately editable business data exposes an explicit Edit action on that row. Under active identity authority, DepartmentCode is an editable business identifier (DepartmentId remains hidden technical identity); RoomNumber remains editable; immutable classification/identity codes (for example KeyType TypeCode, KEY # KeyNumber) do not invent Edit.
+- Actions columns expose only actions valid for that exact record and state (Edit, Delete, Retire, Activate, End, Terminate, Remove as authorized). Retire is not a universal Delete substitute; Delete is not universally available.
+- Permanent Delete requires deliberate confirmation that identifies the exact record and uses permanent-deletion language (not Retire wording).
+- Do not cascade-delete related business/history records merely to make a parent deletable.
+- Lifecycle relationship detection must use stable entity identities (for example DepartmentId), not mutable business strings, once the normalized ERD is implemented.
+
+## Identity presentation (active)
+- Operators see and edit business identifiers (DepartmentCode, RoomNumber, UIN, KEY #, MEDECO) per Domain mutability.
+- Operators must not be required to invent or type internal technical identities (DepartmentId, RoomCode, PartyCode, KeyAssetId) in normal workflows.
+- Renaming a business identifier must not be presented as delete-and-recreate of the underlying entity.
+
 ## Issue / Receive Interaction (active presentation)
 - A freshly opened Issue or Receive/Return operation must not silently select business choices for the operator, including when exactly one valid option exists.
 - Issue Key holder selection is search-on-demand: no full workforce load into HTML or JavaScript; Application returns a bounded set of eligible candidates matching name or UIN; Web must not evaluate eligibility or auto-select first/only match.

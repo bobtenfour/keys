@@ -120,13 +120,16 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
         WorkforceMemberListItem existing = existingMembers.Single(item => item.WorkforceMemberCode == existingCode);
 
         IWorkforcePersistencePort port = scope.ServiceProvider.GetRequiredService<IWorkforcePersistencePort>();
+        Department? department = await port.FindDepartmentByCodeAsync("rb1-dept", CancellationToken.None)
+            .ConfigureAwait(true);
+        Assert.NotNull(department);
         string orphanPartyCode = $"PARTY-{Guid.NewGuid():D}";
         Party party = new(orphanPartyCode, "Orphan", "Party", UniqueUin("rb1", 9));
         WorkforceMember conflicting = new(
             existing.WorkforceMemberCode,
             orphanPartyCode,
             WorkforceType.Employee,
-            "rb1-dept");
+            department.DepartmentId);
 
         await Assert.ThrowsAnyAsync<Exception>(() =>
                 port.AddPartyAndWorkforceMemberAsync(party, conflicting, CancellationToken.None))

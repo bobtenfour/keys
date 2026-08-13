@@ -1,3 +1,4 @@
+using KeyInventory.Application.Lifecycle;
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Web.Presentation;
@@ -8,7 +9,7 @@ namespace KeyInventory.Web.Pages.Administration.WorkAssignments;
 
 public sealed class IndexModel : PageModel
 {
-    private readonly IListWorkAssignmentsUseCase _list;
+    private readonly IConfigurationLifecycleUseCase _lifecycle;
     private readonly IListWorkforceMembersUseCase _members;
     private readonly IListRoomsUseCase _rooms;
     private readonly IEndWorkAssignmentUseCase _end;
@@ -16,14 +17,14 @@ public sealed class IndexModel : PageModel
     private readonly IClearWorkAssignmentPrimaryUseCase _clearPrimary;
 
     public IndexModel(
-        IListWorkAssignmentsUseCase list,
+        IConfigurationLifecycleUseCase lifecycle,
         IListWorkforceMembersUseCase members,
         IListRoomsUseCase rooms,
         IEndWorkAssignmentUseCase end,
         IMarkWorkAssignmentPrimaryUseCase markPrimary,
         IClearWorkAssignmentPrimaryUseCase clearPrimary)
     {
-        _list = list ?? throw new ArgumentNullException(nameof(list));
+        _lifecycle = lifecycle ?? throw new ArgumentNullException(nameof(lifecycle));
         _members = members ?? throw new ArgumentNullException(nameof(members));
         _rooms = rooms ?? throw new ArgumentNullException(nameof(rooms));
         _end = end ?? throw new ArgumentNullException(nameof(end));
@@ -31,7 +32,7 @@ public sealed class IndexModel : PageModel
         _clearPrimary = clearPrimary ?? throw new ArgumentNullException(nameof(clearPrimary));
     }
 
-    public IReadOnlyList<WorkAssignmentListItem> Assignments { get; private set; } = [];
+    public IReadOnlyList<WorkAssignmentLifecycleItem> Assignments { get; private set; } = [];
 
     public IReadOnlyDictionary<string, string> MemberDisplayByCode { get; private set; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -46,6 +47,7 @@ public sealed class IndexModel : PageModel
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         SuccessMessage = TempData["SuccessMessage"] as string;
+        ErrorMessage = TempData["ErrorMessage"] as string;
         await LoadAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -99,7 +101,7 @@ public sealed class IndexModel : PageModel
 
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
-        Assignments = await _list.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        Assignments = await _lifecycle.ListWorkAssignmentsAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<WorkforceMemberListItem> members = await _members.ExecuteAsync(cancellationToken)
             .ConfigureAwait(false);
         MemberDisplayByCode = members.ToDictionary(

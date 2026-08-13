@@ -3,6 +3,7 @@ using KeyInventory.Domain.Audit;
 using KeyInventory.Domain.Catalog;
 using KeyInventory.Domain.Identity;
 using KeyInventory.Domain.Loans;
+using KeyInventory.Domain.Workforce;
 using Xunit;
 
 namespace KeyInventory.ArchitectureTests;
@@ -135,7 +136,17 @@ public sealed class UtcTimestampDomainInvariantTests
     private static Loan CreateLoan(DateTimeOffset issuedAtUtc, DateTimeOffset dueAtUtc)
     {
         KeyAsset keyAsset = CatalogTestFactory.CreateCopy("key-1", "01", "mechanical");
-        return new Loan("loan-1", keyAsset, "party-1", issuedAtUtc, dueAtUtc);
+        Guid departmentId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        return new Loan(
+            "loan-1",
+            keyAsset,
+            "party-1",
+            issuedAtUtc,
+            dueAtUtc,
+            KeyIssueJustificationKind.Department,
+            departmentId,
+            "DEPT",
+            null);
     }
 
     private static PrincipalRoleAssignment CreateAssignment(

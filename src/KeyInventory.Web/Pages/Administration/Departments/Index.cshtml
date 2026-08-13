@@ -43,7 +43,7 @@
                     <tr>
                         <th>Department</th>
                         <th>Status</th>
-                        <th></th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,18 +52,30 @@
                     <tr>
                         <td>@item.DepartmentCode</td>
                         <td>@(item.IsActive ? "Active" : "Retired")</td>
-                        <td>
-                            @if (item.IsActive)
+                        <td class="table-actions">
+                            @if (item.Capabilities.CanEdit)
+                            {
+                                <a class="btn btn-primary"
+                                   asp-page="./Edit"
+                                   asp-route-departmentId="@item.DepartmentId">Edit</a>
+                            }
+                            @if (item.Capabilities.CanDelete)
+                            {
+                                <a class="btn btn-danger"
+                                   asp-page="./Delete"
+                                   asp-route-departmentId="@item.DepartmentId">Delete</a>
+                            }
+                            @if (item.Capabilities.CanRetire)
                             {
                                 <form method="post" asp-page-handler="Retire" style="display:inline">
-                                    <input type="hidden" name="departmentCode" value="@item.DepartmentCode" />
+                                    <input type="hidden" name="departmentId" value="@item.DepartmentId" />
                                     <button type="submit" class="btn btn-secondary">Retire</button>
                                 </form>
                             }
-                            else
+                            @if (item.Capabilities.CanActivate)
                             {
                                 <form method="post" asp-page-handler="Activate" style="display:inline">
-                                    <input type="hidden" name="departmentCode" value="@item.DepartmentCode" />
+                                    <input type="hidden" name="departmentId" value="@item.DepartmentId" />
                                     <button type="submit" class="btn btn-secondary">Activate</button>
                                 </form>
                             }

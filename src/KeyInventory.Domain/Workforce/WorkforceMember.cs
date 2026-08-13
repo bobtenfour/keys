@@ -11,12 +11,17 @@ public sealed class WorkforceMember
         string workforceMemberCode,
         string partyCode,
         WorkforceType workforceType,
-        string departmentCode)
+        Guid departmentId)
     {
         WorkforceMemberCode = WorkforceText.Require(workforceMemberCode, nameof(workforceMemberCode));
         PartyCode = WorkforceText.Require(partyCode, nameof(partyCode));
         WorkforceType = RequireWorkforceType(workforceType);
-        DepartmentCode = WorkforceText.Require(departmentCode, nameof(departmentCode));
+        if (departmentId == Guid.Empty)
+        {
+            throw new ArgumentException("DepartmentId is required.", nameof(departmentId));
+        }
+
+        DepartmentId = departmentId;
         Status = WorkforceMemberStatus.Active;
     }
 
@@ -26,18 +31,23 @@ public sealed class WorkforceMember
 
     public WorkforceType WorkforceType { get; private set; }
 
-    public string DepartmentCode { get; private set; }
+    public Guid DepartmentId { get; private set; }
 
     public WorkforceMemberStatus Status { get; private set; }
 
-    public void AssignDepartment(string departmentCode)
+    public void AssignDepartment(Guid departmentId)
     {
         if (Status != WorkforceMemberStatus.Active)
         {
             throw new InvalidOperationException("Only an Active WorkforceMember may change Department.");
         }
 
-        DepartmentCode = WorkforceText.Require(departmentCode, nameof(departmentCode));
+        if (departmentId == Guid.Empty)
+        {
+            throw new ArgumentException("DepartmentId is required.", nameof(departmentId));
+        }
+
+        DepartmentId = departmentId;
     }
 
     public void ChangeWorkforceType(WorkforceType workforceType)

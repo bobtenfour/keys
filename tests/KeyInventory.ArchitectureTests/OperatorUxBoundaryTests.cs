@@ -84,7 +84,7 @@ public sealed class OperatorUxBoundaryTests
         Assert.Contains("asp-page=\"./Add\"", view, StringComparison.Ordinal);
         Assert.Contains("<th>Name</th>", view, StringComparison.Ordinal);
         Assert.Contains("<th>UIN</th>", view, StringComparison.Ordinal);
-        Assert.Contains("View/Edit", view, StringComparison.Ordinal);
+        Assert.Contains(">Edit<", view, StringComparison.Ordinal);
         Assert.Contains("Issued Keys", view, StringComparison.Ordinal);
         Assert.DoesNotContain("Create party", view, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Terminate workforce member", view, StringComparison.OrdinalIgnoreCase);
@@ -92,7 +92,7 @@ public sealed class OperatorUxBoundaryTests
         Assert.DoesNotContain("<th>Workforce", view, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Responsible Manager", view, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("admin-task-grid", view, StringComparison.Ordinal);
-        Assert.Contains("IListWorkforceMembersUseCase", code, StringComparison.Ordinal);
+        Assert.Contains("IConfigurationLifecycleUseCase", code, StringComparison.Ordinal);
         Assert.DoesNotContain("ICreatePartyUseCase", code, StringComparison.Ordinal);
         Assert.DoesNotContain("ICreateWorkforceMemberUseCase", code, StringComparison.Ordinal);
         Assert.DoesNotContain("IRegisterWorkforceMemberUseCase", code, StringComparison.Ordinal);
@@ -152,9 +152,13 @@ public sealed class OperatorUxBoundaryTests
         Assert.False(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Organizations/Index.cshtml")));
         Assert.False(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Buildings/Add.cshtml")));
         Assert.True(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Departments/Add.cshtml")));
+        Assert.True(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Departments/Edit.cshtml")));
         Assert.True(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/Rooms/Add.cshtml")));
         Assert.True(File.Exists(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/WorkAssignments/Add.cshtml")));
-        Assert.Contains("+ Add department", Read("src/KeyInventory.Web/Pages/Administration/Departments/Index.cshtml"), StringComparison.Ordinal);
+        string departmentsIndex = Read("src/KeyInventory.Web/Pages/Administration/Departments/Index.cshtml");
+        Assert.Contains("+ Add department", departmentsIndex, StringComparison.Ordinal);
+        Assert.Contains("Capabilities.CanEdit", departmentsIndex, StringComparison.Ordinal);
+        Assert.Contains(">Edit<", departmentsIndex, StringComparison.Ordinal);
     }
 
     [Fact]

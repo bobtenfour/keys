@@ -4,7 +4,13 @@ public static class OperatorAuditActions
 {
     public const string KeyRegistered = "Key registered";
     public const string KeyAccessPatternCreated = "KEY # created";
+    public const string KeyAccessPatternActivated = "KEY # activated";
+    public const string KeyAccessPatternRetired = "KEY # retired";
+    public const string KeyAccessPatternDeleted = "KEY # deleted";
     public const string PhysicalKeyCopyRegistered = "Physical key copy registered";
+    public const string PhysicalKeyCopyActivated = "Physical key copy activated";
+    public const string PhysicalKeyCopyRetired = "Physical key copy retired";
+    public const string PhysicalKeyCopyDeleted = "Physical key copy deleted";
     public const string KeyRoomAssignmentAdded = "Key↔Room assignment added";
     public const string KeyRoomAssignmentRemoved = "Key↔Room assignment removed";
     public const string KeyAccessPatternRoomAssignmentAdded = "KEY #↔Room assignment added";
@@ -14,15 +20,19 @@ public static class OperatorAuditActions
     public const string WorkforceMemberCreated = "Workforce Member created";
     public const string WorkforceMemberMaintained = "Workforce Member maintained";
     public const string WorkforceMemberTerminated = "Workforce Member terminated";
+    public const string WorkforceMemberDeleted = "Workforce Member deleted";
     public const string WorkAssignmentCreated = "WorkAssignment created";
     public const string WorkAssignmentEnded = "WorkAssignment ended";
     public const string WorkAssignmentPrimaryChanged = "WorkAssignment primary changed";
+    public const string WorkAssignmentDeleted = "WorkAssignment deleted";
     public const string OrganizationCreated = "Organization created";
     public const string OrganizationActivated = "Organization activated";
     public const string OrganizationRetired = "Organization retired";
     public const string DepartmentCreated = "Department created";
+    public const string DepartmentCodeChanged = "Department code changed";
     public const string DepartmentActivated = "Department activated";
     public const string DepartmentRetired = "Department retired";
+    public const string DepartmentDeleted = "Department deleted";
     public const string BuildingCreated = "Building created";
     public const string BuildingActivated = "Building activated";
     public const string BuildingRetired = "Building retired";
@@ -30,11 +40,13 @@ public static class OperatorAuditActions
     public const string RoomUpdated = "Room updated";
     public const string RoomActivated = "Room activated";
     public const string RoomRetired = "Room retired";
+    public const string RoomDeleted = "Room deleted";
     public const string PartyNameUpdated = "Party name updated";
     public const string PartyUinCorrected = "Party UIN corrected";
     public const string KeyTypeCreated = "KeyType created";
     public const string KeyTypeActivated = "KeyType activated";
     public const string KeyTypeRetired = "KeyType retired";
+    public const string KeyTypeDeleted = "KeyType deleted";
 }
 
 public static class OperatorAuditSubjects

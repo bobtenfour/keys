@@ -6,6 +6,99 @@ This document is the logical data model authority.
 ## Purpose
 Define the logical entities and relationships required by the domain. It is not a database migration plan.
 
+## Active Structural Amendment — Identity normalization (2026-08-12)
+- Decision: SUPERSEDE DepartmentCode-as-entity-identity for the active logical model.
+- Authority: Human Governance identity rule — entity identity is a stable internal PK; business identifiers may be unique and editable and must not become persistence identity merely because they are unique.
+- Evidence / full audit: `documentation/erd-normalization-identity-authority-2026-08-12.md`; provenance: `documentation/department-historical-justification-provenance-2026-08-12.md`.
+- Active Department identity: **DepartmentId** (immutable PK) + **DepartmentCode** (unique editable business identifier).
+- Room dual-identity (RoomCode + RoomNumber), Party (PartyCode + UIN), KeyAssetId, KeyNumber-as-immutable-KEY #, and KeyAccessPatternRoomAssignment sole Room-access authority remain.
+- Does not rewrite Accepted OPERATOR-EXPERIENCE-1 / KEY-ACCESS-COPY-1 historical records.
+
+## Implementation status (2026-08-12)
+- **IMPLEMENTED** via migration `DepartmentIdentityNormalization`: DepartmentId PK; WM/WA/Loan FKs; structured Loan justification; one-time KeyIssued provenance extract (migration-scoped only); Department Edit/rename Application authority.
+- **TARGET** above remains the governing logical model; runtime must not parse OperatorAuditRecord.Details for Department relationships or delete eligibility.
+
+## Target Normalized Relational Model (active)
+Logical persistence shape for current business tables. PK = primary key; AK = alternate/unique business key; FK = foreign key (Restrict unless noted).
+
+### Department
+- **PK:** DepartmentId (stable internal identity, Guid)
+- **AK:** DepartmentCode (unique, operator-facing, **editable**)
+- **Lifecycle:** IsActive (Activate/Retire)
+- **Relationships:** referenced by WorkforceMember.DepartmentId (live membership); may be referenced by Loan.JustificationDepartmentId (historical issue snapshot)
+
+### Room
+- **PK:** RoomCode (immutable technical identity)
+- **AK:** RoomNumber (unique, operator-facing, editable)
+- **Attrs:** Description (editable), IsActive
+- **Relationships:** WorkAssignment.RoomCode FK; KeyAccessPatternRoomAssignment.RoomCode FK; Loan.JustificationRoomCode historical snapshot
+
+### Party
+- **PK:** PartyCode (immutable technical identity)
+- **AK:** UIN (unique, governed mutable business identifier)
+- **Attrs:** FirstName, LastName, IsActive
+- **Relationships:** WorkforceMember.PartyCode FK; Loan.BorrowerPartyReference FK → PartyCode
+
+### WorkforceMember
+- **PK:** WorkforceMemberCode
+- **FK:** PartyCode → Party; **DepartmentId → Department**
+- **Attrs:** WorkforceType, Status (Active/Terminated)
+- **Cardinality:** Party 1 → 0..N WM (≤1 Active); Department 1 → 0..N WM
+
+### WorkAssignment
+- **PK:** WorkAssignmentCode
+- **FK:** WorkforceMemberCode → WorkforceMember; RoomCode → Room
+- **Attrs:** IsPrimary, IsActive (End)
+- Association entity; not Department-scoped
+
+### KeyType
+- **PK / classification code:** TypeCode (immutable classification; not KEY # authority)
+- **Lifecycle:** IsActive
+- **FK from:** KeyAccessPattern.KeyTypeCode
+
+### KeyAccessPattern (KEY #)
+- **PK / business identity:** KeyNumber (operator-facing KEY #; **immutable** by KEY-ACCESS-COPY-1)
+- **FK:** KeyTypeCode → KeyType
+- **Lifecycle:** IsActive
+- Owns current Room openings via KeyAccessPatternRoomAssignment
+
+### KeyAccessPatternRoomAssignment
+- **PK:** (KeyNumber, RoomCode)
+- **FK:** KeyNumber → KeyAccessPattern; RoomCode → Room
+- Sole current Room-access authority; Remove does not rewrite Loan/audit history
+
+### KeyAsset (MEDECO)
+- **PK:** KeyAssetId (Guid, immutable)
+- **AK:** (KeyNumber, MedecoKeyCode) unique
+- **FK:** KeyNumber → KeyAccessPattern
+- Rooms and KeyType **derived** from parent KEY # (not independently persisted authorities)
+
+### Loan
+- **PK:** LoanCode
+- **FK:** KeyAssetId → KeyAsset; BorrowerPartyReference → Party
+- **Historical snapshot (immutable after issue):** JustificationKind; JustificationDepartmentId (nullable FK → Department when kind=Department); JustificationRoomCode (nullable FK → Room when kind=Room)
+- Snapshot ≠ live WorkforceMember.DepartmentId membership
+- Status, IssuedAtUtc, DueAtUtc
+
+### Return
+- **PK:** ReturnCode
+- **FK:** LoanCode → Loan (unique)
+
+### OperatorAuditRecord
+- **PK:** AuditRecordId
+- Append-only; SubjectReference/Details are soft refs and display snapshots; never rewritten on DepartmentCode rename
+
+### Cardinality summary (target)
+- Department 1 — 0..N WorkforceMember
+- Party 1 — 0..N WorkforceMember (≤1 Active)
+- WorkforceMember 1 — 0..N WorkAssignment
+- Room 1 — 0..N WorkAssignment; Room 1 — 0..N KeyAccessPatternRoomAssignment
+- KeyType 1 — 0..N KeyAccessPattern
+- KeyAccessPattern 1 — 0..N KeyAsset; KeyAccessPattern M — N Room (via assignment)
+- KeyAsset 1 — 0..N Loan (≤1 Open)
+- Party 1 — 0..N Loan
+- Loan 1 — 0..1 Return
+
 ## Initial Logical Entities
 - KeyAccessPattern
 - KeyAccessPatternRoomAssignment
@@ -208,12 +301,13 @@ Define the logical entities and relationships required by the domain. It is not 
 - Purpose: organizational unit for WorkforceMember membership and Department-based key-issue justification.
 - Owning aggregate or boundary: Workforce Eligibility boundary.
 - Authoritative or derived: Authoritative.
-- Required relationships: may be referenced by zero or more WorkforceMember records; does not reference Organization.
+- Identity (active, 2026-08-12): **DepartmentId** is the immutable entity identity and relationship target. **DepartmentCode** is the unique operator-facing business identifier and is editable without changing DepartmentId.
+- Required relationships: may be referenced by zero or more WorkforceMember records via DepartmentId; may appear on Loan issue-justification snapshots via JustificationDepartmentId; does not reference Organization.
 - Cardinalities: one Department to zero or more WorkforceMember records.
-- Required uniqueness: DepartmentCode is unique across all Department records.
-- Required integrity constraints: DepartmentCode is required; only an active Department may be used for active WorkforceMember membership or Department-based issue justification.
-- Prohibited authority: must not own Party, Location, Room, Loan, Return, custody, audit, authentication, or UI.
-- Lifecycle phase: OPERATOR-EXPERIENCE-1.
+- Required uniqueness: DepartmentId unique; DepartmentCode unique across all Department records.
+- Required integrity constraints: DepartmentCode is required; only an active Department may be used for active WorkforceMember membership or new Department-based issue justification; renaming DepartmentCode must not delete/recreate the Department or rewrite immutable audit history.
+- Prohibited authority: must not own Party, Location, Room, Loan, Return, custody, audit, authentication, or UI; DepartmentCode must not serve as persistence PK / relationship identity.
+- Lifecycle phase: OPERATOR-EXPERIENCE-1 foundation; identity normalization amendment 2026-08-12.
 
 ### WorkforceMember
 - Purpose: workforce relationship and key-eligibility record for WorkforceType Employee or Contractor; not person identity. Employment is not a separate entity.
@@ -309,10 +403,11 @@ Define the logical entities and relationships required by the domain. It is not 
 - Purpose: authoritative controlled issuance intent and workflow state for one physical KeyAsset copy loaned to one Party.
 - Owning aggregate or boundary: Loan aggregate.
 - Authoritative or derived: Authoritative for loan issuance intent and completion workflow, not possession.
-- Required relationships: references exactly one physical KeyAsset by KeyAssetId; references exactly one borrowing Party; may be referenced by zero or one Return; when Workforce Eligibility is in force, borrowing Party must be the Party of an eligible active WorkforceMember and issue justification is required by domain eligibility rules without creating a Borrower entity.
+- Required relationships: references exactly one physical KeyAsset by KeyAssetId; references exactly one borrowing Party by PartyCode; may be referenced by zero or one Return; when Workforce Eligibility is in force, borrowing Party must be the Party of an eligible active WorkforceMember and issue justification is required by domain eligibility rules without creating a Borrower entity.
+- Issue justification persistence (active, 2026-08-12): Loan stores an **immutable historical snapshot** of the authorizing Department and/or Room identity used at Issue time. For Department: `JustificationKind=Department`, `JustificationDepartmentId` (FK), `JustificationDepartmentCodeSnapshot` (event-time code). For Room: `JustificationKind=Room`, `JustificationRoomCode` (FK to stable RoomCode); no RoomNumber snapshot field. Unrelated justification fields must be null. This snapshot is not live WorkforceMember membership and must not be updated when DepartmentCode or RoomNumber changes. OperatorAuditRecord Details remain immutable operator-readable snapshots and are **not** relational delete authority (see `department-historical-justification-provenance-2026-08-12.md`).
 - Cardinalities: one KeyAsset to zero or more Loan records with at most one Open Loan per KeyAsset; one Party to zero or more Loan records; one Loan to zero or one Return; multiple Open Loans may exist under one KEY # when they reference different physical copies.
 - Required uniqueness: LoanCode is unique across Loan records.
-- Required integrity constraints: LoanCode is required; KeyAssetId reference is required; KEY # alone must not be the Loan subject; Party borrower reference is required; IssuedAtUtc is required; DueAtUtc is required; DueAtUtc must be later than IssuedAtUtc; LoanStatus must be Open, Returned, or Cancelled; an Open Loan may have zero Returns; a Returned Loan must have exactly one Return; a Cancelled Loan must have zero Returns; WorkforceMember termination must not rewrite LoanStatus automatically.
+- Required integrity constraints: LoanCode is required; KeyAssetId reference is required; KEY # alone must not be the Loan subject; Party borrower reference is required; IssuedAtUtc is required; DueAtUtc is required; DueAtUtc must be later than IssuedAtUtc; LoanStatus must be Open, Returned, or Cancelled; an Open Loan may have zero Returns; a Returned Loan must have exactly one Return; a Cancelled Loan must have zero Returns; WorkforceMember termination must not rewrite LoanStatus automatically; justification snapshot ids use stable DepartmentId / RoomCode.
 - Prohibited authority: must not store current possession, current custodian, custody transfer history, catalog identity authority, Party profile data, WorkforceMember ownership, lifecycle state, lifecycle transition authority, audit history, authorization state, authentication state, policy state, persistence-provider configuration, or UI state; must not move custody to KEY # / KeyAccessPattern.
 
 ### Return

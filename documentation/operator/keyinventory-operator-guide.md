@@ -45,7 +45,7 @@ This guide and the Application readiness/eligibility model use the same dependen
 | **Parallel** | Can be created independently / in any order |
 | **Optional** | Helpful, not required for Issue Key |
 | **Consequence** | Created by a successful operation |
-| **Lifecycle** | Activate / retire / end / terminate — not first create |
+| **Lifecycle** | Edit where mutable; Delete only when unused/unreferenced; otherwise Activate / Retire / End / Terminate / Remove |
 
 ```mermaid
 flowchart TB
@@ -129,7 +129,7 @@ Workforce Members → Work Assignments → Register Key → Issue.
 ## Creating Departments
 
 ### Purpose
-Name organizational units used for membership and department-based issue justification.
+Name organizational units used for membership and department-based issue justification. The department code is the operator-facing business identifier; under active identity authority it is editable without destroying the department’s relationships or history (stable internal DepartmentId is not an operator typing target).
 
 ### Prerequisites
 None (parallel).
@@ -375,13 +375,21 @@ Operators may correct:
 
 | Record | What you can correct |
 |---|---|
-| Room | Room number, description; activate/retire |
-| Department | activate/retire (code is fixed) |
-| Workforce Member | Department, type; terminate |
+| Room | Room number, description; activate/retire; **Delete** only when unused |
+| Department | **Edit** department code (same department kept); activate/retire; **Delete** only when unused |
+| Workforce Member | Department, type; terminate; **Delete** only when unused (no assignments/loans) |
 | Party | First/Last name; **UIN** via governed correction on the same person |
-| Work Assignment | End; primary flag |
-| Key Type | activate/retire |
+| Work Assignment | End; primary flag; **Delete** only for active unused assignments |
+| Key Type | activate/retire; **Delete** only when no KEY # references it |
+| KEY # | activate/retire; **Delete** only with no MEDECO copies and no Room assignments |
+| MEDECO copy | activate/retire; **Delete** only with no loan history |
 | Key↔Room | assign/remove |
+
+### Delete vs Retire
+- **Delete** permanently removes an unused record that has no business relationships and no history that must be preserved. Confirm deliberately; deletion cannot be undone.
+- **Retire** (or End / Terminate for relationship/person records) keeps the record so history and references remain meaningful.
+- If Delete is unavailable, the record is in use — Retire/End/Terminate instead.
+- Deleted records do not exist; retired records still exist and may be Activated when that lifecycle is supported.
 
 UIN correction keeps the same person and history; it rejects UIN already used by someone else and writes a new Audit Trail row with old and new UIN.
 

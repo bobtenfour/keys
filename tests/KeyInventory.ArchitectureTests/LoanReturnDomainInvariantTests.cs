@@ -1,5 +1,6 @@
 using KeyInventory.Domain.Catalog;
 using KeyInventory.Domain.Loans;
+using KeyInventory.Domain.Workforce;
 using Xunit;
 
 namespace KeyInventory.ArchitectureTests;
@@ -19,12 +20,17 @@ public sealed class LoanReturnDomainInvariantTests
     [Fact]
     public void LoanRequiresKeyAsset()
     {
+        Guid departmentId = Guid.Parse("22222222-2222-2222-2222-222222222222");
         Assert.Throws<ArgumentNullException>(() => new Loan(
             "loan-1",
             keyAsset: null!,
             "party-1",
             IssueAt,
-            DueAt));
+            DueAt,
+            KeyIssueJustificationKind.Department,
+            departmentId,
+            "DEPT",
+            null));
     }
 
     [Fact]
@@ -122,6 +128,16 @@ public sealed class LoanReturnDomainInvariantTests
         DateTimeOffset? dueAtUtc = null)
     {
         KeyAsset keyAsset = CatalogTestFactory.CreateCopy("key-1", "01", "mechanical");
-        return new Loan(loanCode, keyAsset, borrowerPartyReference, IssueAt, dueAtUtc ?? DueAt);
+        Guid departmentId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        return new Loan(
+            loanCode,
+            keyAsset,
+            borrowerPartyReference,
+            IssueAt,
+            dueAtUtc ?? DueAt,
+            KeyIssueJustificationKind.Department,
+            departmentId,
+            "DEPT",
+            null);
     }
 }

@@ -143,10 +143,36 @@ public sealed class KeyCatalogPersistenceAdapter : IKeyCatalogPersistencePort
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task DeleteKeyTypeAsync(string typeCode, CancellationToken cancellationToken)
+    {
+        KeyTypeEntity? entity = await _dbContext.KeyTypes
+            .FirstOrDefaultAsync(item => item.TypeCode == typeCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The key type was not found in persistence.");
+        }
+
+        _dbContext.KeyTypes.Remove(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     public Task<int> CountActiveKeyAccessPatternsForTypeAsync(string typeCode, CancellationToken cancellationToken)
     {
         return _dbContext.KeyAccessPatterns.CountAsync(
             entity => entity.KeyTypeCode == typeCode && entity.IsActive,
+            cancellationToken);
+    }
+
+    public Task<int> CountKeyAccessPatternsForTypeAsync(string typeCode, CancellationToken cancellationToken)
+    {
+        return CountAllKeyAccessPatternsForTypeAsync(typeCode, cancellationToken);
+    }
+
+    public Task<int> CountAllKeyAccessPatternsForTypeAsync(string typeCode, CancellationToken cancellationToken)
+    {
+        return _dbContext.KeyAccessPatterns.CountAsync(
+            entity => entity.KeyTypeCode == typeCode,
             cancellationToken);
     }
 
@@ -176,6 +202,56 @@ public sealed class KeyCatalogPersistenceAdapter : IKeyCatalogPersistencePort
     {
         ArgumentNullException.ThrowIfNull(keyAsset);
         _dbContext.KeyAssets.Add(DomainCatalogMapper.ToEntity(keyAsset));
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UpdateKeyAssetAsync(KeyAsset keyAsset, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(keyAsset);
+        KeyAssetEntity? entity = await _dbContext.KeyAssets
+            .FirstOrDefaultAsync(item => item.KeyAssetId == keyAsset.KeyAssetId, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The physical key copy was not found in persistence.");
+        }
+
+        entity.IsActive = keyAsset.IsActive;
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task DeleteKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken)
+    {
+        KeyAssetEntity? entity = await _dbContext.KeyAssets
+            .FirstOrDefaultAsync(item => item.KeyAssetId == keyAssetId, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The physical key copy was not found in persistence.");
+        }
+
+        _dbContext.KeyAssets.Remove(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task<int> CountKeyAssetsForKeyNumberAsync(string keyNumber, CancellationToken cancellationToken)
+    {
+        return _dbContext.KeyAssets.CountAsync(
+            entity => entity.KeyNumber == keyNumber,
+            cancellationToken);
+    }
+
+    public async Task DeleteKeyAccessPatternAsync(string keyNumber, CancellationToken cancellationToken)
+    {
+        KeyAccessPatternEntity? entity = await _dbContext.KeyAccessPatterns
+            .FirstOrDefaultAsync(item => item.KeyNumber == keyNumber, cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            throw new InvalidOperationException("The KEY # was not found in persistence.");
+        }
+
+        _dbContext.KeyAccessPatterns.Remove(entity);
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 

@@ -25,13 +25,25 @@ public interface IWorkforcePersistencePort
 
     Task<IReadOnlyList<PartyListItem>> ListPartiesAsync(CancellationToken cancellationToken);
 
-    Task<bool> DepartmentExistsAsync(string departmentCode, CancellationToken cancellationToken);
+    Task<bool> DepartmentExistsByCodeAsync(string departmentCode, CancellationToken cancellationToken);
 
     Task AddDepartmentAsync(Department department, CancellationToken cancellationToken);
 
     Task UpdateDepartmentAsync(Department department, CancellationToken cancellationToken);
 
-    Task<Department?> FindDepartmentAsync(string departmentCode, CancellationToken cancellationToken);
+    Task DeleteDepartmentAsync(Guid departmentId, CancellationToken cancellationToken);
+
+    Task<int> CountWorkforceMembersForDepartmentAsync(
+        Guid departmentId,
+        CancellationToken cancellationToken);
+
+    Task<int> CountLoansJustifiedByDepartmentAsync(
+        Guid departmentId,
+        CancellationToken cancellationToken);
+
+    Task<Department?> FindDepartmentAsync(Guid departmentId, CancellationToken cancellationToken);
+
+    Task<Department?> FindDepartmentByCodeAsync(string departmentCode, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<DepartmentListItem>> ListDepartmentsAsync(CancellationToken cancellationToken);
 
@@ -42,6 +54,10 @@ public interface IWorkforcePersistencePort
     Task AddRoomAsync(Room room, CancellationToken cancellationToken);
 
     Task UpdateRoomAsync(Room room, CancellationToken cancellationToken);
+
+    Task DeleteRoomAsync(string roomCode, CancellationToken cancellationToken);
+
+    Task<int> CountWorkAssignmentsForRoomAsync(string roomCode, CancellationToken cancellationToken);
 
     Task<Room?> FindRoomAsync(string roomCode, CancellationToken cancellationToken);
 
@@ -56,6 +72,16 @@ public interface IWorkforcePersistencePort
     Task AddWorkforceMemberAsync(WorkforceMember member, CancellationToken cancellationToken);
 
     Task UpdateWorkforceMemberAsync(WorkforceMember member, CancellationToken cancellationToken);
+
+    Task DeleteWorkforceMemberAsync(string workforceMemberCode, CancellationToken cancellationToken);
+
+    Task DeletePartyAsync(string partyCode, CancellationToken cancellationToken);
+
+    Task<int> CountWorkforceMembersForPartyAsync(string partyCode, CancellationToken cancellationToken);
+
+    Task<int> CountWorkAssignmentsForMemberAsync(
+        string workforceMemberCode,
+        CancellationToken cancellationToken);
 
     Task<WorkforceMember?> FindWorkforceMemberAsync(string workforceMemberCode, CancellationToken cancellationToken);
 
@@ -75,6 +101,8 @@ public interface IWorkforcePersistencePort
     Task AddWorkAssignmentAsync(WorkAssignment assignment, CancellationToken cancellationToken);
 
     Task UpdateWorkAssignmentAsync(WorkAssignment assignment, CancellationToken cancellationToken);
+
+    Task DeleteWorkAssignmentAsync(string workAssignmentCode, CancellationToken cancellationToken);
 
     Task<WorkAssignment?> FindWorkAssignmentAsync(string workAssignmentCode, CancellationToken cancellationToken);
 

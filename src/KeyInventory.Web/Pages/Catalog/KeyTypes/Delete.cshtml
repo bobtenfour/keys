@@ -1,0 +1,37 @@
+@page
+@model KeyInventory.Web.Pages.Catalog.KeyTypes.DeleteModel
+@{
+    ViewData["Title"] = "Delete Key Type";
+    ViewData["NavSection"] = "catalog";
+    var item = Model.Item!;
+}
+
+<header class="page-header page-header-compact">
+    <p class="eyebrow"><a asp-page="/Catalog/KeyTypes">Key Types</a></p>
+    <h1>Delete key type</h1>
+    <p class="lede">Delete key type &quot;@item.TypeCode&quot;?</p>
+</header>
+
+<section class="card form-card destructive-panel">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <p>
+        This permanently removes the key type. Deletion is only allowed when no KEY # access patterns
+        reference it. Prefer Retire when history must be preserved.
+    </p>
+
+    <form method="post" class="form-grid">
+        <input type="hidden" asp-for="TypeCode" />
+        <label class="checkbox">
+            <input asp-for="ConfirmDelete" />
+            I confirm permanent deletion of key type &quot;@item.TypeCode&quot;
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Delete key type</button>
+            <a class="btn btn-secondary" asp-page="/Catalog/KeyTypes">Cancel</a>
+        </div>
+    </form>
+</section>

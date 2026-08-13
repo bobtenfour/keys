@@ -24,14 +24,21 @@ namespace KeyInventory.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.DepartmentEntity", b =>
                 {
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("DepartmentCode")
+                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.HasKey("DepartmentCode");
+                    b.HasKey("DepartmentId");
+
+                    b.HasIndex("DepartmentCode")
+                        .IsUnique();
 
                     b.ToTable("Departments", (string)null);
                 });
@@ -131,6 +138,21 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                     b.Property<DateTimeOffset>("IssuedAtUtc")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("JustificationDepartmentCodeSnapshot")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<Guid?>("JustificationDepartmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("JustificationKind")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("JustificationRoomCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
                     b.Property<Guid>("KeyAssetId")
                         .HasColumnType("uniqueidentifier");
 
@@ -141,9 +163,18 @@ namespace KeyInventory.Infrastructure.Data.Migrations
 
                     b.HasKey("LoanCode");
 
+                    b.HasIndex("BorrowerPartyReference");
+
+                    b.HasIndex("JustificationDepartmentId");
+
+                    b.HasIndex("JustificationRoomCode");
+
                     b.HasIndex("KeyAssetId");
 
-                    b.ToTable("Loans", (string)null);
+                    b.ToTable("Loans", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Loans_Justification", "(\r\n    [JustificationKind] IS NULL\r\n    AND [JustificationDepartmentId] IS NULL\r\n    AND [JustificationDepartmentCodeSnapshot] IS NULL\r\n    AND [JustificationRoomCode] IS NULL\r\n)\r\nOR\r\n(\r\n    [JustificationKind] = N'Department'\r\n    AND [JustificationDepartmentId] IS NOT NULL\r\n    AND [JustificationDepartmentCodeSnapshot] IS NOT NULL\r\n    AND LTRIM(RTRIM([JustificationDepartmentCodeSnapshot])) <> N''\r\n    AND [JustificationRoomCode] IS NULL\r\n)\r\nOR\r\n(\r\n    [JustificationKind] = N'Room'\r\n    AND [JustificationRoomCode] IS NOT NULL\r\n    AND LTRIM(RTRIM([JustificationRoomCode])) <> N''\r\n    AND [JustificationDepartmentId] IS NULL\r\n    AND [JustificationDepartmentCodeSnapshot] IS NULL\r\n)");
+                        });
                 });
 
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.OperatorAuditRecordEntity", b =>
@@ -298,6 +329,8 @@ namespace KeyInventory.Infrastructure.Data.Migrations
 
                     b.HasKey("WorkAssignmentCode");
 
+                    b.HasIndex("RoomCode");
+
                     b.HasIndex("WorkforceMemberCode", "IsPrimary")
                         .IsUnique()
                         .HasFilter("[IsActive] = 1 AND [IsPrimary] = 1");
@@ -311,10 +344,8 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<string>("DepartmentCode")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("PartyCode")
                         .IsRequired()
@@ -332,6 +363,8 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(32)");
 
                     b.HasKey("WorkforceMemberCode");
+
+                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("PartyCode")
                         .IsUnique()
@@ -581,11 +614,33 @@ namespace KeyInventory.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.LoanEntity", b =>
                 {
+                    b.HasOne("KeyInventory.Infrastructure.Data.PartyEntity", "BorrowerParty")
+                        .WithMany()
+                        .HasForeignKey("BorrowerPartyReference")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("KeyInventory.Infrastructure.Data.DepartmentEntity", "JustificationDepartment")
+                        .WithMany()
+                        .HasForeignKey("JustificationDepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("KeyInventory.Infrastructure.Data.RoomEntity", "JustificationRoom")
+                        .WithMany()
+                        .HasForeignKey("JustificationRoomCode")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("KeyInventory.Infrastructure.Data.KeyAssetEntity", "KeyAsset")
                         .WithMany()
                         .HasForeignKey("KeyAssetId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("BorrowerParty");
+
+                    b.Navigation("JustificationDepartment");
+
+                    b.Navigation("JustificationRoom");
 
                     b.Navigation("KeyAsset");
                 });
@@ -601,13 +656,40 @@ namespace KeyInventory.Infrastructure.Data.Migrations
                     b.Navigation("Loan");
                 });
 
+            modelBuilder.Entity("KeyInventory.Infrastructure.Data.WorkAssignmentEntity", b =>
+                {
+                    b.HasOne("KeyInventory.Infrastructure.Data.RoomEntity", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("KeyInventory.Infrastructure.Data.WorkforceMemberEntity", "WorkforceMember")
+                        .WithMany()
+                        .HasForeignKey("WorkforceMemberCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Room");
+
+                    b.Navigation("WorkforceMember");
+                });
+
             modelBuilder.Entity("KeyInventory.Infrastructure.Data.WorkforceMemberEntity", b =>
                 {
+                    b.HasOne("KeyInventory.Infrastructure.Data.DepartmentEntity", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("KeyInventory.Infrastructure.Data.PartyEntity", "Party")
                         .WithMany()
                         .HasForeignKey("PartyCode")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Department");
 
                     b.Navigation("Party");
                 });

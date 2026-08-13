@@ -17,4 +17,12 @@ public interface ILoanPersistencePort
     Task<IReadOnlyList<LoanListItem>> ListReturnedLoansAsync(CancellationToken cancellationToken);
 
     Task<bool> HasOpenLoanForKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken);
+
+    Task<int> CountLoansForKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken);
+
+    Task<int> CountLoansForPartyAsync(string partyCode, CancellationToken cancellationToken);
+
+    Task<int> CountLoansJustifiedByDepartmentAsync(Guid departmentId, CancellationToken cancellationToken);
+
+    Task<int> CountLoansJustifiedByRoomAsync(string roomCode, CancellationToken cancellationToken);
 }

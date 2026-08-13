@@ -8,9 +8,11 @@ public sealed class WorkforceMemberEntity
 
     public string WorkforceType { get; set; } = string.Empty;
 
-    public string DepartmentCode { get; set; } = string.Empty;
+    public Guid DepartmentId { get; set; }
 
     public string Status { get; set; } = string.Empty;
 
     public PartyEntity Party { get; set; } = null!;
+
+    public DepartmentEntity Department { get; set; } = null!;
 }

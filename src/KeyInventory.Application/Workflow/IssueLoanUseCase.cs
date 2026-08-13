@@ -79,7 +79,7 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
         }
 
         Department? department = await _workforce
-            .FindDepartmentAsync(member.DepartmentCode, cancellationToken)
+            .FindDepartmentAsync(member.DepartmentId, cancellationToken)
             .ConfigureAwait(false);
         if (department is null)
         {
@@ -90,6 +90,8 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
             .ListActiveWorkAssignmentsAsync(member.WorkforceMemberCode, cancellationToken)
             .ConfigureAwait(false);
 
+        ArgumentException.ThrowIfNullOrWhiteSpace(justificationCode);
+
         KeyIssueEligibility.EnsureEligible(
             member,
             party,
@@ -98,12 +100,43 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
             kind,
             justificationCode);
 
-        Loan loan = new(loanCode, keyAsset, party.PartyCode, issuedAtUtc, dueAtUtc);
+        string normalizedJustification = justificationCode.Trim();
+        Guid? justificationDepartmentId = null;
+        string? justificationDepartmentCodeSnapshot = null;
+        string? justificationRoomCode = null;
+        if (kind == KeyIssueJustificationKind.Department)
+        {
+            justificationDepartmentId = department.DepartmentId;
+            justificationDepartmentCodeSnapshot = department.DepartmentCode;
+        }
+        else
+        {
+            justificationRoomCode = normalizedJustification;
+        }
+
+        Loan loan = new(
+            loanCode,
+            keyAsset,
+            party.PartyCode,
+            issuedAtUtc,
+            dueAtUtc,
+            kind,
+            justificationDepartmentId,
+            justificationDepartmentCodeSnapshot,
+            justificationRoomCode);
+
+        string auditDetails =
+            $"KEY#={keyAsset.KeyNumber}; MEDECO={keyAsset.MedecoKeyCode}; KeyAssetId={keyAsset.KeyAssetId:D}; WorkforceMember={member.WorkforceMemberCode}; Justification={kind}/{normalizedJustification}";
+        if (kind == KeyIssueJustificationKind.Department)
+        {
+            auditDetails += $"; DepartmentId={department.DepartmentId:D}";
+        }
+
         _audit.Stage(
             OperatorAuditActions.KeyIssued,
             OperatorAuditSubjects.Loan,
             loan.LoanCode,
-            $"KEY#={keyAsset.KeyNumber}; MEDECO={keyAsset.MedecoKeyCode}; KeyAssetId={keyAsset.KeyAssetId:D}; WorkforceMember={member.WorkforceMemberCode}; Justification={kind}/{justificationCode?.Trim()}");
+            auditDetails);
         await _loans.AddLoanAsync(loan, cancellationToken).ConfigureAwait(false);
     }
 }

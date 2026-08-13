@@ -1,4 +1,4 @@
-using KeyInventory.Application.Workflow;
+using KeyInventory.Application.Lifecycle;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -6,21 +6,14 @@ namespace KeyInventory.Web.Pages.Catalog;
 
 public sealed class KeyTypesModel : PageModel
 {
-    private readonly IListKeyTypesUseCase _listKeyTypes;
-    private readonly IActivateKeyTypeUseCase _activate;
-    private readonly IRetireKeyTypeUseCase _retire;
+    private readonly IConfigurationLifecycleUseCase _lifecycle;
 
-    public KeyTypesModel(
-        IListKeyTypesUseCase listKeyTypes,
-        IActivateKeyTypeUseCase activate,
-        IRetireKeyTypeUseCase retire)
+    public KeyTypesModel(IConfigurationLifecycleUseCase lifecycle)
     {
-        _listKeyTypes = listKeyTypes ?? throw new ArgumentNullException(nameof(listKeyTypes));
-        _activate = activate ?? throw new ArgumentNullException(nameof(activate));
-        _retire = retire ?? throw new ArgumentNullException(nameof(retire));
+        _lifecycle = lifecycle ?? throw new ArgumentNullException(nameof(lifecycle));
     }
 
-    public IReadOnlyList<KeyTypeListItem> KeyTypes { get; private set; } = [];
+    public IReadOnlyList<KeyTypeLifecycleItem> KeyTypes { get; private set; } = [];
 
     public string? SuccessMessage { get; private set; }
 
@@ -28,14 +21,16 @@ public sealed class KeyTypesModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        KeyTypes = await _listKeyTypes.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        SuccessMessage = TempData["SuccessMessage"] as string;
+        ErrorMessage = TempData["ErrorMessage"] as string;
+        KeyTypes = await _lifecycle.ListKeyTypesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IActionResult> OnPostActivateAsync(string typeCode, CancellationToken cancellationToken)
     {
         try
         {
-            await _activate.ExecuteAsync(typeCode, cancellationToken).ConfigureAwait(false);
+            await _lifecycle.ActivateKeyTypeAsync(typeCode, cancellationToken).ConfigureAwait(false);
             SuccessMessage = $"Key type {typeCode} was activated.";
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
@@ -43,7 +38,7 @@ public sealed class KeyTypesModel : PageModel
             ErrorMessage = exception.Message;
         }
 
-        KeyTypes = await _listKeyTypes.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        KeyTypes = await _lifecycle.ListKeyTypesAsync(cancellationToken).ConfigureAwait(false);
         return Page();
     }
 
@@ -51,7 +46,7 @@ public sealed class KeyTypesModel : PageModel
     {
         try
         {
-            await _retire.ExecuteAsync(typeCode, cancellationToken).ConfigureAwait(false);
+            await _lifecycle.RetireKeyTypeAsync(typeCode, cancellationToken).ConfigureAwait(false);
             SuccessMessage = $"Key type {typeCode} was retired.";
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
@@ -59,7 +54,7 @@ public sealed class KeyTypesModel : PageModel
             ErrorMessage = exception.Message;
         }
 
-        KeyTypes = await _listKeyTypes.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        KeyTypes = await _lifecycle.ListKeyTypesAsync(cancellationToken).ConfigureAwait(false);
         return Page();
     }
 }

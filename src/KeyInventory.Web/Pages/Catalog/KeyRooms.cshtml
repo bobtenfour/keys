@@ -53,7 +53,7 @@
                         <th>Room</th>
                         <th>Description</th>
                         <th>Room code</th>
-                        <th></th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,11 +63,11 @@
                         <td>@room.RoomNumber</td>
                         <td>@(string.IsNullOrWhiteSpace(room.Description) ? "—" : room.Description)</td>
                         <td>@room.RoomCode</td>
-                        <td>
-                            <form method="post" asp-page-handler="Remove">
+                        <td class="table-actions">
+                            <form method="post" asp-page-handler="Remove" style="display:inline">
                                 <input type="hidden" name="KeyNumber" value="@Model.KeyNumber" />
                                 <input type="hidden" name="roomCode" value="@room.RoomCode" />
-                                <button type="submit" class="btn btn-secondary">Remove</button>
+                                <button type="submit" class="btn btn-danger">Remove</button>
                             </form>
                         </td>
                     </tr>

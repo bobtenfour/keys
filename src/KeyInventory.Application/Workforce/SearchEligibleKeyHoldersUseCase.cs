@@ -85,7 +85,7 @@ public sealed class SearchEligibleKeyHoldersUseCase : ISearchEligibleKeyHoldersU
         }
 
         Party? party = await _workforce.FindPartyAsync(member.PartyCode, cancellationToken).ConfigureAwait(false);
-        Department? department = await _workforce.FindDepartmentAsync(member.DepartmentCode, cancellationToken)
+        Department? department = await _workforce.FindDepartmentAsync(member.DepartmentId, cancellationToken)
             .ConfigureAwait(false);
         if (party is null || department is null)
         {
@@ -134,7 +134,7 @@ public sealed class GetKeyHolderIssueOptionsUseCase : IGetKeyHolderIssueOptionsU
         }
 
         Party? party = await _workforce.FindPartyAsync(member.PartyCode, cancellationToken).ConfigureAwait(false);
-        Department? department = await _workforce.FindDepartmentAsync(member.DepartmentCode, cancellationToken)
+        Department? department = await _workforce.FindDepartmentAsync(member.DepartmentId, cancellationToken)
             .ConfigureAwait(false);
         if (party is null || department is null)
         {
@@ -185,7 +185,7 @@ public sealed class GetKeyHolderIssueOptionsUseCase : IGetKeyHolderIssueOptionsU
                 party.FirstName,
                 party.LastName,
                 party.Uin),
-            [new KeyHolderJustificationOption(member.DepartmentCode, member.DepartmentCode)],
+            [new KeyHolderJustificationOption(department.DepartmentCode, department.DepartmentCode)],
             roomOptions);
     }
 }

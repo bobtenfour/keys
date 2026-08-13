@@ -1,0 +1,37 @@
+@page
+@model KeyInventory.Web.Pages.Administration.WorkforceMembers.DeleteModel
+@{
+    ViewData["Title"] = "Delete Workforce Member";
+    ViewData["NavSection"] = "administration";
+    var item = Model.Item!;
+}
+
+<header class="page-header page-header-compact">
+    <p class="eyebrow"><a asp-page="./Index">Workforce Members</a></p>
+    <h1>Delete workforce member</h1>
+    <p class="lede">Delete workforce member &quot;@item.FirstName @item.LastName&quot;?</p>
+</header>
+
+<section class="card form-card destructive-panel">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <p>
+        This permanently removes the workforce membership when there are no work assignments and no loan
+        history. Prefer Terminate when history must be preserved.
+    </p>
+
+    <form method="post" class="form-grid">
+        <input type="hidden" asp-for="Member" />
+        <label class="checkbox">
+            <input asp-for="ConfirmDelete" />
+            I confirm permanent deletion of @item.FirstName @item.LastName
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Delete workforce member</button>
+            <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
+        </div>
+    </form>
+</section>

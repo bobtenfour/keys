@@ -307,5 +307,31 @@ After OPERATOR-EXPERIENCE-1 reaches Implementation Complete with closure evidenc
 - Active rules: clean initial Issue/Receive business-choice state; bounded Application-owned eligible key-holder search; PRG clean post-success state; shared absolute operator timestamp display with operator-editable Issued/Due/Received via shared local-time conversion.
 - Historical Accepted evidence above remains unchanged.
 
+## Active Lifecycle Amendment — Administration / Catalog delete vs retire (does not rewrite Acceptance Record)
+- Decision: SUPERSEDE the active mutability matrix rule “No hard delete” for unused/unreferenced Administration and Catalog configuration records only.
+- Date: 2026-08-12.
+- Authority: Human Governance via active `documentation/product-experience-contract.md` (Administration / Catalog Record Lifecycle).
+- Scope: Application-owned lifecycle eligibility and presentation for Administration/Catalog row actions. Does not rewrite historical Accepted records. Does not authorize cascade deletion of business history. Does not change KEY-ACCESS-COPY-1 KEY # / MEDECO custody authority.
+- Active rules:
+  - Unreferenced record → permanent Delete permitted when Application revalidates no relationships/history that must be preserved.
+  - Referenced or historically used record → permanent Delete forbidden; Retire / End / Terminate / Remove where supported.
+  - Edit is an explicit row action when attributes are legitimately mutable under active identity authority.
+  - `IConfigurationLifecycleUseCase` is the Application lifecycle authority consumed by Web list/delete surfaces.
+- Historical Accepted evidence and the historical matrix wording above remain unchanged as Accepted history; active product behavior follows this amendment.
+
+## Active Structural Amendment — Department identity normalization (does not rewrite Acceptance Record)
+- Decision: SUPERSEDE the Accepted mutability matrix classification of Department.DepartmentCode as IMMUTABLE IDENTITY for active product/Domain/ERD authority.
+- Date: 2026-08-12.
+- Authority: Human Governance identity rule via `documentation/key-inventory-erd.md` and `documentation/erd-normalization-identity-authority-2026-08-12.md`.
+- Scope: Logical identity only in this amendment. Runtime/migration implementation is not authorized by this amendment alone. Roadmap Next Allowed Slice remains STOP.
+- Active rules:
+  - DepartmentId = immutable entity identity and relationship target.
+  - DepartmentCode = unique editable business identifier (operator-facing); rename must not rewrite prior OperatorAuditRecord rows.
+  - Live WorkforceMember membership references DepartmentId.
+  - Issue Department justification on Loan (when implemented) = JustificationDepartmentId + immutable JustificationDepartmentCodeSnapshot; OperatorAuditRecord Details remain display history only.
+  - Legacy KeyIssued Details format is classification B (semi-structured, not governed); deterministic relational backfill is not authorized until Human Migration Provenance Extract or Human mapping (`documentation/department-historical-justification-provenance-2026-08-12.md`). Runtime Details parsing for delete eligibility is forbidden. Permanently forbidding rename because of old snapshots is rejected.
+  - Room RoomCode/RoomNumber dual identity, KEY # KeyNumber immutability, and KeyAssetId custody remain unchanged.
+- Historical Accepted matrix rows that labeled DepartmentCode IMMUTABLE IDENTITY remain as Accepted history only.
+
 ## Next Allowed Slice
 STOP

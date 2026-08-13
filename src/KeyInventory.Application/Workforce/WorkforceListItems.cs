@@ -1,6 +1,6 @@
 namespace KeyInventory.Application.Workforce;
 
-public sealed record DepartmentListItem(string DepartmentCode, bool IsActive);
+public sealed record DepartmentListItem(Guid DepartmentId, string DepartmentCode, bool IsActive);
 
 public sealed record RoomListItem(
     string RoomCode,

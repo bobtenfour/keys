@@ -27,14 +27,14 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
     {
         List<OpenLoanPartyRow> openLoans = await LoadOpenLoansAsync(keyNumberFilter, cancellationToken)
             .ConfigureAwait(false);
-        Dictionary<string, WorkforceMemberEntity> membersByParty =
+        Dictionary<string, MemberPartySnapshot> membersByParty =
             await ResolveMembersByPartyAsync(openLoans.Select(loan => loan.PartyCode), cancellationToken)
                 .ConfigureAwait(false);
 
         return openLoans
             .Select(loan =>
             {
-                membersByParty.TryGetValue(loan.PartyCode, out WorkforceMemberEntity? member);
+                membersByParty.TryGetValue(loan.PartyCode, out MemberPartySnapshot? member);
                 return new CurrentKeyHolderReportRow(
                     loan.KeyNumber,
                     loan.MedecoKeyCode,
@@ -58,14 +58,14 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
     {
         List<OpenLoanPartyRow> openLoans = await LoadOpenLoansAsync(keyNumberFilter, cancellationToken)
             .ConfigureAwait(false);
-        Dictionary<string, WorkforceMemberEntity> membersByParty =
+        Dictionary<string, MemberPartySnapshot> membersByParty =
             await ResolveMembersByPartyAsync(openLoans.Select(loan => loan.PartyCode), cancellationToken)
                 .ConfigureAwait(false);
 
         return openLoans
             .Select(loan =>
             {
-                membersByParty.TryGetValue(loan.PartyCode, out WorkforceMemberEntity? member);
+                membersByParty.TryGetValue(loan.PartyCode, out MemberPartySnapshot? member);
                 return new ActiveLoanReportRow(
                     loan.KeyNumber,
                     loan.MedecoKeyCode,
@@ -91,14 +91,14 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
         List<OpenLoanPartyRow> openLoans = await LoadOpenLoansAsync(keyNumberFilter, cancellationToken)
             .ConfigureAwait(false);
         List<OpenLoanPartyRow> overdue = openLoans.Where(loan => loan.DueAtUtc < utcNow).ToList();
-        Dictionary<string, WorkforceMemberEntity> membersByParty =
+        Dictionary<string, MemberPartySnapshot> membersByParty =
             await ResolveMembersByPartyAsync(overdue.Select(loan => loan.PartyCode), cancellationToken)
                 .ConfigureAwait(false);
 
         return overdue
             .Select(loan =>
             {
-                membersByParty.TryGetValue(loan.PartyCode, out WorkforceMemberEntity? member);
+                membersByParty.TryGetValue(loan.PartyCode, out MemberPartySnapshot? member);
                 int daysOverdue = Math.Max(0, (int)Math.Floor((utcNow - loan.DueAtUtc).TotalDays));
                 return new OverdueKeyReportRow(
                     loan.KeyNumber,
@@ -255,6 +255,8 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                 from member in membersQuery
                 join party in _dbContext.Parties.AsNoTracking()
                     on member.PartyCode equals party.PartyCode
+                join department in _dbContext.Departments.AsNoTracking()
+                    on member.DepartmentId equals department.DepartmentId
                 join loan in _dbContext.Loans.AsNoTracking()
                     on member.PartyCode equals loan.BorrowerPartyReference
                 join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
@@ -266,7 +268,7 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                     party.FirstName,
                     party.LastName,
                     party.Uin,
-                    member.DepartmentCode,
+                    department.DepartmentCode,
                     key.KeyNumber,
                     key.MedecoKeyCode,
                     loan.LoanCode,
@@ -409,18 +411,26 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
             .ConfigureAwait(false);
     }
 
-    private async Task<Dictionary<string, WorkforceMemberEntity>> ResolveMembersByPartyAsync(
+    private async Task<Dictionary<string, MemberPartySnapshot>> ResolveMembersByPartyAsync(
         IEnumerable<string> partyCodes,
         CancellationToken cancellationToken)
     {
         HashSet<string> codes = partyCodes.ToHashSet(StringComparer.Ordinal);
         if (codes.Count == 0)
         {
-            return new Dictionary<string, WorkforceMemberEntity>(StringComparer.Ordinal);
+            return new Dictionary<string, MemberPartySnapshot>(StringComparer.Ordinal);
         }
 
-        List<WorkforceMemberEntity> members = await _dbContext.WorkforceMembers.AsNoTracking()
-            .Where(member => codes.Contains(member.PartyCode))
+        List<MemberPartySnapshot> members = await (
+                from member in _dbContext.WorkforceMembers.AsNoTracking()
+                join department in _dbContext.Departments.AsNoTracking()
+                    on member.DepartmentId equals department.DepartmentId
+                where codes.Contains(member.PartyCode)
+                select new MemberPartySnapshot(
+                    member.PartyCode,
+                    member.WorkforceMemberCode,
+                    member.Status,
+                    department.DepartmentCode))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -435,6 +445,12 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
                     .First(),
                 StringComparer.Ordinal);
     }
+
+    private sealed record MemberPartySnapshot(
+        string PartyCode,
+        string WorkforceMemberCode,
+        string Status,
+        string DepartmentCode);
 
     private sealed record OpenLoanPartyRow(
         string LoanCode,
