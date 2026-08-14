@@ -13,6 +13,16 @@ public interface IOperationalKeyLookupPort
 
     Task<IReadOnlyList<OperationalLoanDisplay>> ListOpenLoansWithHoldersAsync(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Bounded search of open loans by KEY #, MEDECO, holder name, or UIN.
+    /// </summary>
+    Task<IReadOnlyList<OperationalLoanDisplay>> SearchOpenLoansWithHoldersAsync(
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken);
+
+    Task<OperationalLoanDisplay?> FindOpenLoanByLoanCodeAsync(string loanCode, CancellationToken cancellationToken);
+
     Task<IReadOnlyList<OperationalLoanDisplay>> ListReturnedLoansWithHoldersAsync(CancellationToken cancellationToken);
 
     Task<IReadOnlyList<WorkforceMemberIdentityDisplay>> ListActiveWorkforceMembersWithIdentityAsync(

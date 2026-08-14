@@ -49,6 +49,12 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
         ICreateKeyAssetUseCase create = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
         IListKeyAssetsUseCase list = scope.ServiceProvider.GetRequiredService<IListKeyAssetsUseCase>();
 
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                create.ExecuteAsync("key-100", "01", "mechanical", CancellationToken.None))
+            .ConfigureAwait(true);
+
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical")
+            .ConfigureAwait(true);
         await create.ExecuteAsync("key-100", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
         IReadOnlyList<KeyAssetListItem> keys = await list.ExecuteAsync(CancellationToken.None).ConfigureAwait(true);
@@ -61,13 +67,13 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
     public async Task IssueLoanSucceedsForExistingKeyAndRejectsNonUtcTimestamp()
     {
         using IServiceScope scope = CreateScope();
-        ICreateKeyAssetUseCase create = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
         IIssueLoanUseCase issue = scope.ServiceProvider.GetRequiredService<IIssueLoanUseCase>();
         IListOpenLoansUseCase listOpen = scope.ServiceProvider.GetRequiredService<IListOpenLoansUseCase>();
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lv200")
             .ConfigureAwait(true);
-        await create.ExecuteAsync("key-200", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-200", "01", "mechanical")
+            .ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 3, 12, 0, 0, TimeSpan.Zero);
         DateTimeOffset due = issued.AddDays(1);
@@ -86,7 +92,8 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
         IReadOnlyList<LoanListItem> openLoans = await listOpen.ExecuteAsync(CancellationToken.None).ConfigureAwait(true);
         Assert.Contains(openLoans, loan => loan.LoanCode == "loan-200" && loan.BorrowerPartyReference == seeded.PartyCode);
 
-        await create.ExecuteAsync("key-201", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-201", "01", "mechanical")
+            .ConfigureAwait(true);
         DateTimeOffset nonUtc = new(2026, 8, 3, 12, 0, 0, TimeSpan.FromHours(-5));
         await Assert.ThrowsAsync<ArgumentException>(() =>
             issue.ExecuteAsync(
@@ -105,14 +112,14 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
     public async Task CompleteReturnSucceedsForOpenLoanAndRejectsNonOpenLoan()
     {
         using IServiceScope scope = CreateScope();
-        ICreateKeyAssetUseCase create = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
         IIssueLoanUseCase issue = scope.ServiceProvider.GetRequiredService<IIssueLoanUseCase>();
         ICompleteReturnUseCase completeReturn = scope.ServiceProvider.GetRequiredService<ICompleteReturnUseCase>();
         IListReturnedLoansUseCase listReturned = scope.ServiceProvider.GetRequiredService<IListReturnedLoansUseCase>();
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lv300")
             .ConfigureAwait(true);
-        await create.ExecuteAsync("key-300", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-300", "01", "mechanical")
+            .ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 3, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-300",
@@ -144,7 +151,6 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
     public async Task ListOpenAndReturnedLoansReturnExpectedResults()
     {
         using IServiceScope scope = CreateScope();
-        ICreateKeyAssetUseCase create = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
         IIssueLoanUseCase issue = scope.ServiceProvider.GetRequiredService<IIssueLoanUseCase>();
         ICompleteReturnUseCase completeReturn = scope.ServiceProvider.GetRequiredService<ICompleteReturnUseCase>();
         IListOpenLoansUseCase listOpen = scope.ServiceProvider.GetRequiredService<IListOpenLoansUseCase>();
@@ -152,7 +158,8 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lv400")
             .ConfigureAwait(true);
-        await create.ExecuteAsync("key-400", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-400", "01", "mechanical")
+            .ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 3, 10, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-open",
@@ -165,7 +172,8 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
                 issued.AddDays(1),
                 CancellationToken.None)
             .ConfigureAwait(true);
-        await create.ExecuteAsync("key-401", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-401", "01", "mechanical")
+            .ConfigureAwait(true);
         await issue.ExecuteAsync(
                 "loan-done",
                 "key-401",

@@ -148,8 +148,7 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "term")
             .ConfigureAwait(true);
 
-        await scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>()
-            .ExecuteAsync("TERM-KEY-1", "01", "mechanical", CancellationToken.None)
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "TERM-KEY-1", "01", "mechanical")
             .ConfigureAwait(true);
 
         DateTimeOffset issued = DateTimeOffset.UtcNow;

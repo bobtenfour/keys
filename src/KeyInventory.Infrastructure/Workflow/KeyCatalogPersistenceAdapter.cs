@@ -101,6 +101,55 @@ public sealed class KeyCatalogPersistenceAdapter : IKeyCatalogPersistencePort
             .ToArray();
     }
 
+    public async Task<IReadOnlyList<KeyAccessPatternListItem>> SearchActiveKeyAccessPatternsAsync(
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(searchText) || maxResults < 1)
+        {
+            return [];
+        }
+
+        string term = searchText.Trim();
+        int bound = Math.Min(maxResults, 25);
+
+        List<KeyAccessPatternEntity> patterns = await _dbContext.KeyAccessPatterns
+            .AsNoTracking()
+            .Where(entity => entity.IsActive && entity.KeyNumber.Contains(term))
+            .OrderBy(entity => entity.KeyNumber)
+            .Take(bound)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (patterns.Count == 0)
+        {
+            return [];
+        }
+
+        Dictionary<string, int> copyCounts = await _dbContext.KeyAssets.AsNoTracking()
+            .Where(entity => patterns.Select(pattern => pattern.KeyNumber).Contains(entity.KeyNumber))
+            .GroupBy(entity => entity.KeyNumber)
+            .Select(group => new { KeyNumber = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.KeyNumber, item => item.Count, StringComparer.Ordinal, cancellationToken)
+            .ConfigureAwait(false);
+
+        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
+            .ListForKeyNumbersAsync(patterns.Select(item => item.KeyNumber), cancellationToken)
+            .ConfigureAwait(false);
+
+        return patterns
+            .Select(entity => new KeyAccessPatternListItem(
+                entity.KeyNumber,
+                entity.KeyTypeCode,
+                entity.IsActive,
+                copyCounts.TryGetValue(entity.KeyNumber, out int count) ? count : 0,
+                roomsByKey.TryGetValue(entity.KeyNumber, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
+                    ? rooms
+                    : []))
+            .ToArray();
+    }
+
     public Task<bool> MedecoExistsUnderPatternAsync(
         string keyNumber,
         string medecoKeyCode,

@@ -292,6 +292,14 @@ PASS.
 - Evidence: KEY-ACCESS-COPY-1 was Implementation Complete; KeyAccessPattern remains sole KEY # / Room-access authority; KeyAsset remains physical MEDECO-copy custody authority with KeyAssetId and MEDECO unique within KEY #; KeyType remains classification at KEY # level; KeySeries remains non-authority; CatalogKeyCode unique-physical-identity retired; KeyAsset↔Room dual authority retired; migration STOP preserved for ambiguous legacy CatalogKeyCode data without parsing/guessing; Issue/Return/Find/Reports distinguish KEY # vs MEDECO; simultaneous issue of distinct copies under one KEY # validated; master key represented only as KEY # with multiple Rooms; no Transfer, REPORTS-2, KeySeries elevation, or successor-slice preparation introduced; architectural review complete; build PASS; tests PASS.
 - Deciding authority role: Human Architectural Governance.
 
+## Active Presentation Amendment — Register Key / Key Type authority (does not rewrite Acceptance Record)
+- Decision: SUPERSEDE Register Key free-text Key Type / silent Key Type creation presentation only.
+- Date: 2026-08-13.
+- Authority: Human Governance via active `documentation/product-experience-contract.md` (Operator Interaction Architecture; KEY-ACCESS-COPY-1 Product Experience).
+- Scope: Presentation and Application CreateKeyAsset / CreateKeyType orchestration. KeyAccessPattern remains KEY # / Room-access authority; KeyAsset remains physical MEDECO copy; KeyType remains classification. Migration STOP unchanged. Roadmap Next Allowed Slice remains STOP.
+- Active rules: Register copy under existing KEY # derives Type/Rooms; Create new KEY # requires selecting an existing Key Type; Key Types created on Catalog → Key Types → Add; no silent Key Type creation from Register.
+- Historical Accepted evidence above remains unchanged.
+
 ## Next Allowed Slice
 STOP
 

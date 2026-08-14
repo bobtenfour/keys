@@ -189,7 +189,7 @@ public sealed class DepartmentIdentityNormalizationTests : IAsyncLifetime
                 .ConfigureAwait(true))
             .Single(item => item.DepartmentCode == seeded.DepartmentCode).DepartmentId;
 
-        await createKey.ExecuteAsync("SNAP-KEY", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "SNAP-KEY", "01", "mechanical").ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 12, 16, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-snap-1",

@@ -1,4 +1,5 @@
 @page
+@using KeyInventory.Web.Presentation
 @model KeyInventory.Web.Pages.Administration.WorkAssignments.AddModel
 @{
     ViewData["Title"] = "Add Work Assignment";
@@ -16,31 +17,140 @@
         <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
     }
 
-    @if (Model.MemberOptions.Count == 0 || Model.RoomOptions.Count == 0)
-    {
-        <div class="empty-state">
-            <strong>Active workforce members and rooms are required</strong>
-        </div>
-        <div class="form-actions">
-            <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
-        </div>
-    }
-    else
-    {
-        <form method="post" class="form-grid">
-            <label>Work assignment code<input asp-for="WorkAssignmentCode" required /></label>
+    <div class="form-grid">
+        <div class="form-span-2">
             <label>
                 Workforce member
-                <select asp-for="WorkforceMemberCode" asp-items="Model.MemberOptions" required>
-                    <option value="">Select member...</option>
-                </select>
+                @if (!string.IsNullOrWhiteSpace(Model.SelectedMemberDisplay))
+                {
+                    <input type="text" value="@Model.SelectedMemberDisplay" readonly />
+                }
+                else
+                {
+                    <span class="hint">Search by name or UIN. Nothing is selected automatically.</span>
+                }
             </label>
+
+            @if (string.IsNullOrWhiteSpace(Model.SelectedMemberDisplay))
+            {
+                <form method="post" asp-page-handler="SearchMembers" class="form-grid">
+                    <label>
+                        Search
+                        <input asp-for="MemberSearchText" placeholder="Search by name or UIN..." autocomplete="off" required />
+                    </label>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-secondary">Search</button>
+                    </div>
+                </form>
+
+                @if (Model.MemberSearchPerformed)
+                {
+                    if (Model.MemberMatches.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <strong>No active workforce members matched</strong>
+                            Refine the name or UIN search.
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="activity-list" aria-label="Matching workforce members">
+                            @foreach (var match in Model.MemberMatches)
+                            {
+                                string label = PartyHolderDisplayFormatter.Format(match.FirstName, match.LastName, match.Uin);
+                                <li>
+                                    <div class="activity-main">
+                                        <span class="activity-primary">@label</span>
+                                    </div>
+                                    <form method="post" asp-page-handler="SelectMember">
+                                        <input type="hidden" name="workforceMemberCode" value="@match.WorkforceMemberCode" />
+                                        <input type="hidden" name="memberDisplay" value="@label" />
+                                        <button type="submit" class="btn btn-secondary">Select</button>
+                                    </form>
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
+            }
+            else
+            {
+                <form method="post" asp-page-handler="ClearMember" class="form-actions">
+                    <button type="submit" class="btn btn-secondary">Change workforce member</button>
+                </form>
+            }
+        </div>
+
+        <div class="form-span-2">
             <label>
                 Room
-                <select asp-for="RoomCode" asp-items="Model.RoomOptions" required>
-                    <option value="">Select room...</option>
-                </select>
+                @if (!string.IsNullOrWhiteSpace(Model.SelectedRoomDisplay))
+                {
+                    <input type="text" value="@Model.SelectedRoomDisplay" readonly />
+                }
+                else
+                {
+                    <span class="hint">Search by room number or description. Nothing is selected automatically.</span>
+                }
             </label>
+
+            @if (string.IsNullOrWhiteSpace(Model.SelectedRoomDisplay))
+            {
+                <form method="post" asp-page-handler="SearchRooms" class="form-grid">
+                    <label>
+                        Search
+                        <input asp-for="RoomSearchText" placeholder="Search room number or description..." autocomplete="off" required />
+                    </label>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-secondary">Search</button>
+                    </div>
+                </form>
+
+                @if (Model.RoomSearchPerformed)
+                {
+                    if (Model.RoomMatches.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <strong>No active rooms matched</strong>
+                            Refine the room number or description search.
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="activity-list" aria-label="Matching rooms">
+                            @foreach (var match in Model.RoomMatches)
+                            {
+                                string label = RoomDisplayFormatter.Format(match);
+                                <li>
+                                    <div class="activity-main">
+                                        <span class="activity-primary">@label</span>
+                                    </div>
+                                    <form method="post" asp-page-handler="SelectRoom">
+                                        <input type="hidden" name="roomCode" value="@match.RoomCode" />
+                                        <input type="hidden" name="roomDisplay" value="@label" />
+                                        <button type="submit" class="btn btn-secondary">Select</button>
+                                    </form>
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
+            }
+            else
+            {
+                <form method="post" asp-page-handler="ClearRoom" class="form-actions">
+                    <button type="submit" class="btn btn-secondary">Change room</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.SelectedMemberDisplay) && !string.IsNullOrWhiteSpace(Model.SelectedRoomDisplay))
+    {
+        <form method="post" class="form-grid">
+            <input type="hidden" asp-for="WorkforceMemberCode" />
+            <input type="hidden" asp-for="RoomCode" />
+            <label>Work assignment code<input asp-for="WorkAssignmentCode" required /></label>
             <label class="checkbox">
                 <input asp-for="IsPrimary" />
                 Primary assignment
@@ -50,5 +160,11 @@
                 <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
             </div>
         </form>
+    }
+    else
+    {
+        <div class="form-actions">
+            <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
+        </div>
     }
 </section>

@@ -16,25 +16,9 @@
     }
     else
     {
-        <p class="lede">Search by name, UIN, Room #, KEY #, or MEDECO.</p>
+        <p class="lede">Use the header Search to look up name, UIN, Room #, KEY #, or MEDECO.</p>
     }
 </header>
-
-<section class="card form-card">
-    <form method="get" asp-page="/Search" class="form-grid" role="search">
-        <label>
-            Search
-            <input type="search"
-                   name="q"
-                   value="@Model.Query"
-                   placeholder="Search name, UIN, Room #, KEY #, or MEDECO..."
-                   aria-label="Search name, UIN, Room #, KEY #, or MEDECO" />
-        </label>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Search</button>
-        </div>
-    </form>
-</section>
 
 @if (Model.SearchSubmitted)
 {
@@ -56,24 +40,38 @@
                     <article class="search-hit">
                         <header class="search-hit-header">
                             <h3>@person.FirstName @person.LastName</h3>
-                            <p class="search-hit-meta">
-                                UIN @person.Uin
-                                · Department @person.DepartmentCode
-                                · @person.Status
-                            </p>
-                            <div class="form-actions">
-                                <a class="btn btn-secondary"
-                                   asp-page="/Administration/WorkforceMembers/Details"
-                                   asp-route-member="@person.WorkforceMemberCode">Member details</a>
-                                <a class="btn btn-secondary"
-                                   asp-page="/Operations/MemberKeys"
-                                   asp-route-member="@person.WorkforceMemberCode">Member keys</a>
-                            </div>
+                            <dl class="search-person-identity">
+                                <div><dt>UIN</dt><dd>@person.Uin</dd></div>
+                                <div><dt>Department</dt><dd>@person.DepartmentCode</dd></div>
+                                <div><dt>Status</dt><dd>@person.Status</dd></div>
+                            </dl>
                         </header>
-                        <h4>Keys currently issued</h4>
+
+                        <h4>Work Assignment</h4>
+                        @if (person.WorkAssignments.Count == 0)
+                        {
+                            <p class="muted">No active work assignment.</p>
+                        }
+                        else
+                        {
+                            <ul class="search-key-list">
+                                @foreach (var assignment in person.WorkAssignments)
+                                {
+                                    <li>
+                                        Room: @assignment.RoomNumber
+                                        @if (assignment.IsPrimary)
+                                        {
+                                            <span class="muted">(primary)</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+
+                        <h4>Current Key Custody</h4>
                         @if (person.CurrentKeys.Count == 0)
                         {
-                            <p class="muted">None</p>
+                            <p class="muted">No keys currently issued.</p>
                         }
                         else
                         {
@@ -124,9 +122,6 @@
                             {
                                 <p class="search-hit-meta">@room.Description</p>
                             }
-                            <div class="form-actions">
-                                <a class="btn btn-secondary" asp-page="/Administration/Rooms/Index">Rooms</a>
-                            </div>
                         </header>
                         <h4>Opened by</h4>
                         @if (room.OpeningKeyNumbers.Count == 0)
@@ -138,10 +133,7 @@
                             <ul class="search-key-list">
                                 @foreach (string keyNumber in room.OpeningKeyNumbers)
                                 {
-                                    <li>
-                                        KEY # @keyNumber
-                                        <a asp-page="/Catalog/KeyRooms" asp-route-keyNumber="@keyNumber">KEY # Rooms</a>
-                                    </li>
+                                    <li>KEY # @keyNumber</li>
                                 }
                             </ul>
                         }
@@ -167,10 +159,6 @@
                                 }
                                 @(string.IsNullOrEmpty(rooms) ? "—" : rooms)
                             </p>
-                            <div class="form-actions">
-                                <a class="btn btn-secondary" asp-page="/Catalog/Keys">Catalog Keys</a>
-                                <a class="btn btn-secondary" asp-page="/Catalog/KeyRooms" asp-route-keyNumber="@key.KeyNumber">KEY # Rooms</a>
-                            </div>
                         </header>
                         <h4>Physical copies</h4>
                         @if (key.Copies.Count == 0)

@@ -81,8 +81,7 @@ public sealed class OperatorExperienceFirstUseWorkflowTests : IAsyncLifetime
             .ExecuteAsync("WA-1", memberCode, roomCode, isPrimary: true, CancellationToken.None)
             .ConfigureAwait(true);
 
-        await services.GetRequiredService<ICreateKeyAssetUseCase>()
-            .ExecuteAsync("KEY-101", "01", "STD", CancellationToken.None)
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(services, "KEY-101", "01", "STD")
             .ConfigureAwait(true);
 
         await services.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>()

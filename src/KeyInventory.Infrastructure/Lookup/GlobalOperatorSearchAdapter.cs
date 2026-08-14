@@ -79,9 +79,37 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
             return [];
         }
 
+        HashSet<string> memberCodes = memberRows
+            .Select(row => row.WorkforceMemberCode)
+            .ToHashSet(StringComparer.Ordinal);
+
         HashSet<string> partyCodes = memberRows
             .Select(row => row.PartyCode)
             .ToHashSet(StringComparer.Ordinal);
+
+        var assignments = await (
+                from assignment in _dbContext.WorkAssignments.AsNoTracking()
+                join room in _dbContext.Rooms.AsNoTracking() on assignment.RoomCode equals room.RoomCode
+                where assignment.IsActive
+                    && memberCodes.Contains(assignment.WorkforceMemberCode)
+                orderby assignment.IsPrimary descending, room.RoomNumber
+                select new
+                {
+                    assignment.WorkforceMemberCode,
+                    room.RoomNumber,
+                    assignment.IsPrimary
+                })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        Dictionary<string, List<GlobalPersonWorkAssignment>> assignmentsByMember = assignments
+            .GroupBy(item => item.WorkforceMemberCode, StringComparer.Ordinal)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .Select(item => new GlobalPersonWorkAssignment(item.RoomNumber, item.IsPrimary))
+                    .ToList(),
+                StringComparer.Ordinal);
 
         var openCustody = await (
                 from loan in _dbContext.Loans.AsNoTracking()
@@ -128,6 +156,9 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
                 row.Uin,
                 row.DepartmentCode,
                 row.Status,
+                assignmentsByMember.TryGetValue(row.WorkforceMemberCode, out List<GlobalPersonWorkAssignment>? work)
+                    ? work
+                    : [],
                 keysByParty.TryGetValue(row.PartyCode, out List<GlobalPersonCurrentKey>? keys)
                     ? keys
                     : []))

@@ -14,6 +14,14 @@ public interface IKeyCatalogPersistencePort
 
     Task<IReadOnlyList<KeyAccessPatternListItem>> ListKeyAccessPatternsAsync(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Bounded active KEY # search for registration under an existing KEY #.
+    /// </summary>
+    Task<IReadOnlyList<KeyAccessPatternListItem>> SearchActiveKeyAccessPatternsAsync(
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken);
+
     Task<bool> MedecoExistsUnderPatternAsync(
         string keyNumber,
         string medecoKeyCode,

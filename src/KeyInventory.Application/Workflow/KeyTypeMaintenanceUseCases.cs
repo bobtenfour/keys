@@ -10,6 +10,11 @@ public interface IListKeyTypesUseCase
     Task<IReadOnlyList<KeyTypeListItem>> ExecuteAsync(CancellationToken cancellationToken);
 }
 
+public interface ICreateKeyTypeUseCase
+{
+    Task ExecuteAsync(string typeCode, CancellationToken cancellationToken);
+}
+
 public interface IActivateKeyTypeUseCase
 {
     Task ExecuteAsync(string typeCode, CancellationToken cancellationToken);
@@ -32,6 +37,36 @@ public sealed class ListKeyTypesUseCase : IListKeyTypesUseCase
     public Task<IReadOnlyList<KeyTypeListItem>> ExecuteAsync(CancellationToken cancellationToken)
     {
         return _catalog.ListKeyTypesAsync(cancellationToken);
+    }
+}
+
+public sealed class CreateKeyTypeUseCase : ICreateKeyTypeUseCase
+{
+    private readonly IKeyCatalogPersistencePort _catalog;
+    private readonly IOperatorAuditRecorder _audit;
+
+    public CreateKeyTypeUseCase(IKeyCatalogPersistencePort catalog, IOperatorAuditRecorder audit)
+    {
+        _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
+    }
+
+    public async Task ExecuteAsync(string typeCode, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(typeCode);
+        string normalized = typeCode.Trim();
+        KeyType? existing = await _catalog.FindKeyTypeAsync(normalized, cancellationToken).ConfigureAwait(false);
+        if (existing is not null)
+        {
+            throw new InvalidOperationException("A Key Type with this code already exists.");
+        }
+
+        KeyType keyType = new(normalized);
+        _audit.Stage(
+            OperatorAuditActions.KeyTypeCreated,
+            OperatorAuditSubjects.KeyType,
+            keyType.TypeCode);
+        await _catalog.AddKeyTypeAsync(keyType, cancellationToken).ConfigureAwait(false);
     }
 }
 

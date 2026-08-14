@@ -16,10 +16,11 @@ public sealed class IssueReceiveInteractionBoundaryTests
 
         Assert.Contains("Key holder", view, StringComparison.Ordinal);
         Assert.Contains("Search by name or UIN", view, StringComparison.Ordinal);
-        Assert.Contains("Select a KEY #...", view, StringComparison.Ordinal);
+        Assert.Contains("Search KEY # or MEDECO", view, StringComparison.Ordinal);
         Assert.Contains("Select an available MEDECO...", view, StringComparison.Ordinal);
         Assert.Contains("Select justification...", view, StringComparison.Ordinal);
         Assert.Contains("ISearchEligibleKeyHoldersUseCase", code, StringComparison.Ordinal);
+        Assert.Contains("ISearchAvailableKeyCopiesUseCase", code, StringComparison.Ordinal);
         Assert.Contains("ResetCleanBusinessChoices", code, StringComparison.Ordinal);
         Assert.Contains("JustificationKind { get; set; } = string.Empty", code, StringComparison.Ordinal);
 
@@ -27,6 +28,8 @@ public sealed class IssueReceiveInteractionBoundaryTests
         Assert.DoesNotContain("IListWorkforceMembersUseCase", code, StringComparison.Ordinal);
         Assert.DoesNotContain("JustificationKind { get; set; } = \"Department\"", code, StringComparison.Ordinal);
         Assert.DoesNotContain("issue-justification-data", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("Select a KEY #...", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("issue-key-copy-data", view, StringComparison.Ordinal);
         Assert.DoesNotContain("Issue to", view, StringComparison.Ordinal);
         Assert.DoesNotContain("class KeyHolder", Read("src/KeyInventory.Domain"), StringComparison.Ordinal);
     }
@@ -71,12 +74,16 @@ public sealed class IssueReceiveInteractionBoundaryTests
         string view = Read("src/KeyInventory.Web/Pages/Operations/Receive.cshtml");
         string code = Read("src/KeyInventory.Web/Pages/Operations/Receive.cshtml.cs");
 
-        Assert.Contains("Select an issued key...", view, StringComparison.Ordinal);
+        Assert.Contains("Search active issue", view, StringComparison.Ordinal);
+        Assert.Contains("Nothing is selected automatically", view, StringComparison.Ordinal);
         Assert.Contains("Never auto-pick first/only issue", code, StringComparison.Ordinal);
+        Assert.Contains("SearchOpenLoansWithHoldersAsync", code, StringComparison.Ordinal);
         Assert.Contains("FormatKeyCopy", code, StringComparison.Ordinal);
         Assert.Contains("RedirectToPage()", code, StringComparison.Ordinal);
         Assert.DoesNotContain("ModelState.Clear()", code, StringComparison.Ordinal);
         Assert.DoesNotContain("ActiveIssueOptions[0]", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("Select an issued key...", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("asp-items=\"Model.ActiveIssueOptions\"", view, StringComparison.Ordinal);
     }
 
     [Fact]

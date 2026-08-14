@@ -190,6 +190,81 @@ public sealed class OperationalKeyLookupAdapter : IOperationalKeyLookupPort
             .ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<OperationalLoanDisplay>> SearchOpenLoansWithHoldersAsync(
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(searchText) || maxResults < 1)
+        {
+            return [];
+        }
+
+        string term = searchText.Trim();
+        int bound = Math.Min(maxResults, IOperationalKeyLookupUseCase.DefaultOpenLoanSearchMaxResults);
+
+        return await (
+                from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
+                join party in _dbContext.Parties.AsNoTracking()
+                    on loan.BorrowerPartyReference equals party.PartyCode
+                where loan.Status == nameof(LoanStatus.Open)
+                    && (key.KeyNumber.Contains(term)
+                        || key.MedecoKeyCode.Contains(term)
+                        || party.FirstName.Contains(term)
+                        || party.LastName.Contains(term)
+                        || (party.FirstName + " " + party.LastName).Contains(term)
+                        || party.Uin.Contains(term))
+                orderby loan.LoanCode
+                select new OperationalLoanDisplay(
+                    loan.LoanCode,
+                    loan.KeyAssetId,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
+                    party.FirstName,
+                    party.LastName,
+                    party.Uin,
+                    loan.IssuedAtUtc,
+                    loan.DueAtUtc,
+                    loan.Status,
+                    null))
+            .Take(bound)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<OperationalLoanDisplay?> FindOpenLoanByLoanCodeAsync(
+        string loanCode,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(loanCode))
+        {
+            return null;
+        }
+
+        return await (
+                from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
+                join party in _dbContext.Parties.AsNoTracking()
+                    on loan.BorrowerPartyReference equals party.PartyCode
+                where loan.Status == nameof(LoanStatus.Open)
+                    && loan.LoanCode == loanCode
+                select new OperationalLoanDisplay(
+                    loan.LoanCode,
+                    loan.KeyAssetId,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
+                    party.FirstName,
+                    party.LastName,
+                    party.Uin,
+                    loan.IssuedAtUtc,
+                    loan.DueAtUtc,
+                    loan.Status,
+                    null))
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task<IReadOnlyList<OperationalLoanDisplay>> ListReturnedLoansWithHoldersAsync(
         CancellationToken cancellationToken)
     {

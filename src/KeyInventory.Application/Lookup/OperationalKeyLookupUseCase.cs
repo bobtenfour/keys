@@ -37,6 +37,35 @@ public sealed class OperationalKeyLookupUseCase : IOperationalKeyLookupUseCase
         return _lookup.ListOpenLoansWithHoldersAsync(cancellationToken);
     }
 
+    public Task<IReadOnlyList<OperationalLoanDisplay>> SearchOpenLoansWithHoldersAsync(
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken)
+    {
+        string normalized = (searchText ?? string.Empty).Trim();
+        if (normalized.Length == 0)
+        {
+            return Task.FromResult<IReadOnlyList<OperationalLoanDisplay>>([]);
+        }
+
+        int bound = maxResults < 1
+            ? IOperationalKeyLookupUseCase.DefaultOpenLoanSearchMaxResults
+            : Math.Min(maxResults, IOperationalKeyLookupUseCase.DefaultOpenLoanSearchMaxResults);
+        return _lookup.SearchOpenLoansWithHoldersAsync(normalized, bound, cancellationToken);
+    }
+
+    public Task<OperationalLoanDisplay?> FindOpenLoanByLoanCodeAsync(
+        string loanCode,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(loanCode))
+        {
+            return Task.FromResult<OperationalLoanDisplay?>(null);
+        }
+
+        return _lookup.FindOpenLoanByLoanCodeAsync(loanCode.Trim(), cancellationToken);
+    }
+
     public Task<IReadOnlyList<OperationalLoanDisplay>> ListReturnedLoansWithHoldersAsync(
         CancellationToken cancellationToken)
     {

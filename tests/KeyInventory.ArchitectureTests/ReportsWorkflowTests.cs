@@ -55,6 +55,8 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "rp")
             .ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "electronic").ConfigureAwait(true);
         await createKey.ExecuteAsync("RP-KEY-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("RP-KEY-2", "01", "electronic", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("RP-KEY-3", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
@@ -176,7 +178,7 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "rp-flow")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("rp-flow-key", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "rp-flow-key", "01", "mechanical").ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 8, 15, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-rp-flow",

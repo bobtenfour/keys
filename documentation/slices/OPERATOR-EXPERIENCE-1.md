@@ -307,6 +307,14 @@ After OPERATOR-EXPERIENCE-1 reaches Implementation Complete with closure evidenc
 - Active rules: clean initial Issue/Receive business-choice state; bounded Application-owned eligible key-holder search; PRG clean post-success state; shared absolute operator timestamp display with operator-editable Issued/Due/Received via shared local-time conversion.
 - Historical Accepted evidence above remains unchanged.
 
+## Active Presentation Amendment — Operator interaction architecture (does not rewrite Acceptance Record)
+- Decision: SUPERSEDE duplicate Global Search form, navigation-as-information-substitute on Person search, unbounded Issue KEY # / Receive active-issue / Work Assignment dropdowns, and Register Key free-text Key Type silent-create presentation.
+- Date: 2026-08-13.
+- Authority: Human Governance via active `documentation/product-experience-contract.md` (Operator Interaction Architecture; Global Operator Search; Issue / Receive Interaction).
+- Scope: Presentation/interaction and Application orchestration over existing authorities only. Domain/ERD KEY # / MEDECO / Work Assignment facts unchanged. Roadmap Next Allowed Slice remains STOP.
+- Active rules: header-only global query input; `/Search` results-only; Person results show Identity / Work Assignment / Current Key Custody inline; Issue KEY # and Receive active issues use bounded search; Work Assignment Add uses bounded member/room search; Register Key explicit existing-vs-new KEY # modes with existing Key Type selection; no silent Key Type creation from Register.
+- Historical Accepted evidence above remains unchanged.
+
 ## Active Lifecycle Amendment — Administration / Catalog delete vs retire (does not rewrite Acceptance Record)
 - Decision: SUPERSEDE the active mutability matrix rule “No hard delete” for unused/unreferenced Administration and Catalog configuration records only.
 - Date: 2026-08-12.

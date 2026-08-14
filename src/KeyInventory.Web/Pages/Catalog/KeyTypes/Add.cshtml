@@ -1,0 +1,30 @@
+@page
+@model KeyInventory.Web.Pages.Catalog.KeyTypes.AddModel
+@{
+    ViewData["Title"] = "Add Key Type";
+    ViewData["NavSection"] = "catalog";
+}
+
+<header class="page-header page-header-compact">
+    <h1>Add Key Type</h1>
+    <p class="lede">Create a Key Type classification used by KEY # values.</p>
+</header>
+
+<section class="card form-card">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <form method="post" class="form-grid">
+        <label>
+            Key Type
+            <input asp-for="TypeCode" autocomplete="off" required />
+            <span class="hint">Enter the classification code for this Key Type.</span>
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Key Type</button>
+            <a class="btn btn-secondary" asp-page="/Catalog/KeyTypes">Cancel</a>
+        </div>
+    </form>
+</section>

@@ -35,6 +35,7 @@ Workforce Key Eligibility ensures keys are issued to legitimate active workers; 
 - Room Administration exists because Room is the real operational place concept for this installation; it does not expand into Building, Campus, or enterprise location hierarchies.
 - Department Administration exists for workforce membership and Department-based issue justification without Organization ownership.
 - Operator Experience and First-Use Guidance (OPERATOR-EXPERIENCE-1) keeps Application-owned readiness, communicates missing prerequisites contextually at capability boundaries, presents human-readable dates, authorized record corrections, clean post-create forms, and a matching User Guide for the empty-installation sequence—without permanent Home onboarding, workflow engines, or wizard frameworks.
+- Operator interaction architecture (active presentation): Global Search header→results; Register Key explicit existing KEY # vs new KEY #; Key Type Add as classification authority; Issue/Receive/Work Assignment Add bounded search for growing collections; no navigation-as-information-substitute on Person search results.
 - Organization and Building are not active product capabilities.
 - Operational Accountability means the product must make clear who has each key through the delivered loan/return and eligibility model.
 - Straightforward Audit and History means operators can review operational evidence without an enterprise analytics platform.

@@ -21,14 +21,15 @@
     }
 
     <div class="toolbar">
-        <a class="btn btn-primary" asp-page="/Catalog/Register">Register Key</a>
+        <a class="btn btn-primary" asp-page="/Catalog/KeyTypes/Add">Add Key Type</a>
+        <a class="btn btn-secondary" asp-page="/Catalog/Register">Register Key</a>
     </div>
 
     @if (Model.KeyTypes.Count == 0)
     {
         <div class="empty-state">
             <strong>No key types yet</strong>
-            Types appear here when keys are registered.
+            Create a Key Type before registering a new KEY #.
         </div>
     }
     else

@@ -65,6 +65,7 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
         Guid amDeptId = (await listDepts.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.DepartmentCode == "am-dept").DepartmentId;
         string roomCode = await createRoom.ExecuteAsync("101", "Lab", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "am-type").ConfigureAwait(true);
         await createKey.ExecuteAsync("AM-KEY-1", "01", "am-type", CancellationToken.None).ConfigureAwait(true);
 
         await retireDept.ExecuteAsync(amDeptId, CancellationToken.None).ConfigureAwait(true);
@@ -195,7 +196,7 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
         Assert.Equal(nameof(WorkforceType.Contractor), updated.WorkforceType);
         Assert.Equal(seeded.PartyCode, updated.PartyCode);
 
-        await createKey.ExecuteAsync("am-term-key", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "am-term-key", "01", "mechanical").ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 9, 18, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-am-term",
@@ -293,7 +294,7 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
                 .ExecuteAsync(CancellationToken.None)
                 .ConfigureAwait(true))
             .Single(item => item.DepartmentCode == seeded.DepartmentCode).DepartmentId;
-        await createKey.ExecuteAsync("am-flow-key", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "am-flow-key", "01", "mechanical").ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 9, 19, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(

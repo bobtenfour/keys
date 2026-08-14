@@ -69,7 +69,7 @@ public sealed class WorkforceEligibilityWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "wf-issue")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("key-wf-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-wf-1", "01", "mechanical").ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 6, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
@@ -114,7 +114,7 @@ public sealed class WorkforceEligibilityWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "wf-term")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("key-wf-term", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-wf-term", "01", "mechanical").ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 6, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-wf-term",

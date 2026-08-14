@@ -60,6 +60,7 @@ public sealed class KeyAccessPatternRoomAssignmentWorkflowTests : IAsyncLifetime
         string roomCode1 = await createRoom.ExecuteAsync("101", "Office", CancellationToken.None).ConfigureAwait(true);
         string roomCode2 = await createRoom.ExecuteAsync("102", "Lab", CancellationToken.None).ConfigureAwait(true);
 
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
         await createKey.ExecuteAsync("KRA-KEY-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("KRA-KEY-2", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
@@ -137,7 +138,7 @@ public sealed class KeyAccessPatternRoomAssignmentWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "kra-flow")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("kra-flow-key", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "kra-flow-key", "01", "mechanical").ConfigureAwait(true);
         await assignments.AssignRoomAsync("kra-flow-key", seeded.RoomCode, CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 9, 16, 0, 0, TimeSpan.Zero);

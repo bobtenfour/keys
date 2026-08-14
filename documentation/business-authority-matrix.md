@@ -71,6 +71,7 @@ Prevent duplicated authority.
 | Audit Event aggregate | key-inventory-domain-contract.md |
 | Immutable audit history | key-inventory-domain-contract.md |
 | Product experience | product-experience-contract.md |
+| Operator interaction architecture (page purpose, control taxonomy, no duplicate capability, bounded search, Register existing/new KEY #) | product-experience-contract.md |
 | Testing requirements | testing-strategy.md |
 | Cross-system integrity | system-integrity-contract.md |
 

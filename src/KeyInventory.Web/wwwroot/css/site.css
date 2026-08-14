@@ -665,10 +665,28 @@ tbody tr:last-child td { border-bottom: 0; }
     color: var(--ki-color-text-muted);
 }
 
-.search-hit-meta {
+.search-person-identity {
+    display: grid;
+    gap: 0.2rem 1rem;
     margin: 0 0 0.65rem;
-    color: var(--ki-color-text-muted);
     font-size: var(--ki-font-size-sm);
+}
+
+.search-person-identity > div {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: 0.35rem;
+}
+
+.search-person-identity dt {
+    margin: 0;
+    color: var(--ki-color-text-muted);
+    font-weight: 600;
+}
+
+.search-person-identity dd {
+    margin: 0;
+    color: var(--ki-color-text-primary);
 }
 
 .search-key-list {

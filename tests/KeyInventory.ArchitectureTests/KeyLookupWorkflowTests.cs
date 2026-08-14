@@ -51,6 +51,8 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lk-search")
             .ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "electronic").ConfigureAwait(true);
         await createKey.ExecuteAsync("LK-MASTER-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("LK-MASTER-2", "01", "electronic", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("OTHER-9", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
@@ -104,6 +106,7 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lk-member")
             .ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
         await createKey.ExecuteAsync("key-lk-m1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("key-lk-m2", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
@@ -158,7 +161,7 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lk-flow")
             .ConfigureAwait(true);
-        await createKey.ExecuteAsync("key-lk-flow", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-lk-flow", "01", "mechanical").ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 8, 14, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(

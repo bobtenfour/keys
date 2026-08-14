@@ -248,16 +248,25 @@ Issue Key eligibility (together with a registered key).
 Classify access patterns, record which Room # values a KEY # opens, and register physical MEDECO copies.
 
 ### Prerequisites
-Key Type may be created with the KEY # if it does not exist, or managed under Catalog → Key Types.
+Create Key Types under **Catalog → Key Types → Add** before creating a new KEY #. Key Types are not created silently from Register Key.
 
 ### Where to go
-Catalog (KEY # / Register copy / KEY # ↔ Room surfaces — labels follow KEY-ACCESS-COPY-1 runtime)
+Catalog → Key Types; Catalog → Register Key; Catalog → Keys → KEY # Rooms
 
-### Steps
-1. Ensure a Key Type exists (or enter a new type when creating the KEY #).
-2. Create **KEY #** (shared access number).
-3. Assign **Room #** openings to that KEY # (once for all copies).
-4. Register each **MEDECO** physical copy under that KEY #.
+### Steps — Register copy under existing KEY #
+1. Choose **Register copy under existing KEY #**.
+2. Search and select the existing KEY #.
+3. Confirm derived **Key Type** and **Rooms opened**.
+4. Enter the **MEDECO** code printed on the physical copy.
+5. Register physical copy — next registration opens clean.
+
+### Steps — Create new KEY #
+1. Choose **Create new KEY #**.
+2. Enter the new KEY #.
+3. Select an **existing** Key Type.
+4. Enter the first **MEDECO** code printed on the physical copy.
+5. Create KEY # and register copy.
+6. Assign **Rooms opened** afterward on KEY # Rooms.
 
 ### Expected result
 KEY # shows Rooms opened; MEDECO copies appear under that KEY # in catalog and Find Key.
@@ -306,12 +315,13 @@ Operations → Issue Key
 ### Steps
 1. Search **Key holder** by name or UIN (eligible matches only; nothing is preselected).
 2. Select the holder deliberately.
-3. Select **KEY #**, then an **available MEDECO** copy under that KEY # (MEDECO stays empty until KEY # is chosen).
-4. Confirm **Rooms opened** shown as derived from the KEY # (do not re-enter Rooms).
-5. Choose For = Department or Room and the matching justification (no default).
-6. Confirm Issued / Due as operator local times (human-readable entry).
-7. Enter Loan code.
-8. Issue Key — next Issue opens clean.
+3. Search available **KEY #** or **MEDECO**, then select KEY # deliberately (no full KEY # dropdown).
+4. Select an **available MEDECO** copy under that KEY # (MEDECO stays empty until KEY # is chosen; nothing auto-selected).
+5. Confirm **Rooms opened** shown as derived from the KEY # (do not re-enter Rooms).
+6. Choose For = Department or Room and the matching justification (no default).
+7. Confirm Issued / Due as operator local times (human-readable entry).
+8. Enter Loan code.
+9. Issue Key — next Issue opens clean.
 
 ### Expected result
 Success message; Active custody shows KEY # + MEDECO for the open issue with human-readable times.
@@ -340,8 +350,8 @@ Open loan for the physical copy being returned.
 Operations → Active Loans → Receive/Return, or Operations → Receive Key
 
 ### Steps
-1. Open Receive Key with no active issue preselected (or open a specific issue deliberately from Active Loans).
-2. Select the open issue labeled **KEY # / MEDECO · holder — UIN** (for example KEY # 66800 / MEDECO 26 · …).
+1. Search active issues by **KEY #**, **MEDECO**, holder name, or UIN (bounded matches; nothing is preselected). Deep-link from Active Loans may open one deliberate issue.
+2. Select the matching open issue labeled **KEY # / MEDECO · holder — UIN** (for example KEY # 66800 / MEDECO 26 · …).
 3. Enter Receive reference and Received (operator local time).
 4. Complete return — next Receive opens clean.
 
@@ -356,13 +366,13 @@ That MEDECO copy leaves Active custody; appears in History as returned. Other ME
 Answer practical questions about a person, Room, KEY #, or MEDECO copy by composing current operational facts from existing authorities.
 
 ### Where to go
-Header search → Search Results (`/Search`).
+Header search → Search Results (`/Search`). The header owns the Search box; the results page does not show a second Search form.
 
 ### How to search
-One box accepts **name**, **UIN**, **Room #**, **KEY #**, or **MEDECO**. No search-type dropdown. Results are typed groups (People, Rooms, KEY #, MEDECO) — only groups with matches appear.
+One header box accepts **name**, **UIN**, **Room #**, **KEY #**, or **MEDECO**. No search-type dropdown. Results are typed groups (People, Rooms, KEY #, MEDECO) — only groups with matches appear.
 
 ### Person results
-Show Full Name, UIN, Department, status, and **Keys currently issued** (open custody only). For each current physical copy: KEY #, MEDECO, Rooms opened by that KEY #. A person with no current keys is still a valid result (`None`). History is not listed here.
+Show Full Name, UIN, Department, status, active **Work Assignment** Room # values, and **Current Key Custody** (open custody only). For each current physical copy: KEY #, MEDECO, Rooms opened by that KEY #, Issued time. A person with no current keys is still a valid result (`No keys currently issued.`). Work Assignment is not key custody. History is not listed here. There are no Member details / Member keys buttons on search results.
 
 ### Room / KEY # / MEDECO results
 - Room #: description when available; KEY # values that open it.

@@ -41,6 +41,8 @@ public static class LoanVerticalComposition
         services.AddScoped<ILoanPersistencePort, LoanPersistenceAdapter>();
         services.AddScoped<IWorkforcePersistencePort, WorkforcePersistenceAdapter>();
         services.AddScoped<ICreateKeyAssetUseCase, CreateKeyAssetUseCase>();
+        services.AddScoped<IGetKeyNumberRegistrationPreviewUseCase, GetKeyNumberRegistrationPreviewUseCase>();
+        services.AddScoped<ISearchKeyNumbersForRegistrationUseCase, SearchKeyNumbersForRegistrationUseCase>();
         services.AddScoped<IListKeyAssetsUseCase, ListKeyAssetsUseCase>();
         services.AddScoped<IKeyAccessPatternRoomAssignmentUseCase, KeyAccessPatternRoomAssignmentUseCase>();
         services.AddScoped<IIssueLoanUseCase, IssueLoanUseCase>();
@@ -63,12 +65,16 @@ public static class LoanVerticalComposition
         services.AddScoped<IUpdatePartyNameUseCase, UpdatePartyNameUseCase>();
         services.AddScoped<ICorrectPartyUinUseCase, CorrectPartyUinUseCase>();
         services.AddScoped<IListKeyTypesUseCase, ListKeyTypesUseCase>();
+        services.AddScoped<ICreateKeyTypeUseCase, CreateKeyTypeUseCase>();
         services.AddScoped<IActivateKeyTypeUseCase, ActivateKeyTypeUseCase>();
         services.AddScoped<IRetireKeyTypeUseCase, RetireKeyTypeUseCase>();
         services.AddScoped<ICreateWorkforceMemberUseCase, CreateWorkforceMemberUseCase>();
         services.AddScoped<IRegisterWorkforceMemberUseCase, RegisterWorkforceMemberUseCase>();
         services.AddScoped<IListWorkforceMembersUseCase, ListWorkforceMembersUseCase>();
         services.AddScoped<ISearchEligibleKeyHoldersUseCase, SearchEligibleKeyHoldersUseCase>();
+        services.AddScoped<ISearchActiveWorkforceMembersUseCase, SearchActiveWorkforceMembersUseCase>();
+        services.AddScoped<ISearchActiveRoomsUseCase, SearchActiveRoomsUseCase>();
+        services.AddScoped<ISearchAvailableKeyCopiesUseCase, SearchAvailableKeyCopiesUseCase>();
         services.AddScoped<IGetKeyHolderIssueOptionsUseCase, GetKeyHolderIssueOptionsUseCase>();
         services.AddScoped<ITerminateWorkforceMemberUseCase, TerminateWorkforceMemberUseCase>();
         services.AddScoped<IUpdateWorkforceMemberDepartmentUseCase, UpdateWorkforceMemberDepartmentUseCase>();

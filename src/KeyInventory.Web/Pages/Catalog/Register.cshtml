@@ -1,4 +1,6 @@
 @page
+@using KeyInventory.Application.Catalog
+@using KeyInventory.Web.Presentation
 @model KeyInventory.Web.Pages.Catalog.RegisterModel
 @{
     ViewData["Title"] = "Register Key";
@@ -7,7 +9,7 @@
 
 <header class="page-header">
     <h1>Register Key</h1>
-    <p class="lede">Register a physical MEDECO copy under a KEY #. A new KEY # is created when needed.</p>
+    <p class="lede">Register a physical MEDECO copy under an existing KEY #, or create a new KEY # with its first copy.</p>
 </header>
 
 <section class="card form-card">
@@ -26,25 +28,142 @@
     }
     else
     {
-        <form method="post" class="form-grid">
-            <label>
-                KEY #
-                <input asp-for="KeyNumber" autocomplete="off" required />
-            </label>
-            <label>
-                MEDECO Key Code
-                <input asp-for="MedecoKeyCode" autocomplete="off" required />
-                <span class="hint">Unique within this KEY #. The same MEDECO may exist under another KEY #.</span>
-            </label>
-            <label>
-                Key type
-                <input asp-for="TypeCode" autocomplete="off" required />
-                <span class="hint">Owned by the KEY #. Existing KEY # values must keep their type. New types are created when needed.</span>
-            </label>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Register Key</button>
-                <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
-            </div>
-        </form>
+        <div class="form-actions" style="margin-bottom: 1rem;">
+            <form method="post" asp-page-handler="SetMode" style="display:inline">
+                <input type="hidden" name="mode" value="@RegisterModel.ModeExisting" />
+                <button type="submit"
+                        class="btn @(Model.Mode == RegisterModel.ModeExisting ? "btn-primary" : "btn-secondary")">
+                    Register copy under existing KEY #
+                </button>
+            </form>
+            <form method="post" asp-page-handler="SetMode" style="display:inline">
+                <input type="hidden" name="mode" value="@RegisterModel.ModeNew" />
+                <button type="submit"
+                        class="btn @(Model.Mode == RegisterModel.ModeNew ? "btn-primary" : "btn-secondary")">
+                    Create new KEY #
+                </button>
+            </form>
+        </div>
+
+        @if (Model.Mode == RegisterModel.ModeExisting)
+        {
+            @if (Model.SelectedKeyPreview is null)
+            {
+                <form method="post" asp-page-handler="SearchKeyNumbers" class="form-grid">
+                    <label>
+                        Find existing KEY #
+                        <input asp-for="KeyNumberSearchText" placeholder="Search KEY #..." autocomplete="off" required />
+                        <span class="hint">Search an existing KEY #. Key Type and Rooms opened are derived after selection.</span>
+                    </label>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-secondary">Search</button>
+                        <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
+                    </div>
+                </form>
+
+                @if (Model.KeyNumberSearchPerformed)
+                {
+                    if (Model.KeyNumberMatches.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <strong>No matching KEY #</strong>
+                            Refine the search, or create a new KEY #.
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="activity-list" aria-label="Matching KEY # values">
+                            @foreach (var match in Model.KeyNumberMatches)
+                            {
+                                <li>
+                                    <div class="activity-main">
+                                        <span class="activity-primary">KEY # @match.KeyNumber</span>
+                                        <span class="muted">Type @match.TypeCode</span>
+                                    </div>
+                                    <form method="post" asp-page-handler="SelectKeyNumber">
+                                        <input type="hidden" name="KeyNumber" value="@match.KeyNumber" />
+                                        <button type="submit" class="btn btn-secondary">Select</button>
+                                    </form>
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
+            }
+            else
+            {
+                <dl class="search-person-identity">
+                    <div><dt>KEY #</dt><dd>@Model.SelectedKeyPreview.KeyNumber</dd></div>
+                    <div><dt>Key Type</dt><dd>@Model.SelectedKeyPreview.TypeCode</dd></div>
+                    <div>
+                        <dt>Rooms opened</dt>
+                        <dd>
+                            @{
+                                string rooms = KeyOpenedRoomDisplayFormatter.Format(Model.SelectedKeyPreview.OpenedRooms);
+                            }
+                            @(string.IsNullOrEmpty(rooms) ? "—" : rooms)
+                        </dd>
+                    </div>
+                </dl>
+                <form method="post" asp-page-handler="ClearKeyNumber" class="form-actions">
+                    <button type="submit" class="btn btn-secondary">Change KEY #</button>
+                </form>
+                <form method="post" class="form-grid">
+                    <input type="hidden" asp-for="Mode" />
+                    <input type="hidden" asp-for="KeyNumber" value="@Model.SelectedKeyPreview.KeyNumber" />
+                    <label>
+                        MEDECO Key Code
+                        <input asp-for="MedecoKeyCode" autocomplete="off" required />
+                        <span class="hint">Enter the MEDECO code printed on this physical key copy.</span>
+                    </label>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Register physical copy</button>
+                        <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
+                    </div>
+                </form>
+            }
+        }
+        else
+        {
+            @if (Model.KeyTypeOptions.Count == 0)
+            {
+                <div class="empty-state">
+                    <strong>No active Key Types</strong>
+                    Create a Key Type before creating a new KEY #.
+                </div>
+                <div class="form-actions">
+                    <a class="btn btn-primary" asp-page="/Catalog/KeyTypes/Add">Add Key Type</a>
+                    <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
+                </div>
+            }
+            else
+            {
+                <form method="post" class="form-grid">
+                    <input type="hidden" asp-for="Mode" value="@RegisterModel.ModeNew" />
+                    <label>
+                        New KEY #
+                        <input asp-for="KeyNumber" autocomplete="off" required />
+                        <span class="hint">Enter the new KEY # that does not yet exist in the catalog.</span>
+                    </label>
+                    <label>
+                        Key Type
+                        <select asp-for="TypeCode" asp-items="Model.KeyTypeOptions" required>
+                            <option value="">Select an existing Key Type...</option>
+                        </select>
+                        <span class="hint">Select an existing Key Type. New types are created under Key Types.</span>
+                    </label>
+                    <label>
+                        MEDECO Key Code
+                        <input asp-for="MedecoKeyCode" autocomplete="off" required />
+                        <span class="hint">Enter the MEDECO code printed on the first physical key copy.</span>
+                    </label>
+                    <p class="hint">Rooms opened are assigned after creation on KEY # Rooms. They are not re-entered here.</p>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Create KEY # and register copy</button>
+                        <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
+                    </div>
+                </form>
+            }
+        }
     }
 </section>

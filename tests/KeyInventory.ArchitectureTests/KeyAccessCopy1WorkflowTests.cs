@@ -53,6 +53,7 @@ public sealed class KeyAccessCopy1WorkflowTests : IAsyncLifetime
         ICreateKeyAssetUseCase createKey = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
         IListKeyAssetsUseCase listKeys = scope.ServiceProvider.GetRequiredService<IListKeyAssetsUseCase>();
 
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "27", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "28", "mechanical", CancellationToken.None).ConfigureAwait(true);
@@ -87,6 +88,7 @@ public sealed class KeyAccessCopy1WorkflowTests : IAsyncLifetime
         string roomA = await createRoom.ExecuteAsync("410D", "Suite", CancellationToken.None).ConfigureAwait(true);
         string roomB = await createRoom.ExecuteAsync("411A", "Lab", CancellationToken.None).ConfigureAwait(true);
 
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "27", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("66801", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
@@ -129,6 +131,7 @@ public sealed class KeyAccessCopy1WorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "kac-issue")
             .ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "27", "mechanical", CancellationToken.None).ConfigureAwait(true);
 
@@ -193,6 +196,7 @@ public sealed class KeyAccessCopy1WorkflowTests : IAsyncLifetime
             .ConfigureAwait(true);
         string roomCode = await createRoom.ExecuteAsync("410D", "Office", CancellationToken.None).ConfigureAwait(true);
 
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "27", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await assignments.AssignRoomAsync("66800", roomCode, CancellationToken.None).ConfigureAwait(true);

@@ -41,6 +41,7 @@ Owns persistence, external systems, integration adapters, and technical implemen
 Owns presentation, request/response binding, navigation, and product experience.
 - Operator-facing local civil time controls may be used for Issue/Receive capture; conversion to authoritative zero-offset UTC occurs only at the Web→Application boundary and must not create a second time authority.
 - Web must not query `KeyInventoryDbContext` or reimplement Domain eligibility; selector options come from Application list/query authorities.
+- Operator interaction architecture (active): one page purpose; no duplicate capability surfaces without distinct intent; header owns Global Search input (`/Search` is results-only); growing collections use Application-owned bounded search; existing facts are selected/derived not retyped; Key Type creation is an explicit Key Types capability, not silent Register-side creation; Work Assignment rooms and Key-access rooms remain separate presentations.
 
 ## Dependency Rules
 - Domain references no project.

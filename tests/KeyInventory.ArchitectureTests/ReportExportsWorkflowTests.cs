@@ -58,6 +58,8 @@ public sealed class ReportExportsWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "rx")
             .ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "electronic").ConfigureAwait(true);
         await createKey.ExecuteAsync("RX-KEY-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("RX-KEY-2", "01", "electronic", CancellationToken.None).ConfigureAwait(true);
 

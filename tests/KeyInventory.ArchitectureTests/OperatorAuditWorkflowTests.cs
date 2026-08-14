@@ -72,6 +72,9 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "aud2")
             .ConfigureAwait(true);
 
+        await scope.ServiceProvider.GetRequiredService<ICreateKeyTypeUseCase>()
+            .ExecuteAsync("aud-type", CancellationToken.None)
+            .ConfigureAwait(true);
         await scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>()
             .ExecuteAsync("AUD-KEY-1", "01", "aud-type", CancellationToken.None)
             .ConfigureAwait(true);

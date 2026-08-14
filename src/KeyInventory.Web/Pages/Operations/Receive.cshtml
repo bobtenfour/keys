@@ -24,27 +24,65 @@
             <a class="btn btn-secondary" asp-page="/Index">Return to Operations</a>
         </div>
     }
-
-    @if (Model.ActiveIssueOptions.Count == 0 && string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    else if (Model.SelectedIssue is null)
     {
-        <div class="empty-state">
-            <strong>No active issues to receive</strong>
-            Issue a key first, then complete receive here.
-        </div>
-        <div class="form-actions">
-            <a class="btn btn-primary" asp-page="/Operations/Issue">Issue Key</a>
-            <a class="btn btn-secondary" asp-page="/Index">Return to Operations</a>
-        </div>
-    }
-    else if (string.IsNullOrWhiteSpace(Model.SuccessMessage))
-    {
-        <form method="post" class="form-grid">
+        <form method="post" asp-page-handler="SearchIssues" class="form-grid">
             <label>
-                Active issue
-                <select asp-for="IssueReference" asp-items="Model.ActiveIssueOptions" required>
-                    <option value="">Select an issued key...</option>
-                </select>
+                Search active issue
+                <input asp-for="IssueSearchText" placeholder="KEY #, MEDECO, holder name, or UIN..." autocomplete="off" required />
+                <span class="hint">Search matching active issues. Nothing is selected automatically.</span>
             </label>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-secondary">Search</button>
+                <a class="btn btn-secondary" asp-page="/Index">Cancel</a>
+            </div>
+        </form>
+
+        @if (Model.IssueSearchPerformed)
+        {
+            if (Model.IssueMatches.Count == 0)
+            {
+                <div class="empty-state">
+                    <strong>No matching active issues</strong>
+                    Refine KEY #, MEDECO, holder name, or UIN.
+                </div>
+            }
+            else
+            {
+                <ul class="activity-list" aria-label="Matching active issues">
+                    @foreach (var match in Model.IssueMatches)
+                    {
+                        string label = $"{PartyHolderDisplayFormatter.FormatKeyCopy(match.KeyNumber, match.MedecoKeyCode)} · {PartyHolderDisplayFormatter.Format(match.HolderFirstName, match.HolderLastName, match.HolderUin)}";
+                        <li>
+                            <div class="activity-main">
+                                <span class="activity-primary">@label</span>
+                            </div>
+                            <form method="post" asp-page-handler="SelectIssue">
+                                <input type="hidden" name="IssueReference" value="@match.LoanCode" />
+                                <button type="submit" class="btn btn-secondary">Select</button>
+                            </form>
+                        </li>
+                    }
+                </ul>
+            }
+        }
+    }
+    else
+    {
+        <dl class="search-person-identity">
+            <div>
+                <dt>Active issue</dt>
+                <dd>
+                    @PartyHolderDisplayFormatter.FormatKeyCopy(Model.SelectedIssue.KeyNumber, Model.SelectedIssue.MedecoKeyCode)
+                    · @PartyHolderDisplayFormatter.Format(Model.SelectedIssue.HolderFirstName, Model.SelectedIssue.HolderLastName, Model.SelectedIssue.HolderUin)
+                </dd>
+            </div>
+        </dl>
+        <form method="post" asp-page-handler="ClearIssue" class="form-actions">
+            <button type="submit" class="btn btn-secondary">Change active issue</button>
+        </form>
+        <form method="post" class="form-grid">
+            <input type="hidden" asp-for="IssueReference" />
             <label>
                 Receive reference
                 <input asp-for="ReceiveReference" autocomplete="off" required />

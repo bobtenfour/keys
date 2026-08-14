@@ -38,7 +38,8 @@ public sealed class OperatorUxBoundaryTests
         Assert.DoesNotContain("yyyy-MM-ddTHH:mm:sszzz", view, StringComparison.Ordinal);
         Assert.DoesNotContain("Justification code", view, StringComparison.Ordinal);
         Assert.Contains("Loan code", view, StringComparison.Ordinal);
-        Assert.Contains("issue-key-copy-data", view, StringComparison.Ordinal);
+        Assert.Contains("Search KEY # or MEDECO", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("issue-key-copy-data", view, StringComparison.Ordinal);
     }
 
     [Fact]

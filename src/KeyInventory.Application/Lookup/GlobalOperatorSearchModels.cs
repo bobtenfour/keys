@@ -26,7 +26,16 @@ public sealed record GlobalPersonSearchHit(
     string Uin,
     string DepartmentCode,
     string Status,
+    IReadOnlyList<GlobalPersonWorkAssignment> WorkAssignments,
     IReadOnlyList<GlobalPersonCurrentKey> CurrentKeys);
+
+/// <summary>
+/// Current active Work Assignment room relationship for a person search hit.
+/// Not key custody — assignment authority only.
+/// </summary>
+public sealed record GlobalPersonWorkAssignment(
+    string RoomNumber,
+    bool IsPrimary);
 
 public sealed record GlobalPersonCurrentKey(
     string KeyNumber,

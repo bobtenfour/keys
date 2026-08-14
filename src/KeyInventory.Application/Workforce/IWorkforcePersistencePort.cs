@@ -96,6 +96,22 @@ public interface IWorkforcePersistencePort
         int maxResults,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Bounded name/UIN search of Active workforce members (no work-assignment eligibility filter).
+    /// </summary>
+    Task<IReadOnlyList<EligibleKeyHolderCandidate>> SearchActiveWorkforceMembersAsync(
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Bounded RoomNumber/Description search of active rooms.
+    /// </summary>
+    Task<IReadOnlyList<RoomListItem>> SearchActiveRoomsAsync(
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken);
+
     Task<bool> WorkAssignmentExistsAsync(string workAssignmentCode, CancellationToken cancellationToken);
 
     Task AddWorkAssignmentAsync(WorkAssignment assignment, CancellationToken cancellationToken);

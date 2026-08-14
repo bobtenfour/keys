@@ -61,10 +61,11 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 
 ## Global Operator Search (active)
 - Header search is global operational search (`/Search`), not Find Key. One Application orchestration boundary (`IGlobalOperatorSearchUseCase`) composes typed results from existing authorities. No second search store, no Web DbContext, no full-table Web filtering.
+- Header Search is the only global-query input surface in this workflow. `/Search` presents results only — no duplicate Search textbox/button/card.
 - One search field accepts name, UIN, Room #, KEY #, or MEDECO. Placeholder: `Search name, UIN, Room #, KEY #, or MEDECO...`. No search-type dropdown. Search runs only on submit; no preload; no auto-select/auto-redirect.
-- Results are typed groups rendered only when populated: People, Rooms, KEY #, MEDECO Key Code.
-- Person result: Full Name, UIN, Department (current workforce membership), workforce status, and **Keys currently issued** from open Loan custody only — each with KEY #, MEDECO, Rooms opened (from KEY #). Person with zero current keys is still a valid result (`None`). History/Audit are not embedded.
-- Room result: Room #, description when available, KEY # values that open it via KeyAccessPattern↔Room.
+- Results page begins with Search Results / Search results for "<query>" then typed groups rendered only when populated: People, Rooms, KEY #, MEDECO Key Code.
+- Person result: Full Name; UIN; Department (current workforce membership); workforce status; **Work Assignment** rooms from active Work Assignment authority; and **Current Key Custody** from open Loan custody only — each with KEY #, MEDECO, Rooms opened (from KEY #), Issued timestamp. Person with zero current keys is still a valid result (`No keys currently issued.`). Work Assignment is not custody. History/Audit are not embedded. Do not render Member details / Member keys / View details / View keys as information substitutes.
+- Room result: Room #, description when available, KEY # values that open it via KeyAccessPattern↔Room (inline; no navigation substitute for that answer).
 - KEY # result: type, Rooms opened, physical MEDECO copies with Available/Issued and holder identity when issued.
 - MEDECO result: always includes parent KEY # (MEDECO is not globally unique), Rooms via KEY #, custody state/holder.
 - Zero results: single global empty state (`No results found for "…"`) with guidance to search by name, UIN, Room #, KEY #, or MEDECO — not Find Key’s “No matching keys / Browse Keys” pattern.
@@ -89,10 +90,20 @@ Prevent framework-default, demo-like, or inconsistent UI experience.
 ## Issue / Receive Interaction (active presentation)
 - A freshly opened Issue or Receive/Return operation must not silently select business choices for the operator, including when exactly one valid option exists.
 - Issue Key holder selection is search-on-demand: no full workforce load into HTML or JavaScript; Application returns a bounded set of eligible candidates matching name or UIN; Web must not evaluate eligibility or auto-select first/only match.
+- Issue KEY # / MEDECO selection is search-on-demand over available physical copies: no full available-catalog dropdown or client-side KEY # catalog JSON; operator searches KEY # or MEDECO, explicitly selects KEY #, then chooses an available MEDECO for that KEY # only. Rooms opened remain derived from KEY #.
 - Issue initial business-choice state is empty for Key holder, KEY #, MEDECO, justification kind, Department, and Room. MEDECO options appear only after KEY # is selected. Rooms opened remain derived from KEY #.
 - Successful Issue and Receive use server-side PRG: success confirmation then clean new-operation state. Failed validation retains submitted values. No JavaScript field-by-field reset; no first/only-record defaults; no query-string carry of prior Issue business selections on a fresh Issue open.
-- Receive/Return initial Active issue selection is empty (`Select an issued key...`) unless the operator deliberately opens a specific issue deep-link. Option text uses `KEY # … / MEDECO … · Name — UIN …`.
+- Receive/Return uses bounded search of active issues by KEY #, MEDECO, holder name, or UIN. No full active-issue dropdown. Operator explicitly selects the matching issue. Deep-link from Active Loans / Member Keys may pre-select one deliberate issue only. Display uses `KEY # … / MEDECO … · Name — UIN …`. Internal LoanId/KeyAssetId are not operator targets.
 - Issued, Due, and Received remain operator-editable under Application loan/return timestamp parameters (UTC persistence unchanged). Operator entry uses shared `OperatorLocalTimestamp` conversion; absolute display uses shared `OperatorTimestampFormatter.ToAbsoluteDisplay` (`MMM d, yyyy · h:mm tt`). No page-local timestamp formatters; no ISO/raw UTC/offset presentation in normal operator UI.
+
+## Operator Interaction Architecture (active presentation amendment)
+- **One capability — one primary interaction surface.** Header owns Global Search input; `/Search` owns result presentation only and must not render a second global Search form.
+- **Page purpose.** Every page answers one operator question or completes one business operation; do not retain controls/navigation that do not serve that purpose.
+- **No navigation as information substitute.** Global Search Person results must present Identity, Work Assignment rooms, and Current Key Custody directly — never Member details / Member keys / View details / View keys as substitutes.
+- **Interaction taxonomy.** New fact → enter; existing reference → select/find; large collection → bounded search-on-demand; derived fact → display; system fact → system-owned; business decision → explicit operator choice; lifecycle → Application-authorized action only.
+- **Register Key.** Explicit modes: register physical copy under existing KEY # (search/select KEY #; derive Key Type and Rooms opened; enter MEDECO) versus create new KEY # (enter new KEY #; select existing Key Type; enter first MEDECO; Rooms assigned later on KEY # Rooms). No silent Key Type creation from Register text; Key Types are created on Key Types → Add.
+- **Work Assignments Add.** Workforce member and Room use bounded search-select. WorkAssignmentCode remains operator-entered until Domain authorizes system generation.
+- Work Assignment rooms and Key-access rooms remain distinct labels and authorities; no inference between them.
 
 ## Help Presentation (active)
 - `/Help` is operator-invoked reference guidance in the existing Razor Pages shell; it is not Home onboarding, first-time setup UI, or a permanent readiness surface.

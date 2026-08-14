@@ -1,4 +1,3 @@
-using System.Text.Json;
 using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Readiness;
@@ -15,30 +14,24 @@ public sealed class IssueModel : PageModel
 {
     private const string SuccessTempDataKey = "IssueSuccessMessage";
     private const string SelectedHolderTempDataKey = "IssueSelectedHolderCode";
-
-    private static readonly JsonSerializerOptions KeyCopyJsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
+    private const string SelectedKeyNumberTempDataKey = "IssueSelectedKeyNumber";
+    private const string SelectedMedecoTempDataKey = "IssueSelectedMedeco";
 
     private readonly IIssueLoanUseCase _issueLoan;
-    private readonly IListKeyAssetsUseCase _listKeyAssets;
-    private readonly IListOpenLoansUseCase _listOpenLoans;
+    private readonly ISearchAvailableKeyCopiesUseCase _searchCopies;
     private readonly ISearchEligibleKeyHoldersUseCase _searchHolders;
     private readonly IGetKeyHolderIssueOptionsUseCase _holderOptions;
     private readonly IOperationalReadinessUseCase _readiness;
 
     public IssueModel(
         IIssueLoanUseCase issueLoan,
-        IListKeyAssetsUseCase listKeyAssets,
-        IListOpenLoansUseCase listOpenLoans,
+        ISearchAvailableKeyCopiesUseCase searchCopies,
         ISearchEligibleKeyHoldersUseCase searchHolders,
         IGetKeyHolderIssueOptionsUseCase holderOptions,
         IOperationalReadinessUseCase readiness)
     {
         _issueLoan = issueLoan ?? throw new ArgumentNullException(nameof(issueLoan));
-        _listKeyAssets = listKeyAssets ?? throw new ArgumentNullException(nameof(listKeyAssets));
-        _listOpenLoans = listOpenLoans ?? throw new ArgumentNullException(nameof(listOpenLoans));
+        _searchCopies = searchCopies ?? throw new ArgumentNullException(nameof(searchCopies));
         _searchHolders = searchHolders ?? throw new ArgumentNullException(nameof(searchHolders));
         _holderOptions = holderOptions ?? throw new ArgumentNullException(nameof(holderOptions));
         _readiness = readiness ?? throw new ArgumentNullException(nameof(readiness));
@@ -71,7 +64,8 @@ public sealed class IssueModel : PageModel
     [BindProperty]
     public string HolderSearchText { get; set; } = string.Empty;
 
-    public IReadOnlyList<SelectListItem> KeyNumberOptions { get; private set; } = [];
+    [BindProperty]
+    public string KeyCopySearchText { get; set; } = string.Empty;
 
     public IReadOnlyList<SelectListItem> MedecoOptions { get; private set; } = [];
 
@@ -83,11 +77,13 @@ public sealed class IssueModel : PageModel
 
     public IReadOnlyList<EligibleKeyHolderCandidate> HolderMatches { get; private set; } = [];
 
+    public IReadOnlyList<AvailableKeyCopyCandidate> KeyCopyMatches { get; private set; } = [];
+
     public string? SelectedHolderDisplay { get; private set; }
 
     public bool HolderSearchPerformed { get; private set; }
 
-    public string KeyCopyDataJson { get; private set; } = "{}";
+    public bool KeyCopySearchPerformed { get; private set; }
 
     public bool HasAvailableCopies { get; private set; }
 
@@ -105,7 +101,7 @@ public sealed class IssueModel : PageModel
         }
 
         ResetCleanBusinessChoices();
-        await LoadCatalogAndReadinessAsync(cancellationToken).ConfigureAwait(false);
+        await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
         IssuedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
         DueLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow.AddDays(1));
 
@@ -116,12 +112,25 @@ public sealed class IssueModel : PageModel
             WorkforceMemberCode = selectedCode;
             await LoadSelectedHolderAsync(cancellationToken).ConfigureAwait(false);
         }
+
+        if (TempData.Peek(SelectedKeyNumberTempDataKey) is string selectedKey
+            && !string.IsNullOrWhiteSpace(selectedKey)
+            && string.IsNullOrWhiteSpace(SuccessMessage))
+        {
+            KeyNumber = selectedKey;
+            await LoadSelectedKeyAsync(cancellationToken).ConfigureAwait(false);
+            if (TempData.Peek(SelectedMedecoTempDataKey) is string selectedMedeco
+                && !string.IsNullOrWhiteSpace(selectedMedeco))
+            {
+                MedecoKeyCode = selectedMedeco;
+            }
+        }
     }
 
     public async Task<IActionResult> OnPostSearchHoldersAsync(CancellationToken cancellationToken)
     {
         TempData.Remove(SelectedHolderTempDataKey);
-        await LoadCatalogAndReadinessAsync(cancellationToken).ConfigureAwait(false);
+        await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
         EnsureDefaultTimestamps();
         HolderSearchPerformed = true;
         WorkforceMemberCode = string.Empty;
@@ -130,6 +139,7 @@ public sealed class IssueModel : PageModel
         JustificationCode = string.Empty;
         DepartmentOptions = [];
         RoomOptions = [];
+        await RestoreSelectedKeyFromTempDataAsync(cancellationToken).ConfigureAwait(false);
 
         HolderMatches = await _searchHolders
             .ExecuteAsync(HolderSearchText, ISearchEligibleKeyHoldersUseCase.DefaultMaxResults, cancellationToken)
@@ -143,7 +153,7 @@ public sealed class IssueModel : PageModel
         if (string.IsNullOrWhiteSpace(WorkforceMemberCode))
         {
             ErrorMessage = "Select a key holder.";
-            await LoadCatalogAndReadinessAsync(cancellationToken).ConfigureAwait(false);
+            await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
             EnsureDefaultTimestamps();
             return Page();
         }
@@ -154,7 +164,7 @@ public sealed class IssueModel : PageModel
         if (options is null)
         {
             ErrorMessage = "The selected key holder is not eligible to receive a key.";
-            await LoadCatalogAndReadinessAsync(cancellationToken).ConfigureAwait(false);
+            await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
             EnsureDefaultTimestamps();
             return Page();
         }
@@ -169,16 +179,75 @@ public sealed class IssueModel : PageModel
         return RedirectToPage();
     }
 
+    public async Task<IActionResult> OnPostSearchKeyCopiesAsync(CancellationToken cancellationToken)
+    {
+        TempData.Remove(SelectedKeyNumberTempDataKey);
+        TempData.Remove(SelectedMedecoTempDataKey);
+        await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
+        EnsureDefaultTimestamps();
+        await RestoreSelectedHolderFromTempDataAsync(cancellationToken).ConfigureAwait(false);
+        KeyCopySearchPerformed = true;
+        KeyNumber = string.Empty;
+        MedecoKeyCode = string.Empty;
+        OpenedRoomsDisplay = "—";
+        MedecoOptions = [];
+        KeyCopyMatches = await _searchCopies
+            .ExecuteAsync(KeyCopySearchText, ISearchAvailableKeyCopiesUseCase.DefaultMaxResults, cancellationToken)
+            .ConfigureAwait(false);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostSelectKeyNumberAsync(CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(KeyNumber))
+        {
+            ErrorMessage = "Select a KEY #.";
+            await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
+            EnsureDefaultTimestamps();
+            await RestoreSelectedHolderFromTempDataAsync(cancellationToken).ConfigureAwait(false);
+            return Page();
+        }
+
+        IReadOnlyList<AvailableKeyCopyCandidate> copies = await _searchCopies
+            .ListAvailableForKeyNumberAsync(KeyNumber, cancellationToken)
+            .ConfigureAwait(false);
+        if (copies.Count == 0)
+        {
+            ErrorMessage = "No available MEDECO copies were found for that KEY #.";
+            await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
+            EnsureDefaultTimestamps();
+            await RestoreSelectedHolderFromTempDataAsync(cancellationToken).ConfigureAwait(false);
+            return Page();
+        }
+
+        TempData[SelectedKeyNumberTempDataKey] = copies[0].KeyNumber;
+        TempData.Remove(SelectedMedecoTempDataKey);
+        return RedirectToPage();
+    }
+
+    public IActionResult OnPostClearKeyNumber()
+    {
+        TempData.Remove(SelectedKeyNumberTempDataKey);
+        TempData.Remove(SelectedMedecoTempDataKey);
+        return RedirectToPage();
+    }
+
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        await LoadCatalogAndReadinessAsync(cancellationToken).ConfigureAwait(false);
+        await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
         await LoadSelectedHolderAsync(cancellationToken).ConfigureAwait(false);
+        await LoadSelectedKeyAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
             if (string.IsNullOrWhiteSpace(WorkforceMemberCode))
             {
                 throw new InvalidOperationException("Select a key holder.");
+            }
+
+            if (string.IsNullOrWhiteSpace(KeyNumber) || string.IsNullOrWhiteSpace(MedecoKeyCode))
+            {
+                throw new InvalidOperationException("Select KEY # and an available MEDECO Key Code.");
             }
 
             if (string.IsNullOrWhiteSpace(JustificationKind))
@@ -209,6 +278,8 @@ public sealed class IssueModel : PageModel
                 .ConfigureAwait(false);
 
             TempData.Remove(SelectedHolderTempDataKey);
+            TempData.Remove(SelectedKeyNumberTempDataKey);
+            TempData.Remove(SelectedMedecoTempDataKey);
             TempData[SuccessTempDataKey] =
                 $"{PartyHolderDisplayFormatter.FormatKeyCopy(KeyNumber, MedecoKeyCode)} was issued to {SelectedHolderDisplay}.";
             return RedirectToPage();
@@ -219,6 +290,16 @@ public sealed class IssueModel : PageModel
             if (!string.IsNullOrWhiteSpace(WorkforceMemberCode))
             {
                 TempData[SelectedHolderTempDataKey] = WorkforceMemberCode;
+            }
+
+            if (!string.IsNullOrWhiteSpace(KeyNumber))
+            {
+                TempData[SelectedKeyNumberTempDataKey] = KeyNumber;
+            }
+
+            if (!string.IsNullOrWhiteSpace(MedecoKeyCode))
+            {
+                TempData[SelectedMedecoTempDataKey] = MedecoKeyCode;
             }
 
             return Page();
@@ -234,8 +315,11 @@ public sealed class IssueModel : PageModel
         JustificationKind = string.Empty;
         JustificationCode = string.Empty;
         HolderSearchText = string.Empty;
+        KeyCopySearchText = string.Empty;
         HolderMatches = [];
+        KeyCopyMatches = [];
         HolderSearchPerformed = false;
+        KeyCopySearchPerformed = false;
         SelectedHolderDisplay = null;
         DepartmentOptions = [];
         RoomOptions = [];
@@ -256,65 +340,74 @@ public sealed class IssueModel : PageModel
         }
     }
 
-    private async Task LoadCatalogAndReadinessAsync(CancellationToken cancellationToken)
+    private async Task LoadReadinessAsync(CancellationToken cancellationToken)
     {
         OperationalReadinessSnapshot snapshot = await _readiness.ExecuteAsync(cancellationToken).ConfigureAwait(false);
         Readiness = new OperationalReadinessViewModel(snapshot);
+        HasAvailableCopies = await _searchCopies.HasAnyAvailableAsync(cancellationToken).ConfigureAwait(false);
+    }
 
-        IReadOnlyList<KeyAssetListItem> keys = await _listKeyAssets.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<LoanListItem> openItems = await _listOpenLoans.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        HashSet<Guid> issued = openItems.Select(item => item.KeyAssetId).ToHashSet();
-
-        List<KeyAssetListItem> available = keys
-            .Where(key => key.IsActive && !issued.Contains(key.KeyAssetId))
-            .OrderBy(key => key.KeyNumber, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(key => key.MedecoKeyCode, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        HasAvailableCopies = available.Count > 0;
-
-        Dictionary<string, KeyNumberIssueOptions> byKeyNumber = available
-            .GroupBy(key => key.KeyNumber, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                group => group.Key,
-                group =>
-                {
-                    string rooms = KeyOpenedRoomDisplayFormatter.Format(group.First().OpenedRooms);
-                    return new KeyNumberIssueOptions(
-                        string.IsNullOrEmpty(rooms) ? "—" : rooms,
-                        group.Select(copy => new MedecoChoice(copy.MedecoKeyCode, copy.MedecoKeyCode)).ToArray());
-                },
-                StringComparer.OrdinalIgnoreCase);
-
-        KeyCopyDataJson = JsonSerializer.Serialize(byKeyNumber, KeyCopyJsonOptions);
-
-        KeyNumberOptions = byKeyNumber.Keys
-            .OrderBy(key => key, StringComparer.OrdinalIgnoreCase)
-            .Select(key => new SelectListItem(
-                key,
-                key,
-                string.Equals(key, KeyNumber, StringComparison.OrdinalIgnoreCase)))
-            .ToArray();
-
-        if (!string.IsNullOrWhiteSpace(KeyNumber)
-            && byKeyNumber.TryGetValue(KeyNumber, out KeyNumberIssueOptions? selectedKey))
+    private async Task RestoreSelectedHolderFromTempDataAsync(CancellationToken cancellationToken)
+    {
+        if (TempData.Peek(SelectedHolderTempDataKey) is string selectedCode
+            && !string.IsNullOrWhiteSpace(selectedCode))
         {
-            OpenedRoomsDisplay = selectedKey.Rooms;
-            MedecoOptions = selectedKey.Medecos
-                .Select(choice => new SelectListItem(
-                    choice.Code,
-                    choice.Code,
-                    string.Equals(choice.Code, MedecoKeyCode, StringComparison.OrdinalIgnoreCase)))
-                .ToArray();
+            WorkforceMemberCode = selectedCode;
+            await LoadSelectedHolderAsync(cancellationToken).ConfigureAwait(false);
         }
-        else
+    }
+
+    private async Task RestoreSelectedKeyFromTempDataAsync(CancellationToken cancellationToken)
+    {
+        if (TempData.Peek(SelectedKeyNumberTempDataKey) is string selectedKey
+            && !string.IsNullOrWhiteSpace(selectedKey))
+        {
+            KeyNumber = selectedKey;
+            await LoadSelectedKeyAsync(cancellationToken).ConfigureAwait(false);
+            if (TempData.Peek(SelectedMedecoTempDataKey) is string selectedMedeco
+                && !string.IsNullOrWhiteSpace(selectedMedeco))
+            {
+                MedecoKeyCode = selectedMedeco;
+            }
+        }
+    }
+
+    private async Task LoadSelectedKeyAsync(CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(KeyNumber))
         {
             OpenedRoomsDisplay = "—";
             MedecoOptions = [];
-            if (!string.IsNullOrWhiteSpace(KeyNumber))
-            {
-                // Keep operator-entered KEY # for validation retention, but clear MEDECO options.
-                MedecoKeyCode = string.IsNullOrWhiteSpace(MedecoKeyCode) ? string.Empty : MedecoKeyCode;
-            }
+            return;
+        }
+
+        IReadOnlyList<AvailableKeyCopyCandidate> copies = await _searchCopies
+            .ListAvailableForKeyNumberAsync(KeyNumber, cancellationToken)
+            .ConfigureAwait(false);
+        if (copies.Count == 0)
+        {
+            OpenedRoomsDisplay = "—";
+            MedecoOptions = [];
+            KeyNumber = string.Empty;
+            MedecoKeyCode = string.Empty;
+            TempData.Remove(SelectedKeyNumberTempDataKey);
+            TempData.Remove(SelectedMedecoTempDataKey);
+            return;
+        }
+
+        KeyNumber = copies[0].KeyNumber;
+        string rooms = KeyOpenedRoomDisplayFormatter.Format(copies[0].OpenedRooms);
+        OpenedRoomsDisplay = string.IsNullOrEmpty(rooms) ? "—" : rooms;
+        MedecoOptions = copies
+            .Select(copy => new SelectListItem(
+                copy.MedecoKeyCode,
+                copy.MedecoKeyCode,
+                string.Equals(copy.MedecoKeyCode, MedecoKeyCode, StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
+        // Do not auto-select first/only MEDECO.
+        if (!MedecoOptions.Any(item => item.Selected))
+        {
+            MedecoKeyCode = string.Empty;
         }
     }
 
@@ -362,10 +455,4 @@ public sealed class IssueModel : PageModel
                     && string.Equals(JustificationKind, "Room", StringComparison.OrdinalIgnoreCase)))
             .ToArray();
     }
-
-    private sealed record MedecoChoice(string Code, string Label);
-
-    private sealed record KeyNumberIssueOptions(
-        string Rooms,
-        IReadOnlyList<MedecoChoice> Medecos);
 }

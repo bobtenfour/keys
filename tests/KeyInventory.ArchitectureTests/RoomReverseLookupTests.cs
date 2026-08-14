@@ -65,6 +65,8 @@ public sealed class RoomReverseLookupTests : IAsyncLifetime
         string room410 = await createRoom.ExecuteAsync("410D", "Office", CancellationToken.None).ConfigureAwait(true);
         string room411 = await createRoom.ExecuteAsync("411A", "Lab", CancellationToken.None).ConfigureAwait(true);
 
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "master").ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "27", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "28", "mechanical", CancellationToken.None).ConfigureAwait(true);
@@ -139,7 +141,7 @@ public sealed class RoomReverseLookupTests : IAsyncLifetime
         IOperationalKeyLookupUseCase lookup = scope.ServiceProvider.GetRequiredService<IOperationalKeyLookupUseCase>();
 
         string roomCode = await createRoom.ExecuteAsync("410D", "Office", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("66800", "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "66800", "26", "mechanical").ConfigureAwait(true);
         await assignments.AssignRoomAsync("66800", roomCode, CancellationToken.None).ConfigureAwait(true);
 
         Assert.Contains(
@@ -171,6 +173,8 @@ public sealed class RoomReverseLookupTests : IAsyncLifetime
         IOperationalKeyLookupUseCase lookup = scope.ServiceProvider.GetRequiredService<IOperationalKeyLookupUseCase>();
 
         string roomCode = await createRoom.ExecuteAsync("410D", "Office", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "master").ConfigureAwait(true);
         await createKey.ExecuteAsync("66800", "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync("MASTER1", "01", "master", CancellationToken.None).ConfigureAwait(true);
         await assignments.AssignRoomAsync("66800", roomCode, CancellationToken.None).ConfigureAwait(true);

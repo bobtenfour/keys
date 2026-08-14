@@ -153,6 +153,7 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
         await lifecycle.DeleteRoomAsync(roomCode, CancellationToken.None).ConfigureAwait(true);
         Assert.Equal(0, await db.Rooms.CountAsync(item => item.RoomCode == roomCode).ConfigureAwait(true));
 
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "lc-type").ConfigureAwait(true);
         await createKey.ExecuteAsync("LC-KEY", "01", "lc-type", CancellationToken.None).ConfigureAwait(true);
         KeyTypeLifecycleItem keyType = (await lifecycle.ListKeyTypesAsync(CancellationToken.None)
                 .ConfigureAwait(true))
@@ -179,6 +180,7 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
         await lifecycle.DeleteKeyTypeAsync("lc-type", CancellationToken.None).ConfigureAwait(true);
         Assert.Equal(0, await db.KeyTypes.CountAsync(item => item.TypeCode == "lc-type").ConfigureAwait(true));
 
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "lc-type2").ConfigureAwait(true);
         await createKey.ExecuteAsync("LC-KEY2", "02", "lc-type2", CancellationToken.None).ConfigureAwait(true);
         string room2 = await createRoom.ExecuteAsync("998", "Lab", CancellationToken.None).ConfigureAwait(true);
         await rooms.AssignRoomAsync("LC-KEY2", room2, CancellationToken.None).ConfigureAwait(true);
@@ -250,6 +252,7 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
         const string wa2 = "wa-lc-2";
         await createWa.ExecuteAsync(wa2, memberCode, roomCode, true, CancellationToken.None)
             .ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "wm-type").ConfigureAwait(true);
         await createKey.ExecuteAsync("WM-KEY", "09", "wm-type", CancellationToken.None).ConfigureAwait(true);
         DateTimeOffset issued = DateTimeOffset.UtcNow;
         await issue.ExecuteAsync(

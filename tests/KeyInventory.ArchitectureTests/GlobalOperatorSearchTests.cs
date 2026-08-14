@@ -131,6 +131,7 @@ public sealed class GlobalOperatorSearchTests : IAsyncLifetime
         Assert.Equal("Holder", brian.LastName);
         Assert.Equal(seeded.DepartmentCode, brian.DepartmentCode);
         Assert.Equal("Active", brian.Status);
+        Assert.Contains(brian.WorkAssignments, assignment => assignment.RoomNumber == seeded.Room410);
         GlobalPersonCurrentKey held = Assert.Single(brian.CurrentKeys);
         Assert.Equal(seeded.KeyNumberA, held.KeyNumber);
         Assert.Equal("27", held.MedecoKeyCode);
@@ -156,6 +157,18 @@ public sealed class GlobalOperatorSearchTests : IAsyncLifetime
         Assert.True(result.HasAnyResults);
         GlobalPersonSearchHit casey = Assert.Single(result.People, person => person.Uin == seeded.CaseyUin);
         Assert.Empty(casey.CurrentKeys);
+        Assert.Contains(casey.WorkAssignments, assignment => assignment.RoomNumber == seeded.Room410);
+
+        string page = await File.ReadAllTextAsync(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Search.cshtml"))
+            .ConfigureAwait(true);
+        Assert.Contains("Search Results", page, StringComparison.Ordinal);
+        Assert.Contains("Search results for", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("Member details", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("Member keys", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("<form method=\"get\" asp-page=\"/Search\"", page, StringComparison.Ordinal);
+        Assert.Contains("Work Assignment", page, StringComparison.Ordinal);
+        Assert.Contains("Current Key Custody", page, StringComparison.Ordinal);
+        Assert.Contains("No keys currently issued.", page, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -235,6 +248,11 @@ public sealed class GlobalOperatorSearchTests : IAsyncLifetime
 
         string page = await File.ReadAllTextAsync(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Search.cshtml"))
             .ConfigureAwait(true);
+        Assert.Contains("Search Results", page, StringComparison.Ordinal);
+        Assert.Contains("Search results for", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("Member details", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("Member keys", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("<form method=\"get\" asp-page=\"/Search\"", page, StringComparison.Ordinal);
         Assert.Contains("No results found for", page, StringComparison.Ordinal);
         Assert.Contains("Search by name, UIN, Room #, KEY #, or MEDECO", page, StringComparison.Ordinal);
         Assert.DoesNotContain("No matching keys", page, StringComparison.Ordinal);
@@ -307,6 +325,8 @@ public sealed class GlobalOperatorSearchTests : IAsyncLifetime
         await createAssignment.ExecuteAsync($"{prefix}-wa-r", brianna, room411, true, CancellationToken.None)
             .ConfigureAwait(true);
 
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(services, "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(services, "master").ConfigureAwait(true);
         await createKey.ExecuteAsync(keyA, "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync(keyA, "27", "mechanical", CancellationToken.None).ConfigureAwait(true);
         await createKey.ExecuteAsync(keyMaster, "01", "master", CancellationToken.None).ConfigureAwait(true);
