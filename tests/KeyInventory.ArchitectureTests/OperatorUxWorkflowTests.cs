@@ -7,6 +7,7 @@ using KeyInventory.Web.Presentation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -56,7 +57,7 @@ public sealed class OperatorUxWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "oux")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "OUX-KEY-1", "01", "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "OUX-KEY-1", "01", KeyAccessClassification.Regular).ConfigureAwait(true);
 
         WorkforceMemberListItem member = (await listMembers.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.WorkforceMemberCode == seeded.MemberCode);
@@ -94,7 +95,7 @@ public sealed class OperatorUxWorkflowTests : IAsyncLifetime
                 CancellationToken.None)
             .ConfigureAwait(true);
 
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "OUX-KEY-2", "01", "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "OUX-KEY-2", "01", KeyAccessClassification.Regular).ConfigureAwait(true);
         await issue.ExecuteAsync(
                 "loan-oux-room",
                 "OUX-KEY-2",

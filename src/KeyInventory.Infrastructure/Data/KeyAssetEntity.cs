@@ -8,7 +8,11 @@ public sealed class KeyAssetEntity
 
     public string MedecoKeyCode { get; set; } = string.Empty;
 
-    public bool IsActive { get; set; }
+    public string Condition { get; set; } = string.Empty;
+
+    public Guid? ReplacesKeyAssetId { get; set; }
 
     public KeyAccessPatternEntity AccessPattern { get; set; } = null!;
+
+    public KeyAssetEntity? ReplacesKeyAsset { get; set; }
 }

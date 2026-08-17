@@ -7,6 +7,8 @@
     ViewData["NavSection"] = "administration";
     var selected = Model.Selected!;
     bool isActive = string.Equals(selected.Status, "Active", StringComparison.Ordinal);
+    bool isEdit = Model.IsEditMode && isActive;
+    bool justCreated = Model.JustCreated;
 }
 
 <header class="page-header page-header-compact identity-header">
@@ -27,9 +29,18 @@
     <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
 }
 
+@if (justCreated && isActive)
+{
+    <div class="next-actions" style="margin-bottom: 1rem;">
+        <a class="btn btn-primary" asp-page="/Administration/WorkAssignments/Add">Assign Room</a>
+        <a class="btn btn-secondary" asp-page="./Add">Add another member</a>
+        <a class="btn btn-secondary" asp-page="./Index">Back to list</a>
+    </div>
+}
+
 <section class="card form-card admin-task-form">
-    <h2>Membership</h2>
-    @if (isActive)
+    <h2>@(isEdit ? "Edit membership" : "Membership")</h2>
+    @if (isEdit)
     {
         <form method="post" asp-page-handler="Maintain" class="form-grid">
             <input type="hidden" asp-for="Member" />
@@ -53,32 +64,42 @@
             </label>
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Save changes</button>
-                <a class="btn btn-secondary" asp-page="./Index">Back to list</a>
-                <a class="btn btn-secondary" asp-page="/Administration/AuditTrail" asp-route-Subject="@selected.WorkforceMemberCode">Audit history</a>
+                <a class="btn btn-secondary" asp-page="./Details" asp-route-member="@selected.WorkforceMemberCode">Cancel</a>
             </div>
         </form>
     }
     else
     {
-        <dl class="detail-list">
+        <dl class="detail-list search-person-identity">
             <div><dt>Name</dt><dd>@selected.FirstName @selected.LastName</dd></div>
             <div><dt>UIN</dt><dd>@selected.Uin</dd></div>
             <div><dt>Workforce type</dt><dd>@selected.WorkforceType</dd></div>
             <div><dt>Department</dt><dd>@selected.DepartmentCode</dd></div>
+            <div><dt>Status</dt><dd>@selected.Status</dd></div>
         </dl>
-        <p class="hint">Terminated members cannot be reactivated or edited.</p>
         <div class="form-actions">
+            @if (isActive)
+            {
+                <a class="btn btn-primary"
+                   asp-page="./Details"
+                   asp-route-member="@selected.WorkforceMemberCode"
+                   asp-route-edit="true">Edit</a>
+            }
             <a class="btn btn-secondary" asp-page="./Index">Back to list</a>
             <a class="btn btn-secondary" asp-page="/Administration/AuditTrail" asp-route-Subject="@selected.WorkforceMemberCode">Audit history</a>
         </div>
+        @if (!isActive)
+        {
+            <p class="hint">Terminated members cannot be reactivated or edited.</p>
+        }
     }
 </section>
 
 <section class="card admin-list-panel">
-    <h2>Work Assignments / Rooms</h2>
-    @if (Model.WorkAssignments.Count == 0)
+    <h2>Room Assignments</h2>
+    @if (Model.RoomAssignments.Count == 0)
     {
-        <div class="empty-state"><strong>No active work assignments</strong></div>
+        <div class="empty-state"><strong>No active room assignments</strong></div>
     }
     else
     {
@@ -88,16 +109,14 @@
                     <tr>
                         <th>Room</th>
                         <th>Description</th>
-                        <th>Primary</th>
                     </tr>
                 </thead>
                 <tbody>
-                @foreach (var item in Model.WorkAssignments)
+                @foreach (var item in Model.RoomAssignments)
                 {
                     <tr>
                         <td>@item.RoomNumber</td>
                         <td>@(string.IsNullOrEmpty(item.Description) ? "—" : item.Description)</td>
-                        <td>@(item.IsPrimary ? "Yes" : "No")</td>
                     </tr>
                 }
                 </tbody>
@@ -105,7 +124,11 @@
         </div>
     }
     <div class="form-actions">
-        <a class="btn btn-secondary" asp-page="/Administration/WorkAssignments/Index">Manage work assignments</a>
+        @if (isActive)
+        {
+            <a class="btn btn-secondary" asp-page="/Administration/WorkAssignments/Add">Assign Room</a>
+        }
+        <a class="btn btn-secondary" asp-page="/Administration/WorkAssignments/Index">Manage room assignments</a>
     </div>
 </section>
 
@@ -143,16 +166,13 @@
             </table>
         </div>
     }
-    <div class="form-actions">
-        <a class="btn btn-secondary" asp-page="/Operations/MemberKeys" asp-route-member="@selected.WorkforceMemberCode">Issued Keys</a>
-    </div>
 </section>
 
-@if (isActive)
+@if (isActive && !justCreated)
 {
-    <section class="card form-card destructive-panel">
-        <h2>Terminate workforce member</h2>
-        <p class="lede">Termination ends eligibility for new key issues. Outstanding keys must still be received through Return.</p>
+    <section class="card form-card destructive-panel" aria-label="Lifecycle actions">
+        <h2>Lifecycle</h2>
+        <p class="lede">Termination ends eligibility for new key issues. Outstanding keys must still be received through Receive.</p>
         @if (Model.Obligations.Count > 0)
         {
             <div class="alert alert-warning" role="status">

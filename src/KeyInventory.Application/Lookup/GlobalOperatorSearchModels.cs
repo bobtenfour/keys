@@ -1,4 +1,5 @@
 using KeyInventory.Application.Catalog;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.Application.Lookup;
 
@@ -30,16 +31,16 @@ public sealed record GlobalPersonSearchHit(
     IReadOnlyList<GlobalPersonCurrentKey> CurrentKeys);
 
 /// <summary>
-/// Current active Work Assignment room relationship for a person search hit.
+/// Current active Room Assignment room relationship for a person search hit.
 /// Not key custody — assignment authority only.
 /// </summary>
 public sealed record GlobalPersonWorkAssignment(
-    string RoomNumber,
-    bool IsPrimary);
+    string RoomNumber);
 
 public sealed record GlobalPersonCurrentKey(
     string KeyNumber,
     string MedecoKeyCode,
+    KeyAccessClassification Classification,
     DateTimeOffset IssuedAtUtc,
     IReadOnlyList<KeyOpenedRoomItem> OpenedRooms);
 
@@ -47,23 +48,26 @@ public sealed record GlobalRoomSearchHit(
     string RoomCode,
     string RoomNumber,
     string? Description,
+    string DepartmentCode,
     IReadOnlyList<string> OpeningKeyNumbers);
 
 public sealed record GlobalKeyNumberSearchHit(
     string KeyNumber,
-    string TypeCode,
+    KeyAccessClassification Classification,
     IReadOnlyList<KeyOpenedRoomItem> OpenedRooms,
     IReadOnlyList<GlobalPhysicalCopyState> Copies);
 
 public sealed record GlobalPhysicalCopyState(
     string MedecoKeyCode,
+    KeyPhysicalCondition Condition,
     string AvailabilityStatus,
     PartyHolderDisplay? CurrentHolder);
 
 public sealed record GlobalMedecoSearchHit(
     string KeyNumber,
     string MedecoKeyCode,
-    string TypeCode,
+    KeyAccessClassification Classification,
+    KeyPhysicalCondition Condition,
     string AvailabilityStatus,
     PartyHolderDisplay? CurrentHolder,
     IReadOnlyList<KeyOpenedRoomItem> OpenedRooms);

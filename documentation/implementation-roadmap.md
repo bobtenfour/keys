@@ -73,7 +73,7 @@ OPERATOR-EXPERIENCE-1 is Accepted.
 KEY-ACCESS-COPY-1 is Accepted (2026-08-11).
 Next Allowed Slice remains STOP until human governance explicitly prepares the next concrete operational capability.
 Do not prepare or invent slices for speculative enterprise scale, multi-campus design, policy engines, workflow engines, event platforms, or extensibility frameworks.
-Preserve KEY-ACCESS-COPY-1 authorities: KeyAccessPattern sole KEY # / Room-access; KeyAsset physical MEDECO-copy custody; KeyType classification; KeySeries non-authority; migration STOP for ambiguous legacy CatalogKeyCode data.
+Preserve KEY-ACCESS-COPY-1 authorities: KeyAccessPattern sole KEY # / Room-access; KeyAsset physical MEDECO-copy custody; Regular/Master classification; KeySeries non-authority; migration STOP for ambiguous legacy CatalogKeyCode data.
 Do not prepare or invent slices for speculative enterprise scale, multi-campus design, policy engines, workflow engines, event platforms, or extensibility frameworks.
 
 ## Depends On

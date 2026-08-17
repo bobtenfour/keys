@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -166,7 +167,7 @@ public sealed class GlobalOperatorSearchTests : IAsyncLifetime
         Assert.DoesNotContain("Member details", page, StringComparison.Ordinal);
         Assert.DoesNotContain("Member keys", page, StringComparison.Ordinal);
         Assert.DoesNotContain("<form method=\"get\" asp-page=\"/Search\"", page, StringComparison.Ordinal);
-        Assert.Contains("Work Assignment", page, StringComparison.Ordinal);
+        Assert.Contains("Room Assignment", page, StringComparison.Ordinal);
         Assert.Contains("Current Key Custody", page, StringComparison.Ordinal);
         Assert.Contains("No keys currently issued.", page, StringComparison.Ordinal);
     }
@@ -292,8 +293,6 @@ public sealed class GlobalOperatorSearchTests : IAsyncLifetime
         IRegisterWorkforceMemberUseCase register = services.GetRequiredService<IRegisterWorkforceMemberUseCase>();
         ICreateWorkAssignmentUseCase createAssignment = services.GetRequiredService<ICreateWorkAssignmentUseCase>();
         ICreateKeyAssetUseCase createKey = services.GetRequiredService<ICreateKeyAssetUseCase>();
-        IKeyAccessPatternRoomAssignmentUseCase assignments =
-            services.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>();
         IIssueLoanUseCase issue = services.GetRequiredService<IIssueLoanUseCase>();
 
         string dept = $"{prefix}-fac";
@@ -304,8 +303,8 @@ public sealed class GlobalOperatorSearchTests : IAsyncLifetime
         string keyB = $"{prefix}-54970";
 
         await createDept.ExecuteAsync(dept, CancellationToken.None).ConfigureAwait(true);
-        string room410 = await createRoom.ExecuteAsync(room410Number, "Office", CancellationToken.None).ConfigureAwait(true);
-        string room411 = await createRoom.ExecuteAsync(room411Number, "Lab", CancellationToken.None).ConfigureAwait(true);
+        string room410 = await createRoom.ExecuteAsync(dept, room410Number, "Office", CancellationToken.None).ConfigureAwait(true);
+        string room411 = await createRoom.ExecuteAsync(dept, room411Number, "Lab", CancellationToken.None).ConfigureAwait(true);
 
         string brianUin = UniqueUin(prefix, 11);
         string caseyUin = UniqueUin(prefix, 12);
@@ -318,24 +317,17 @@ public sealed class GlobalOperatorSearchTests : IAsyncLifetime
         string brianna = await register.ExecuteAsync("Brianna", "Other", briannaUin, "Employee", dept, CancellationToken.None)
             .ConfigureAwait(true);
 
-        await createAssignment.ExecuteAsync($"{prefix}-wa-b", brian, room410, true, CancellationToken.None)
+        await createAssignment.ExecuteAsync(brian, room410, CancellationToken.None)
             .ConfigureAwait(true);
-        await createAssignment.ExecuteAsync($"{prefix}-wa-c", casey, room410, true, CancellationToken.None)
+        await createAssignment.ExecuteAsync(casey, room410, CancellationToken.None)
             .ConfigureAwait(true);
-        await createAssignment.ExecuteAsync($"{prefix}-wa-r", brianna, room411, true, CancellationToken.None)
+        await createAssignment.ExecuteAsync(brianna, room411, CancellationToken.None)
             .ConfigureAwait(true);
 
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(services, "mechanical").ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(services, "master").ConfigureAwait(true);
-        await createKey.ExecuteAsync(keyA, "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync(keyA, "27", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync(keyMaster, "01", "master", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync(keyB, "27", "mechanical", CancellationToken.None).ConfigureAwait(true);
-
-        await assignments.AssignRoomAsync(keyA, room410, CancellationToken.None).ConfigureAwait(true);
-        await assignments.AssignRoomAsync(keyMaster, room410, CancellationToken.None).ConfigureAwait(true);
-        await assignments.AssignRoomAsync(keyMaster, room411, CancellationToken.None).ConfigureAwait(true);
-        await assignments.AssignRoomAsync(keyB, room411, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(services, keyA, "26", KeyAccessClassification.Regular, room410, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(services, keyA, "27", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(services, keyMaster, "01", KeyAccessClassification.Master, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(services, keyB, "27", KeyAccessClassification.Regular, room411, CancellationToken.None).ConfigureAwait(true);
 
         string loanCode = $"{prefix}-loan-27";
         DateTimeOffset issued = new(2026, 8, 13, 15, 0, 0, TimeSpan.Zero);

@@ -25,6 +25,11 @@
     <form method="post" class="form-grid">
         <input type="hidden" asp-for="Room" />
         <label>
+            Department
+            <input type="text" value="@selected.DepartmentCode" readonly />
+            <span class="hint">Rooms belong to their originally created Department. Department is immutable in this release.</span>
+        </label>
+        <label>
             Room number
             <input asp-for="RoomNumber" autocomplete="off" required />
         </label>

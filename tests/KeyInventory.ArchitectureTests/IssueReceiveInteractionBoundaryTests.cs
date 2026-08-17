@@ -17,11 +17,11 @@ public sealed class IssueReceiveInteractionBoundaryTests
         Assert.Contains("Key holder", view, StringComparison.Ordinal);
         Assert.Contains("Search by name or UIN", view, StringComparison.Ordinal);
         Assert.Contains("Search KEY # or MEDECO", view, StringComparison.Ordinal);
-        Assert.Contains("Select an available MEDECO...", view, StringComparison.Ordinal);
+        Assert.Contains("Search KEY # or MEDECO...", view, StringComparison.Ordinal);
         Assert.Contains("Select justification...", view, StringComparison.Ordinal);
         Assert.Contains("ISearchEligibleKeyHoldersUseCase", code, StringComparison.Ordinal);
+        Assert.Contains("ISearchIssuablePhysicalCopiesUseCase", code, StringComparison.Ordinal);
         Assert.Contains("ISearchAvailableKeyCopiesUseCase", code, StringComparison.Ordinal);
-        Assert.Contains("ResetCleanBusinessChoices", code, StringComparison.Ordinal);
         Assert.Contains("JustificationKind { get; set; } = string.Empty", code, StringComparison.Ordinal);
 
         Assert.DoesNotContain("ListActiveWorkforceMembersWithIdentityAsync", code, StringComparison.Ordinal);
@@ -47,9 +47,8 @@ public sealed class IssueReceiveInteractionBoundaryTests
         Assert.Contains("SearchEligibleKeyHoldersAsync", port, StringComparison.Ordinal);
         Assert.Contains(".Take(bound)", adapter, StringComparison.Ordinal);
         Assert.Contains("EnsureIssueCandidate", useCase, StringComparison.Ordinal);
-        Assert.Contains("OnPostSearchHoldersAsync", code, StringComparison.Ordinal);
-        Assert.Contains("OnPostSelectHolderAsync", code, StringComparison.Ordinal);
-        Assert.Contains("asp-page-handler=\"SearchHolders\"", view, StringComparison.Ordinal);
+        Assert.Contains("OnGetSearchHoldersAsync", code, StringComparison.Ordinal);
+        Assert.Contains("handler=SearchHolders", view, StringComparison.Ordinal);
         Assert.Contains("Nothing is selected automatically", view, StringComparison.Ordinal);
         Assert.DoesNotContain("KeyIssueEligibility", code, StringComparison.Ordinal);
         Assert.DoesNotContain("KeyInventoryDbContext", code, StringComparison.Ordinal);
@@ -74,10 +73,10 @@ public sealed class IssueReceiveInteractionBoundaryTests
         string view = Read("src/KeyInventory.Web/Pages/Operations/Receive.cshtml");
         string code = Read("src/KeyInventory.Web/Pages/Operations/Receive.cshtml.cs");
 
-        Assert.Contains("Search active issue", view, StringComparison.Ordinal);
+        Assert.Contains("Search KEY #, MEDECO, holder name, or UIN...", view, StringComparison.Ordinal);
         Assert.Contains("Nothing is selected automatically", view, StringComparison.Ordinal);
-        Assert.Contains("Never auto-pick first/only issue", code, StringComparison.Ordinal);
-        Assert.Contains("SearchOpenLoansWithHoldersAsync", code, StringComparison.Ordinal);
+        Assert.Contains("ISearchOpenCustodyUseCase", code, StringComparison.Ordinal);
+        Assert.Contains("OnGetSearchOpenCustodyAsync", code, StringComparison.Ordinal);
         Assert.Contains("FormatKeyCopy", code, StringComparison.Ordinal);
         Assert.Contains("RedirectToPage()", code, StringComparison.Ordinal);
         Assert.DoesNotContain("ModelState.Clear()", code, StringComparison.Ordinal);
@@ -116,7 +115,7 @@ public sealed class IssueReceiveInteractionBoundaryTests
         PropertyInfo[] properties = typeof(IssueModel).GetProperties(BindingFlags.Instance | BindingFlags.Public);
         Assert.Contains(properties, property => property.Name == nameof(IssueModel.IssuedLocalText));
         Assert.Contains(properties, property => property.Name == nameof(IssueModel.DueLocalText));
-        Assert.Contains(properties, property => property.Name == nameof(IssueModel.HolderSearchText));
+        Assert.Contains(properties, property => property.Name == nameof(IssueModel.SelectedHolderDisplay));
         Assert.DoesNotContain(properties, property => property.Name == "IssuedAtUtcText");
         Assert.DoesNotContain(properties, property => property.Name == "WorkforceMemberOptions");
     }

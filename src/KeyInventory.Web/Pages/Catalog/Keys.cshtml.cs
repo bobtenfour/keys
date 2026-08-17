@@ -10,13 +10,19 @@ public sealed class KeysModel : PageModel
 {
     private readonly IConfigurationLifecycleUseCase _lifecycle;
     private readonly IListKeyAssetsUseCase _listKeyAssets;
+    private readonly IMarkKeyAssetLostUseCase _markLost;
+    private readonly IDestroyKeyAssetUseCase _destroy;
 
     public KeysModel(
         IConfigurationLifecycleUseCase lifecycle,
-        IListKeyAssetsUseCase listKeyAssets)
+        IListKeyAssetsUseCase listKeyAssets,
+        IMarkKeyAssetLostUseCase markLost,
+        IDestroyKeyAssetUseCase destroy)
     {
         _lifecycle = lifecycle ?? throw new ArgumentNullException(nameof(lifecycle));
         _listKeyAssets = listKeyAssets ?? throw new ArgumentNullException(nameof(listKeyAssets));
+        _markLost = markLost ?? throw new ArgumentNullException(nameof(markLost));
+        _destroy = destroy ?? throw new ArgumentNullException(nameof(destroy));
     }
 
     public IReadOnlyList<KeyAssetLifecycleItem> Keys { get; private set; } = [];
@@ -40,36 +46,34 @@ public sealed class KeysModel : PageModel
         await LoadAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IActionResult> OnPostActivateAsync(Guid keyAssetId, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostMarkLostAsync(Guid keyAssetId, CancellationToken cancellationToken)
     {
         try
         {
-            await _lifecycle.ActivateKeyAssetAsync(keyAssetId, cancellationToken).ConfigureAwait(false);
-            SuccessMessage = "Physical key copy was activated.";
+            await _markLost.ExecuteAsync(keyAssetId, cancellationToken).ConfigureAwait(false);
+            TempData["SuccessMessage"] = "Key was marked Lost.";
+            return RedirectToPage();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
-            ErrorMessage = exception.Message;
+            TempData["ErrorMessage"] = exception.Message;
+            return RedirectToPage();
         }
-
-        await LoadAsync(cancellationToken).ConfigureAwait(false);
-        return Page();
     }
 
-    public async Task<IActionResult> OnPostRetireAsync(Guid keyAssetId, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostDestroyAsync(Guid keyAssetId, CancellationToken cancellationToken)
     {
         try
         {
-            await _lifecycle.RetireKeyAssetAsync(keyAssetId, cancellationToken).ConfigureAwait(false);
-            SuccessMessage = "Physical key copy was retired.";
+            await _destroy.ExecuteAsync(keyAssetId, cancellationToken).ConfigureAwait(false);
+            TempData["SuccessMessage"] = "Key was Destroyed.";
+            return RedirectToPage();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
-            ErrorMessage = exception.Message;
+            TempData["ErrorMessage"] = exception.Message;
+            return RedirectToPage();
         }
-
-        await LoadAsync(cancellationToken).ConfigureAwait(false);
-        return Page();
     }
 
     public async Task<IActionResult> OnPostActivatePatternAsync(
@@ -80,15 +84,14 @@ public sealed class KeysModel : PageModel
         {
             await _lifecycle.ActivateKeyAccessPatternAsync(keyNumber, cancellationToken)
                 .ConfigureAwait(false);
-            SuccessMessage = $"KEY # {keyNumber} was activated.";
+            TempData["SuccessMessage"] = $"KEY # {keyNumber} was activated.";
+            return RedirectToPage();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
-            ErrorMessage = exception.Message;
+            TempData["ErrorMessage"] = exception.Message;
+            return RedirectToPage();
         }
-
-        await LoadAsync(cancellationToken).ConfigureAwait(false);
-        return Page();
     }
 
     public async Task<IActionResult> OnPostRetirePatternAsync(
@@ -99,15 +102,14 @@ public sealed class KeysModel : PageModel
         {
             await _lifecycle.RetireKeyAccessPatternAsync(keyNumber, cancellationToken)
                 .ConfigureAwait(false);
-            SuccessMessage = $"KEY # {keyNumber} was retired.";
+            TempData["SuccessMessage"] = $"KEY # {keyNumber} was retired.";
+            return RedirectToPage();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
-            ErrorMessage = exception.Message;
+            TempData["ErrorMessage"] = exception.Message;
+            return RedirectToPage();
         }
-
-        await LoadAsync(cancellationToken).ConfigureAwait(false);
-        return Page();
     }
 
     private async Task LoadAsync(CancellationToken cancellationToken)

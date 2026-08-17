@@ -13,13 +13,16 @@ Do not reintroduce Organization or Building as active configurable business conc
 Do not introduce policy engines, generalized authorization engines, workflow engines, event platforms, or extensibility frameworks unless a concrete KeyInventory business requirement later proves they are necessary.
 Workforce Eligibility evaluates legitimate active-worker key issue eligibility; it is not a generalized access-control or key-authorization policy engine.
 Room must not be expanded into Campus or enterprise location hierarchies without a future explicit business requirement.
-Key Catalog owns KEY # / KeyAccessPattern identity, physical KeyAsset copies (MEDECO within KEY #), and current KeyAccessPattern-to-Room opening assignments; Location owns Room identity (RoomCode technical + RoomNumber business); Workforce Eligibility owns Department identity (DepartmentId technical + DepartmentCode business); keys associate to places only through Rooms via KEY #.
-KeyAccessPattern↔Room is the operational authority for which Rooms a KEY # opens; every physical copy under that KEY # derives the same Room set; Lock must not be required or used as an intermediate room-opening authority.
-KeyAsset must not own independent Room openings after KEY-ACCESS-COPY-1; dual KeyAsset↔Room authority is forbidden.
+Key Catalog owns KEY # / KeyAccessPattern identity, Regular|Master Classification on KEY #, physical KeyAsset copies (MEDECO within KEY #), and Classification-defined Room access (Regular single RoomCode; Master all Rooms); Location owns Room identity (RoomCode technical + RoomNumber business) and Room→Department membership; Workforce Eligibility owns Department identity (DepartmentId technical + DepartmentCode business); keys associate to places only through Rooms via KEY # Classification rules.
+Classification defines which Rooms a KEY # opens; every physical copy under that KEY # derives the same access; Lock must not be required or used as an intermediate room-opening authority.
+KeyAsset must not own independent Room openings; dual KeyAsset↔Room authority is forbidden; KeyAccessPatternRoomAssignment join is retired.
+KeyAsset must not store holder or Department; physical Condition is Active|Lost|Destroyed; Available/Issued is derived from Condition plus open Loan on the physical key; Replacement lineage uses ReplacesKeyAssetId.
 KeySeries must not be elevated or used as KEY # / Room-access / copy identity authority.
+KeyType is not an active catalog entity; Classification Regular|Master on KeyAccessPattern is the sole KEY # classification authority.
 CatalogKeyCode must not remain unique physical-copy business identity; opaque composite KEY#+MEDECO strings must not be identity authority; KeyAssetId is immutable internal physical-copy identity.
 Custody (Issue/Return) remains on the physical KeyAsset; Transfer is out of scope.
-Master/sub-master hierarchy is out of scope; a master key is only a KEY # whose Room set contains multiple Rooms.
+Master/sub-master hierarchy is out of scope; Classification Master is explicit and is not inferred from Room count (Master ≠ multi-room).
+Room belongs to exactly one Department; WorkAssignment requires Room.DepartmentId == WorkforceMember.DepartmentId.
 
 ## Operational Report Export Boundary
 Existing REPORTS-1 tabular reports may be represented as on-screen tables and as CSV, XLSX, and PDF downloads of the same Application-owned filtered result set.
@@ -41,7 +44,7 @@ Owns persistence, external systems, integration adapters, and technical implemen
 Owns presentation, request/response binding, navigation, and product experience.
 - Operator-facing local civil time controls may be used for Issue/Receive capture; conversion to authoritative zero-offset UTC occurs only at the Web→Application boundary and must not create a second time authority.
 - Web must not query `KeyInventoryDbContext` or reimplement Domain eligibility; selector options come from Application list/query authorities.
-- Operator interaction architecture (active): one page purpose; no duplicate capability surfaces without distinct intent; header owns Global Search input (`/Search` is results-only); growing collections use Application-owned bounded search; existing facts are selected/derived not retyped; Key Type creation is an explicit Key Types capability, not silent Register-side creation; Work Assignment rooms and Key-access rooms remain separate presentations.
+- Operator interaction architecture (active): one page purpose; no duplicate capability surfaces without distinct intent; header owns Global Search input (`/Search` is results-only); growing collections use Application-owned bounded searchable combobox; existing facts are selected/derived not retyped; primary navigation order is Home → Catalog → Operations → remaining modules; Create Key uses **New Key** / **Replace Lost Key** with Application-resolved KEY # existence (no separate Create New KEY # mode; no Key Types admin); Issue is key-first then holder under Operations; Receive uses open-custody searchable combobox; Room Assignment rooms and Key-access rooms remain separate presentations.
 
 ## Dependency Rules
 - Domain references no project.
@@ -64,7 +67,7 @@ Runtime composition belongs to the application host. Service registration must n
 - Runtime and design-time persistence use EF Core SQL Server (`UseSqlServer`) with that connection string only.
 - MIGRATION-1 establishes the minimum persistence foundation required for LOAN-VERTICAL-1.
 - MIGRATION-1 includes one EF Core `DbContext` in Infrastructure.
-- MIGRATION-1 includes the initial migration for only these entities: KeyType, KeyAsset, Loan, and Return.
+- MIGRATION-1 includes the initial migration for only these entities: KeyType, KeyAsset, Loan, and Return (historical foundation; active model supersedes KeyType with Regular|Master Classification on KeyAccessPattern).
 - KeyAsset persistence may omit optional KeySeries references; KEY-ACCESS-COPY-1 must not elevate KeySeries into KEY # or Room-access authority.
 - KEY-ACCESS-COPY-1 migrates Room-opening persistence from KeyAsset↔Room to KeyAccessPattern↔Room and introduces KeyAccessPattern, KeyAssetId, and MEDECO-within-KEY # uniqueness; Lock must not mediate Room openings.
 - Existing CatalogKeyCode values must not be semantically guessed as KEY # vs MEDECO vs composite during migration; STOP rather than invent mapping. Controlled demo/test reset/reseed authority is separate from production migration authority.
@@ -113,7 +116,9 @@ Runtime composition belongs to the application host. Service registration must n
 - Organization and ResponsibleManager are not active Workforce Eligibility authorities (OPERATOR-EXPERIENCE-1). Historical OperatorAuditRecord rows may still mention them.
 - WorkforceMember is the workforce relationship, not person identity.
 - Employment is not a separate aggregate; relationship authority must not be duplicated under an Employment entity.
-- Location boundary owns Room place authority, including required global RoomNumber uniqueness. Building is not an active place authority.
+- Location boundary owns Room place authority, including required global RoomNumber uniqueness and required Room→Department membership. Building is not an active place authority.
+- WorkAssignment requires Room.DepartmentId == WorkforceMember.DepartmentId.
+- WorkAssignment identity is technical WorkAssignmentId only; WorkAssignmentCode and Primary designation are not active authority.
 - WorkforceMember references Party and must not own or duplicate Party person-identity attributes.
 - Borrower remains a workflow role only; a Borrower aggregate, temporary borrower fields, and duplicate identity authority are forbidden.
 - Workforce Eligibility must not own Loan workflow mutation, Return workflow mutation, custody, lifecycle, audit emission, authentication, authorization runtime, HR integration, persistence implementation, or UI.

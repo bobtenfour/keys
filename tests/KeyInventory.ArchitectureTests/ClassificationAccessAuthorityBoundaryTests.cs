@@ -12,29 +12,26 @@ using Xunit;
 
 namespace KeyInventory.ArchitectureTests;
 
-public sealed class KeyAccessPatternRoomAssignmentBoundaryTests
+public sealed class ClassificationAccessAuthorityBoundaryTests
 {
     [Fact]
-    public void CatalogKeyRoomsPageConsumesApplicationUseCaseWithoutDbContext()
+    public void KeyRoomsPageAndAssignUseCasesAreAbsent()
     {
-        ConstructorInfo ctor = typeof(KeyRoomsModel).GetConstructors().Single();
-        Assert.Contains(
-            ctor.GetParameters(),
-            parameter => parameter.ParameterType == typeof(IKeyAccessPatternRoomAssignmentUseCase));
-        Assert.DoesNotContain(
-            ctor.GetParameters(),
-            parameter =>
-                parameter.ParameterType.Name.Contains("DbContext", StringComparison.Ordinal)
-                || (parameter.ParameterType.Namespace?.StartsWith("KeyInventory.Infrastructure", StringComparison.Ordinal) ?? false)
-                || parameter.ParameterType == typeof(IKeyAccessPatternRoomAssignmentPersistencePort));
+        Assert.Null(typeof(KeysModel).Assembly.GetType("KeyInventory.Web.Pages.Catalog.KeyRoomsModel"));
+        Assert.Null(typeof(IKeyAccessResolutionPort).Assembly.GetType(
+            "KeyInventory.Application.Catalog.IKeyAccessPatternRoomAssignmentUseCase"));
+        Assert.Null(typeof(IKeyAccessResolutionPort).Assembly.GetType(
+            "KeyInventory.Application.Catalog.IKeyAccessPatternRoomAssignmentPersistencePort"));
+        Assert.Null(typeof(LoanVerticalComposition).Assembly.GetType(
+            "KeyInventory.Infrastructure.Data.KeyAccessPatternRoomAssignmentEntity"));
     }
 
     [Fact]
-    public void SliceDoesNotIntroduceHistoryMasterKeyOrSecondPersistence()
+    public void SliceDoesNotIntroduceHistoryOrSecondPersistence()
     {
         Assembly[] assemblies =
         [
-            typeof(IKeyAccessPatternRoomAssignmentUseCase).Assembly,
+            typeof(IKeyAccessResolutionPort).Assembly,
             typeof(LoanVerticalComposition).Assembly,
             typeof(KeyInventory.Web.Program).Assembly
         ];
@@ -46,19 +43,19 @@ public sealed class KeyAccessPatternRoomAssignmentBoundaryTests
                 name,
                 "AssignmentHistory",
                 "KeyRoomHistory",
-                "MasterKey",
                 "SubMaster",
                 "Reports2",
                 "Sqlite",
                 "InMemory",
-                "Elasticsearch"))
+                "Elasticsearch",
+                "KeyAccessPatternRoomAssignment"))
             .ToArray();
 
         Assert.Empty(prohibited);
     }
 
     [Fact]
-    public void CompositionRegistersRoomAssignmentAuthority()
+    public void CompositionRegistersAccessResolutionAuthority()
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
@@ -71,12 +68,13 @@ public sealed class KeyAccessPatternRoomAssignmentBoundaryTests
             builder.Environment);
 
         using ServiceProvider provider = builder.Services.BuildServiceProvider();
-        Assert.NotNull(provider.GetService<IKeyAccessPatternRoomAssignmentUseCase>());
-        Assert.NotNull(provider.GetService<IKeyAccessPatternRoomAssignmentPersistencePort>());
+        Assert.NotNull(provider.GetService<IKeyAccessResolutionPort>());
+        Assert.Null(typeof(IKeyAccessResolutionPort).Assembly.GetType(
+            "KeyInventory.Application.Catalog.IKeyAccessPatternRoomAssignmentUseCase"));
     }
 
     [Fact]
-    public void KeyAccessPatternRoomAssignmentMappingHasNoLockForeignKeyAndNoBuildingOnKeyAsset()
+    public void KeyAccessPatternStoresRoomCodeAndKeyAssetDoesNot()
     {
         string connectionString = KeyInventorySqlServerTestConnection.Require();
         DbContextOptions<KeyInventoryDbContext> options = new DbContextOptionsBuilder<KeyInventoryDbContext>()
@@ -86,26 +84,22 @@ public sealed class KeyAccessPatternRoomAssignmentBoundaryTests
 
         Assert.Null(typeof(KeyAssetEntity).GetProperty("Building"));
         Assert.Null(typeof(KeyAssetEntity).GetProperty("BuildingCode"));
+        Assert.Null(typeof(KeyAssetEntity).GetProperty("RoomCode"));
         Assert.Null(typeof(KeyAsset).GetProperty("Building"));
         Assert.Null(typeof(KeyAsset).GetProperty("BuildingCode"));
-        Assert.Null(typeof(KeyAssetEntity).GetProperty("CatalogKeyCode"));
+        Assert.NotNull(typeof(KeyAccessPatternEntity).GetProperty("RoomCode"));
+        Assert.NotNull(typeof(KeyAccessPattern).GetProperty("RoomCode"));
+        Assert.NotNull(typeof(KeyAccessPattern).GetProperty("OpensAllRooms"));
 
-        var assignmentEntity = context.Model.FindEntityType(typeof(KeyAccessPatternRoomAssignmentEntity));
-        Assert.NotNull(assignmentEntity);
-        Assert.Equal("KeyAccessPatternRoomAssignments", assignmentEntity.GetTableName());
-        Assert.DoesNotContain(
-            assignmentEntity.GetForeignKeys(),
-            fk => fk.PrincipalEntityType.ClrType.Name.Contains("Lock", StringComparison.Ordinal));
+        var patternEntity = context.Model.FindEntityType(typeof(KeyAccessPatternEntity));
+        Assert.NotNull(patternEntity);
+        Assert.Equal("KeyAccessPatterns", patternEntity.GetTableName());
         Assert.Contains(
-            assignmentEntity.GetForeignKeys(),
-            fk => fk.PrincipalEntityType.ClrType == typeof(RoomEntity));
-        Assert.Contains(
-            assignmentEntity.GetForeignKeys(),
-            fk => fk.PrincipalEntityType.ClrType == typeof(KeyAccessPatternEntity));
-        Assert.DoesNotContain(
-            assignmentEntity.GetForeignKeys(),
-            fk => fk.PrincipalEntityType.ClrType == typeof(KeyAssetEntity));
-        Assert.Null(context.Model.FindEntityType("KeyInventory.Infrastructure.Data.KeyRoomAssignmentEntity"));
+            patternEntity.GetForeignKeys(),
+            fk => fk.PrincipalEntityType.ClrType == typeof(RoomEntity)
+                && fk.Properties.Any(property => property.Name == "RoomCode"));
+        Assert.Null(context.Model.FindEntityType(
+            "KeyInventory.Infrastructure.Data.KeyAccessPatternRoomAssignmentEntity"));
     }
 
     private static bool ContainsAny(string value, params string[] terms)

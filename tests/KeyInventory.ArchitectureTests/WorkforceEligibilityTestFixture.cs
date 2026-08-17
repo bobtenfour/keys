@@ -15,10 +15,9 @@ internal static class WorkforceEligibilityTestFixture
         IListWorkforceMembersUseCase listMembers = services.GetRequiredService<IListWorkforceMembersUseCase>();
 
         string dept = $"{prefix}-dept";
-        string workAssignmentCode = $"{prefix}-wa-1";
 
         await createDept.ExecuteAsync(dept, CancellationToken.None).ConfigureAwait(true);
-        string roomCode = await createRoom.ExecuteAsync($"{prefix}-101", "Lab", CancellationToken.None)
+        string roomCode = await createRoom.ExecuteAsync(dept, $"{prefix}-101", "Lab", CancellationToken.None)
             .ConfigureAwait(true);
 
         string memberCode = await registerMember.ExecuteAsync(
@@ -34,7 +33,7 @@ internal static class WorkforceEligibilityTestFixture
             .ConfigureAwait(true);
         string partyCode = members.Single(item => item.WorkforceMemberCode == memberCode).PartyCode;
 
-        await createAssignment.ExecuteAsync(workAssignmentCode, memberCode, roomCode, isPrimary: true, CancellationToken.None)
+        await createAssignment.ExecuteAsync(memberCode, roomCode, CancellationToken.None)
             .ConfigureAwait(true);
 
         return (memberCode, partyCode, dept, roomCode);

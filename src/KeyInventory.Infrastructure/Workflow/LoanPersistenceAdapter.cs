@@ -32,7 +32,6 @@ public sealed class LoanPersistenceAdapter : ILoanPersistencePort
             .AsNoTracking()
             .Include(item => item.KeyAsset)
             .ThenInclude(asset => asset.AccessPattern)
-            .ThenInclude(pattern => pattern.KeyType)
             .FirstOrDefaultAsync(
                 item => item.LoanCode == loanCode && item.Status == nameof(LoanStatus.Open),
                 cancellationToken)
@@ -43,13 +42,7 @@ public sealed class LoanPersistenceAdapter : ILoanPersistencePort
             return null;
         }
 
-        List<string> roomCodes = await _dbContext.KeyAccessPatternRoomAssignments.AsNoTracking()
-            .Where(item => item.KeyNumber == entity.KeyAsset.KeyNumber)
-            .Select(item => item.RoomCode)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        return DomainLoanMapper.ToOpenDomainLoan(entity, roomCodes);
+        return DomainLoanMapper.ToOpenDomainLoan(entity);
     }
 
     public async Task AddReturnAsync(Return completedReturn, CancellationToken cancellationToken)
@@ -68,6 +61,52 @@ public sealed class LoanPersistenceAdapter : ILoanPersistencePort
         loanEntity.Status = completedReturn.Loan.Status.ToString();
         _dbContext.Returns.Add(DomainLoanMapper.ToEntity(completedReturn));
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UpdateLoanAsync(Loan loan, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(loan);
+        LoanEntity? loanEntity = await _dbContext.Loans
+            .FirstOrDefaultAsync(item => item.LoanCode == loan.LoanCode, cancellationToken)
+            .ConfigureAwait(false);
+        if (loanEntity is null)
+        {
+            throw new InvalidOperationException("The loan was not found in persistence.");
+        }
+
+        loanEntity.Status = loan.Status.ToString();
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<Loan?> FindOpenLoanForKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken)
+    {
+        if (keyAssetId == Guid.Empty)
+        {
+            return null;
+        }
+
+        LoanEntity? entity = await _dbContext.Loans.AsNoTracking()
+            .FirstOrDefaultAsync(
+                item => item.KeyAssetId == keyAssetId && item.Status == nameof(LoanStatus.Open),
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (entity is null)
+        {
+            return null;
+        }
+
+        KeyAssetEntity? keyEntity = await _dbContext.KeyAssets.AsNoTracking()
+            .Include(item => item.AccessPattern)
+            .FirstOrDefaultAsync(item => item.KeyAssetId == entity.KeyAssetId, cancellationToken)
+            .ConfigureAwait(false);
+        if (keyEntity is null)
+        {
+            return null;
+        }
+
+        entity.KeyAsset = keyEntity;
+
+        return DomainLoanMapper.ToOpenDomainLoan(entity);
     }
 
     public async Task<IReadOnlyList<LoanListItem>> ListOpenLoansAsync(CancellationToken cancellationToken)
@@ -109,6 +148,36 @@ public sealed class LoanPersistenceAdapter : ILoanPersistencePort
                     on loan.BorrowerPartyReference equals party.PartyCode into partyJoin
                 from party in partyJoin.DefaultIfEmpty()
                 where loan.Status == nameof(LoanStatus.Returned)
+                orderby loan.LoanCode
+                select new LoanListItem(
+                    loan.LoanCode,
+                    loan.KeyAssetId,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
+                    loan.BorrowerPartyReference,
+                    party != null ? party.FirstName : null,
+                    party != null ? party.LastName : null,
+                    party != null ? party.Uin : null,
+                    loan.IssuedAtUtc,
+                    loan.DueAtUtc,
+                    loan.Status))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return items;
+    }
+
+    public async Task<IReadOnlyList<LoanListItem>> ListClosedLoansAsync(CancellationToken cancellationToken)
+    {
+        List<LoanListItem> items = await (
+                from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
+                join party in _dbContext.Parties.AsNoTracking()
+                    on loan.BorrowerPartyReference equals party.PartyCode into partyJoin
+                from party in partyJoin.DefaultIfEmpty()
+                where loan.Status == nameof(LoanStatus.Returned)
+                    || loan.Status == nameof(LoanStatus.Lost)
+                    || loan.Status == nameof(LoanStatus.Destroyed)
                 orderby loan.LoanCode
                 select new LoanListItem(
                     loan.LoanCode,

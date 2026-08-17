@@ -8,6 +8,7 @@ using KeyInventory.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -133,18 +134,17 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task UnreferencedRoomKeyTypeMedecoAndKeyNumberLifecycle()
+    public async Task UnreferencedRoomMedecoAndKeyNumberLifecycle()
     {
         using IServiceScope scope = CreateScope();
+        ICreateDepartmentUseCase createDept = scope.ServiceProvider.GetRequiredService<ICreateDepartmentUseCase>();
         ICreateRoomUseCase createRoom = scope.ServiceProvider.GetRequiredService<ICreateRoomUseCase>();
-        ICreateKeyAssetUseCase createKey = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
         IConfigurationLifecycleUseCase lifecycle =
             scope.ServiceProvider.GetRequiredService<IConfigurationLifecycleUseCase>();
-        IKeyAccessPatternRoomAssignmentUseCase rooms =
-            scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>();
         KeyInventoryDbContext db = scope.ServiceProvider.GetRequiredService<KeyInventoryDbContext>();
 
-        string roomCode = await createRoom.ExecuteAsync("999", "Temp", CancellationToken.None)
+        await createDept.ExecuteAsync("lc-dept", CancellationToken.None).ConfigureAwait(true);
+        string roomCode = await createRoom.ExecuteAsync("lc-dept", "999", "Temp", CancellationToken.None)
             .ConfigureAwait(true);
         RoomLifecycleItem room = (await lifecycle.ListRoomsAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.RoomCode == roomCode);
@@ -153,12 +153,7 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
         await lifecycle.DeleteRoomAsync(roomCode, CancellationToken.None).ConfigureAwait(true);
         Assert.Equal(0, await db.Rooms.CountAsync(item => item.RoomCode == roomCode).ConfigureAwait(true));
 
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "lc-type").ConfigureAwait(true);
-        await createKey.ExecuteAsync("LC-KEY", "01", "lc-type", CancellationToken.None).ConfigureAwait(true);
-        KeyTypeLifecycleItem keyType = (await lifecycle.ListKeyTypesAsync(CancellationToken.None)
-                .ConfigureAwait(true))
-            .Single(item => item.TypeCode == "lc-type");
-        Assert.False(keyType.Capabilities.CanDelete);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "LC-KEY", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
 
         KeyAssetLifecycleItem medeco = (await lifecycle.ListKeyAssetsAsync(CancellationToken.None)
                 .ConfigureAwait(true))
@@ -172,18 +167,13 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
             .Single(item => item.KeyNumber == "LC-KEY");
         Assert.True(pattern.Capabilities.CanDelete);
         await lifecycle.DeleteKeyAccessPatternAsync("LC-KEY", CancellationToken.None).ConfigureAwait(true);
+        Assert.Equal(0, await db.KeyAccessPatterns.CountAsync(item => item.KeyNumber == "LC-KEY").ConfigureAwait(true));
 
-        KeyTypeLifecycleItem unusedType = (await lifecycle.ListKeyTypesAsync(CancellationToken.None)
-                .ConfigureAwait(true))
-            .Single(item => item.TypeCode == "lc-type");
-        Assert.True(unusedType.Capabilities.CanDelete);
-        await lifecycle.DeleteKeyTypeAsync("lc-type", CancellationToken.None).ConfigureAwait(true);
-        Assert.Equal(0, await db.KeyTypes.CountAsync(item => item.TypeCode == "lc-type").ConfigureAwait(true));
-
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "lc-type2").ConfigureAwait(true);
-        await createKey.ExecuteAsync("LC-KEY2", "02", "lc-type2", CancellationToken.None).ConfigureAwait(true);
-        string room2 = await createRoom.ExecuteAsync("998", "Lab", CancellationToken.None).ConfigureAwait(true);
-        await rooms.AssignRoomAsync("LC-KEY2", room2, CancellationToken.None).ConfigureAwait(true);
+        string room2 = await createRoom.ExecuteAsync("lc-dept", "998", "Lab", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(
+                scope.ServiceProvider, "LC-KEY2", "02", KeyAccessClassification.Regular, room2, CancellationToken.None)
+            .ConfigureAwait(true);
+        // KEY # with a physical copy cannot be deleted; Regular KEY # blocks Room delete.
         Assert.False((await lifecycle.ListKeyAccessPatternsAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.KeyNumber == "LC-KEY2").Capabilities.CanDelete);
         Assert.False((await lifecycle.ListRoomsAsync(CancellationToken.None).ConfigureAwait(true))
@@ -192,6 +182,7 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
         Assert.True((await lifecycle.ListRoomsAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.RoomCode == room2).Capabilities.CanActivate);
     }
+
 
     [Fact]
     public async Task UnusedWorkforceMemberAndActiveWorkAssignmentCanDeleteUsedCannot()
@@ -226,7 +217,7 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
             await db.WorkforceMembers.CountAsync(item => item.WorkforceMemberCode == unusedMember)
                 .ConfigureAwait(true));
 
-        string roomCode = await createRoom.ExecuteAsync("777", "Office", CancellationToken.None)
+        string roomCode = await createRoom.ExecuteAsync("wm-dept", "777", "Office", CancellationToken.None)
             .ConfigureAwait(true);
         string memberCode = await register.ExecuteAsync(
                 "Used",
@@ -236,24 +227,31 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
                 "wm-dept",
                 CancellationToken.None)
             .ConfigureAwait(true);
-        const string waCode = "wa-lc-1";
-        await createWa.ExecuteAsync(waCode, memberCode, roomCode, true, CancellationToken.None)
+        await createWa.ExecuteAsync(memberCode, roomCode, CancellationToken.None)
             .ConfigureAwait(true);
-        Assert.True((await lifecycle.ListWorkAssignmentsAsync(CancellationToken.None).ConfigureAwait(true))
-            .Single(item => item.WorkAssignmentCode == waCode).Capabilities.CanDelete);
+        WorkAssignmentLifecycleItem activeWa = (await lifecycle.ListWorkAssignmentsAsync(CancellationToken.None)
+                .ConfigureAwait(true))
+            .Single(item => item.IsActive
+                && item.WorkforceMemberCode == memberCode
+                && item.RoomCode == roomCode);
+        Assert.True(activeWa.Capabilities.CanDelete);
         Assert.False((await lifecycle.ListWorkforceMembersAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.WorkforceMemberCode == memberCode).Capabilities.CanDelete);
 
-        await lifecycle.DeleteWorkAssignmentAsync(waCode, CancellationToken.None).ConfigureAwait(true);
+        await lifecycle.DeleteWorkAssignmentAsync(activeWa.WorkAssignmentId, CancellationToken.None).ConfigureAwait(true);
         Assert.Equal(
             0,
-            await db.WorkAssignments.CountAsync(item => item.WorkAssignmentCode == waCode).ConfigureAwait(true));
+            await db.WorkAssignments.CountAsync(item => item.WorkAssignmentId == activeWa.WorkAssignmentId)
+                .ConfigureAwait(true));
 
-        const string wa2 = "wa-lc-2";
-        await createWa.ExecuteAsync(wa2, memberCode, roomCode, true, CancellationToken.None)
+        await createWa.ExecuteAsync(memberCode, roomCode, CancellationToken.None)
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "wm-type").ConfigureAwait(true);
-        await createKey.ExecuteAsync("WM-KEY", "09", "wm-type", CancellationToken.None).ConfigureAwait(true);
+        WorkAssignmentLifecycleItem secondWa = (await lifecycle.ListWorkAssignmentsAsync(CancellationToken.None)
+                .ConfigureAwait(true))
+            .Single(item => item.IsActive
+                && item.WorkforceMemberCode == memberCode
+                && item.RoomCode == roomCode);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "WM-KEY", "09", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
         DateTimeOffset issued = DateTimeOffset.UtcNow;
         await issue.ExecuteAsync(
                 "loan-lc-1",
@@ -268,7 +266,7 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
             .ConfigureAwait(true);
 
         Assert.False((await lifecycle.ListWorkAssignmentsAsync(CancellationToken.None).ConfigureAwait(true))
-            .Single(item => item.WorkAssignmentCode == wa2).Capabilities.CanDelete);
+            .Single(item => item.WorkAssignmentId == secondWa.WorkAssignmentId).Capabilities.CanDelete);
         Assert.False((await lifecycle.ListKeyAssetsAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.KeyNumber == "WM-KEY" && item.MedecoKeyCode == "09").Capabilities.CanDelete);
         Assert.False((await lifecycle.ListWorkforceMembersAsync(CancellationToken.None).ConfigureAwait(true))
@@ -304,7 +302,6 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
             "src/KeyInventory.Web/Pages/Administration/Departments/Delete.cshtml.cs",
             "src/KeyInventory.Web/Pages/Administration/Departments/Edit.cshtml.cs",
             "src/KeyInventory.Web/Pages/Administration/Rooms/Index.cshtml.cs",
-            "src/KeyInventory.Web/Pages/Catalog/KeyTypes.cshtml.cs",
             "src/KeyInventory.Web/Pages/Catalog/Keys.cshtml.cs"
         ];
         foreach (string relative in pageCodes)
@@ -328,10 +325,9 @@ public sealed class ConfigurationLifecycleWorkflowTests : IAsyncLifetime
         string[] configs =
         [
             "src/KeyInventory.Infrastructure/Data/WorkforceMemberConfiguration.cs",
-            "src/KeyInventory.Infrastructure/Data/KeyAccessPatternConfiguration.cs",
             "src/KeyInventory.Infrastructure/Data/KeyAssetConfiguration.cs",
             "src/KeyInventory.Infrastructure/Data/LoanConfiguration.cs",
-            "src/KeyInventory.Infrastructure/Data/KeyAccessPatternRoomAssignmentConfiguration.cs",
+            "src/KeyInventory.Infrastructure/Data/KeyAccessPatternConfiguration.cs",
             "src/KeyInventory.Infrastructure/Data/ReturnConfiguration.cs"
         ];
 

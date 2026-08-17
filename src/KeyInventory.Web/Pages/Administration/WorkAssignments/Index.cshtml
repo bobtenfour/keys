@@ -1,17 +1,17 @@
 @page
 @model KeyInventory.Web.Pages.Administration.WorkAssignments.IndexModel
 @{
-    ViewData["Title"] = "Work Assignments";
+    ViewData["Title"] = "Room Assignments";
     ViewData["NavSection"] = "administration";
 }
 
 <div class="page-header-row">
     <header class="page-header page-header-compact">
-        <h1>Work Assignments</h1>
-        <p class="lede">Assign workforce members to rooms. One active assignment may be primary.</p>
+        <h1>Room Assignments</h1>
+        <p class="lede">Active assignments of workforce members to Rooms in the same Department.</p>
     </header>
     <div class="page-header-actions">
-        <a class="btn btn-primary" asp-page="./Add">+ Add work assignment</a>
+        <a class="btn btn-primary" asp-page="./Add">Assign Room</a>
     </div>
 </div>
 
@@ -27,7 +27,7 @@
 
     @if (Model.Assignments.Count == 0)
     {
-        <div class="empty-state"><strong>No work assignments</strong></div>
+        <div class="empty-state"><strong>No room assignments</strong></div>
     }
     else
     {
@@ -35,10 +35,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Assignment</th>
                         <th>Member</th>
                         <th>Room</th>
-                        <th>Primary</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -47,39 +45,20 @@
                 @foreach (var item in Model.Assignments)
                 {
                     <tr>
-                        <td>@item.WorkAssignmentCode</td>
                         <td>@Model.FormatMember(item.WorkforceMemberCode)</td>
                         <td>@Model.FormatRoom(item.RoomCode)</td>
-                        <td>@(item.IsPrimary ? "Yes" : "No")</td>
                         <td>@(item.IsActive ? "Active" : "Ended")</td>
                         <td class="table-actions">
-                            @if (item.IsActive)
-                            {
-                                @if (!item.IsPrimary)
-                                {
-                                    <form method="post" asp-page-handler="MarkPrimary" style="display:inline">
-                                        <input type="hidden" name="workAssignmentCode" value="@item.WorkAssignmentCode" />
-                                        <button type="submit" class="btn btn-secondary">Make primary</button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <form method="post" asp-page-handler="ClearPrimary" style="display:inline">
-                                        <input type="hidden" name="workAssignmentCode" value="@item.WorkAssignmentCode" />
-                                        <button type="submit" class="btn btn-secondary">Clear primary</button>
-                                    </form>
-                                }
-                            }
                             @if (item.Capabilities.CanDelete)
                             {
                                 <a class="btn btn-danger"
                                    asp-page="./Delete"
-                                   asp-route-workAssignmentCode="@item.WorkAssignmentCode">Delete</a>
+                                   asp-route-workAssignmentId="@item.WorkAssignmentId">Delete</a>
                             }
                             @if (item.Capabilities.CanEnd)
                             {
                                 <form method="post" asp-page-handler="End" style="display:inline">
-                                    <input type="hidden" name="workAssignmentCode" value="@item.WorkAssignmentCode" />
+                                    <input type="hidden" name="workAssignmentId" value="@item.WorkAssignmentId" />
                                     <button type="submit" class="btn btn-secondary">End</button>
                                 </form>
                             }

@@ -1,4 +1,5 @@
 using KeyInventory.Application.Catalog;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.Application.Reports;
 
@@ -91,8 +92,8 @@ public sealed record OutstandingWorkforceKeyReportRow(
 public sealed record KeyCatalogReportRow(
     string KeyNumber,
     string MedecoKeyCode,
-    string TypeCode,
-    bool IsActive,
+    KeyAccessClassification Classification,
+    KeyPhysicalCondition Condition,
     string AvailabilityStatus,
     IReadOnlyList<KeyOpenedRoomItem> OpenedRooms);
 

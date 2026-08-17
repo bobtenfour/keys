@@ -5,6 +5,7 @@ using KeyInventory.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -51,11 +52,9 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lk-search")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "electronic").ConfigureAwait(true);
-        await createKey.ExecuteAsync("LK-MASTER-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("LK-MASTER-2", "01", "electronic", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("OTHER-9", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "LK-MASTER-1", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "LK-MASTER-2", "01", KeyAccessClassification.Master, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "OTHER-9", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 8, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
@@ -91,9 +90,9 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
             && item.AvailabilityStatus == OperationalKeyAvailability.Available
             && item.CurrentHolder is null);
 
-        IReadOnlyList<KeyLookupResult> byType = await lookup.SearchKeysAsync("electronic", CancellationToken.None)
+        IReadOnlyList<KeyLookupResult> byClassification = await lookup.SearchKeysAsync("Master", CancellationToken.None)
             .ConfigureAwait(true);
-        Assert.Contains(byType, item => item.KeyNumber == "LK-MASTER-2");
+        Assert.Contains(byClassification, item => item.KeyNumber == "LK-MASTER-2");
     }
 
     [Fact]
@@ -106,9 +105,8 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lk-member")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
-        await createKey.ExecuteAsync("key-lk-m1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("key-lk-m2", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-lk-m1", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-lk-m2", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 8, 13, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
@@ -161,7 +159,7 @@ public sealed class KeyLookupWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lk-flow")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-lk-flow", "01", "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-lk-flow", "01", KeyAccessClassification.Regular).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 8, 14, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(

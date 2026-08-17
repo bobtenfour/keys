@@ -76,16 +76,15 @@ public sealed class CatalogBoundaryTests
             .ToArray();
 
         Assert.Contains(catalogTypes, type => type == typeof(IKeyAssetLookupPort));
-        Assert.Contains(catalogTypes, type => type == typeof(IKeyAccessPatternRoomAssignmentUseCase));
-        Assert.Contains(catalogTypes, type => type == typeof(IKeyAccessPatternRoomAssignmentPersistencePort));
+        Assert.Contains(catalogTypes, type => type == typeof(IKeyAccessResolutionPort));
         Assert.Contains(catalogTypes, type => type == typeof(KeyOpenedRoomItem));
-        Assert.Contains(catalogTypes, type => type == typeof(KeyAccessPatternRoomAssignmentUseCase));
+        Assert.Contains(catalogTypes, type => type == typeof(KeyAccessResolutionRequest));
 
         string[] unexpected = catalogTypes
             .Select(type => type.Name)
             .Where(name =>
                 !name.EndsWith("LookupPort", StringComparison.Ordinal)
-                && !name.Contains("KeyAccessPatternRoomAssignment", StringComparison.Ordinal)
+                && !name.Contains("KeyAccessResolution", StringComparison.Ordinal)
                 && !name.Contains("KeyOpenedRoom", StringComparison.Ordinal))
             .ToArray();
 
@@ -128,7 +127,6 @@ public sealed class CatalogBoundaryTests
         [
             typeof(IKeyAssetLookupPort),
             typeof(IKeySeriesLookupPort),
-            typeof(IKeyTypeLookupPort),
             typeof(ILockLookupPort),
             typeof(ILocationLookupPort)
         ];
@@ -182,7 +180,6 @@ public sealed class CatalogBoundaryTests
         using IServiceScope scope = app.Services.CreateScope();
         Assert.Null(scope.ServiceProvider.GetService<IKeyAssetLookupPort>());
         Assert.Null(scope.ServiceProvider.GetService<IKeySeriesLookupPort>());
-        Assert.Null(scope.ServiceProvider.GetService<IKeyTypeLookupPort>());
         Assert.Null(scope.ServiceProvider.GetService<ILockLookupPort>());
         Assert.Null(scope.ServiceProvider.GetService<ILocationLookupPort>());
     }

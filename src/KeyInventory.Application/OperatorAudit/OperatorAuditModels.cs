@@ -7,10 +7,13 @@ public static class OperatorAuditActions
     public const string KeyAccessPatternActivated = "KEY # activated";
     public const string KeyAccessPatternRetired = "KEY # retired";
     public const string KeyAccessPatternDeleted = "KEY # deleted";
-    public const string PhysicalKeyCopyRegistered = "Physical key copy registered";
-    public const string PhysicalKeyCopyActivated = "Physical key copy activated";
-    public const string PhysicalKeyCopyRetired = "Physical key copy retired";
-    public const string PhysicalKeyCopyDeleted = "Physical key copy deleted";
+    public const string PhysicalKeyCopyRegistered = "Key registered";
+    public const string PhysicalKeyCopyDeleted = "Key deleted";
+    public const string KeyMarkedLost = "Key marked Lost";
+    public const string KeyDestroyed = "Key Destroyed";
+    public const string CustodyClosedLost = "Custody closed Lost";
+    public const string CustodyClosedDestroyed = "Custody closed Destroyed";
+    public const string LostKeyReplaced = "Lost key replaced";
     public const string KeyRoomAssignmentAdded = "Key↔Room assignment added";
     public const string KeyRoomAssignmentRemoved = "Key↔Room assignment removed";
     public const string KeyAccessPatternRoomAssignmentAdded = "KEY #↔Room assignment added";
@@ -23,7 +26,6 @@ public static class OperatorAuditActions
     public const string WorkforceMemberDeleted = "Workforce Member deleted";
     public const string WorkAssignmentCreated = "WorkAssignment created";
     public const string WorkAssignmentEnded = "WorkAssignment ended";
-    public const string WorkAssignmentPrimaryChanged = "WorkAssignment primary changed";
     public const string WorkAssignmentDeleted = "WorkAssignment deleted";
     public const string OrganizationCreated = "Organization created";
     public const string OrganizationActivated = "Organization activated";
@@ -43,29 +45,24 @@ public static class OperatorAuditActions
     public const string RoomDeleted = "Room deleted";
     public const string PartyNameUpdated = "Party name updated";
     public const string PartyUinCorrected = "Party UIN corrected";
-    public const string KeyTypeCreated = "KeyType created";
-    public const string KeyTypeActivated = "KeyType activated";
-    public const string KeyTypeRetired = "KeyType retired";
-    public const string KeyTypeDeleted = "KeyType deleted";
 }
 
 public static class OperatorAuditSubjects
 {
     public const string Key = "Key";
     public const string KeyAccessPattern = "KEY #";
-    public const string PhysicalKeyCopy = "Physical key copy";
+    public const string PhysicalKeyCopy = "Key";
     public const string KeyRoomAssignment = "Key↔Room";
     public const string KeyAccessPatternRoomAssignment = "KEY #↔Room";
     public const string Loan = "Loan";
     public const string Return = "Return";
     public const string WorkforceMember = "Workforce Member";
     public const string Party = "Party";
-    public const string WorkAssignment = "Work Assignment";
+    public const string WorkAssignment = "Room Assignment";
     public const string Organization = "Organization";
     public const string Department = "Department";
     public const string Building = "Building";
     public const string Room = "Room";
-    public const string KeyType = "Key Type";
 }
 
 public sealed record OperatorAuditRecord(

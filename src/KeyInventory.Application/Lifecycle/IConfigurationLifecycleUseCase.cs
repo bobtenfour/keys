@@ -26,23 +26,11 @@ public interface IConfigurationLifecycleUseCase
     Task<IReadOnlyList<WorkAssignmentLifecycleItem>> ListWorkAssignmentsAsync(
         CancellationToken cancellationToken);
 
-    Task DeleteWorkAssignmentAsync(string workAssignmentCode, CancellationToken cancellationToken);
-
-    Task<IReadOnlyList<KeyTypeLifecycleItem>> ListKeyTypesAsync(CancellationToken cancellationToken);
-
-    Task DeleteKeyTypeAsync(string typeCode, CancellationToken cancellationToken);
-
-    Task ActivateKeyTypeAsync(string typeCode, CancellationToken cancellationToken);
-
-    Task RetireKeyTypeAsync(string typeCode, CancellationToken cancellationToken);
+    Task DeleteWorkAssignmentAsync(Guid workAssignmentId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<KeyAssetLifecycleItem>> ListKeyAssetsAsync(CancellationToken cancellationToken);
 
     Task DeleteKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken);
-
-    Task ActivateKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken);
-
-    Task RetireKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<KeyAccessPatternLifecycleItem>> ListKeyAccessPatternsAsync(
         CancellationToken cancellationToken);

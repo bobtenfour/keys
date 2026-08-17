@@ -9,7 +9,7 @@
 <header class="page-header page-header-compact">
     <p class="eyebrow"><a asp-page="./Index">Departments</a></p>
     <h1>Edit @selected.DepartmentCode</h1>
-    <p class="lede">Update the department code. Department identity is stable and is not editable.</p>
+    <p class="lede">Update the department. Department identity is stable and is not editable.</p>
 </header>
 
 <section class="card form-card admin-task-form">
@@ -25,7 +25,7 @@
     <form method="post" class="form-grid">
         <input type="hidden" asp-for="DepartmentId" />
         <label>
-            Department code
+            Department
             <input asp-for="DepartmentCode" autocomplete="off" required />
         </label>
         <div class="form-actions">

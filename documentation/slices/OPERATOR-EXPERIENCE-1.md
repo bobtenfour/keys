@@ -193,10 +193,9 @@ Task-oriented, not architectural-entity oriented:
 | Party | LastName | MUTABLE BUSINESS ATTRIBUTE | Update Party person name | required non-empty | audited | same |
 | Party | UIN | MUTABLE BUSINESS IDENTIFIER | Correct Party UIN (governed) | nine numeric digits; installation-wide unique; reject collision with another Party; PartyId/PartyCode stable; no replacement Party | audited with old UIN → new UIN; do not rewrite historical audit rows | preserves Loans/Returns/relationships/history |
 | Party | PartyCode | IMMUTABLE IDENTITY | system-generated | unique | create | — |
-| WorkAssignment | WorkAssignmentCode | IMMUTABLE IDENTITY | system/create | unique | create | — |
-| WorkAssignment | WorkforceMember / Room | IMMUTABLE IDENTITY (for existing row) | create new; End old to change room | active WM + active Room at create | create/end audited | — |
-| WorkAssignment | IsPrimary | MUTABLE BUSINESS ATTRIBUTE | Mark/Clear Primary | ≤1 active primary per WM | audited | — |
-| WorkAssignment | IsActive | LIFECYCLE CONTROLLED | End | ended not deleted | audited | — |
+| WorkAssignment | WorkAssignmentId | TECHNICAL IDENTITY | system-generated Guid | unique | create | not operator-facing; no WorkAssignmentCode |
+| WorkAssignment | WorkforceMember / Room | IMMUTABLE IDENTITY (for existing row) | create new; End old to change room | active WM + active Room; same Department | create/end audited | — |
+| WorkAssignment | IsActive | LIFECYCLE CONTROLLED | End | ended not deleted | audited | no Primary designation |
 | KeyType | TypeCode | IMMUTABLE IDENTITY | create | unique | create | — |
 | KeyType | IsActive | LIFECYCLE CONTROLLED | Activate/Retire | retire rules for active keys | audited | existing keys remain |
 | KeyAsset | CatalogKeyCode | IMMUTABLE IDENTITY | register | unique | register audited | — |
@@ -340,6 +339,29 @@ After OPERATOR-EXPERIENCE-1 reaches Implementation Complete with closure evidenc
   - Legacy KeyIssued Details format is classification B (semi-structured, not governed); deterministic relational backfill is not authorized until Human Migration Provenance Extract or Human mapping (`documentation/department-historical-justification-provenance-2026-08-12.md`). Runtime Details parsing for delete eligibility is forbidden. Permanently forbidding rename because of old snapshots is rejected.
   - Room RoomCode/RoomNumber dual identity, KEY # KeyNumber immutability, and KeyAssetId custody remain unchanged.
 - Historical Accepted matrix rows that labeled DepartmentCode IMMUTABLE IDENTITY remain as Accepted history only.
+
+## Active Structural Amendment — Room→Department and WA consistency (does not rewrite Acceptance Record)
+- Decision: SUPERSEDE Room-without-Department and unrestricted WorkAssignment Room selection for the active model.
+- Date: 2026-08-14.
+- Authority: Human Governance via `documentation/key-inventory-domain-contract.md`, `documentation/key-inventory-erd.md`.
+- Scope: Active Domain/ERD/product authority only. Does not rewrite historical Acceptance Record. Roadmap Next Allowed Slice remains STOP.
+- Active rules:
+  - Room belongs to exactly one Department (`Room.DepartmentId` required).
+  - WorkAssignment requires `Room.DepartmentId == WorkforceMember.DepartmentId`; cross-department WA forbidden.
+  - Operator Room create/edit and Work Assignment Add (searchable combobox) follow that consistency.
+- Historical Accepted dependency wording that treated Room as parallel-without-Department remains Accepted history only.
+
+## Active Presentation Amendment — Searchable combobox / Issue physical-key-first / no Key Types (does not rewrite Acceptance Record)
+- Decision: SUPERSEDE prior Issue holder-first / Key Type admin presentation for active operator experience.
+- Date: 2026-08-14.
+- Authority: Human Governance via `documentation/product-experience-contract.md`.
+- Scope: Presentation/interaction and Application orchestration over existing authorities. Roadmap Next Allowed Slice remains STOP.
+- Active rules:
+  - Growing selectors use shared searchable combobox.
+  - Issue is physical-key-first (issuable MEDECO combobox), then holder combobox.
+  - Receive uses open-custody searchable combobox.
+  - Register new KEY # selects Regular|Master; no Key Types admin page.
+- Historical Accepted presentation evidence above remains unchanged.
 
 ## Next Allowed Slice
 STOP

@@ -4,15 +4,24 @@ namespace KeyInventory.ArchitectureTests;
 
 internal static class CatalogTestFactory
 {
-    public static KeyAsset CreateCopy(string keyNumber, string medeco, string typeCode = "TYPE")
+    public static KeyAsset CreateCopy(
+        string keyNumber,
+        string medeco,
+        KeyAccessClassification classification = KeyAccessClassification.Regular,
+        string? regularRoomCode = "room-default")
     {
-        KeyType keyType = new(typeCode);
-        KeyAccessPattern pattern = new(keyNumber, keyType);
+        KeyAccessPattern pattern = CreatePattern(keyNumber, classification, regularRoomCode);
         return new KeyAsset(Guid.NewGuid(), pattern, medeco);
     }
 
-    public static KeyAccessPattern CreatePattern(string keyNumber, string typeCode = "TYPE")
+    public static KeyAccessPattern CreatePattern(
+        string keyNumber,
+        KeyAccessClassification classification = KeyAccessClassification.Regular,
+        string? regularRoomCode = "room-default")
     {
-        return new KeyAccessPattern(keyNumber, new KeyType(typeCode));
+        string? room = classification == KeyAccessClassification.Master
+            ? null
+            : regularRoomCode;
+        return new KeyAccessPattern(keyNumber, classification, room);
     }
 }

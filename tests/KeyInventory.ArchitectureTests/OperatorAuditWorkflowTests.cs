@@ -2,6 +2,7 @@ using KeyInventory.Application.Catalog;
 using KeyInventory.Application.OperatorAudit;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Application.Workflow;
+using KeyInventory.Domain.Catalog;
 using KeyInventory.Infrastructure;
 using KeyInventory.Infrastructure.Data;
 using KeyInventory.Infrastructure.OperatorAudit;
@@ -72,20 +73,8 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "aud2")
             .ConfigureAwait(true);
 
-        await scope.ServiceProvider.GetRequiredService<ICreateKeyTypeUseCase>()
-            .ExecuteAsync("aud-type", CancellationToken.None)
-            .ConfigureAwait(true);
-        await scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>()
-            .ExecuteAsync("AUD-KEY-1", "01", "aud-type", CancellationToken.None)
-            .ConfigureAwait(true);
-        await scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>()
-            .AssignRoomAsync("AUD-KEY-1", seeded.RoomCode, CancellationToken.None)
-            .ConfigureAwait(true);
-        await scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>()
-            .RemoveRoomAsync("AUD-KEY-1", seeded.RoomCode, CancellationToken.None)
-            .ConfigureAwait(true);
-        await scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>()
-            .AssignRoomAsync("AUD-KEY-1", seeded.RoomCode, CancellationToken.None)
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(
+                scope.ServiceProvider, "AUD-KEY-1", "01", KeyAccessClassification.Regular, seeded.RoomCode, CancellationToken.None)
             .ConfigureAwait(true);
 
         DateTimeOffset issued = DateTimeOffset.UtcNow;
@@ -109,8 +98,13 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
         await scope.ServiceProvider.GetRequiredService<IUpdateWorkforceMemberWorkforceTypeUseCase>()
             .ExecuteAsync(seeded.MemberCode, "Contractor", CancellationToken.None)
             .ConfigureAwait(true);
+        WorkAssignmentListItem assignment = (await scope.ServiceProvider
+                .GetRequiredService<IListWorkAssignmentsUseCase>()
+                .ExecuteAsync(CancellationToken.None)
+                .ConfigureAwait(true))
+            .Single(item => item.IsActive && item.WorkforceMemberCode == seeded.MemberCode);
         await scope.ServiceProvider.GetRequiredService<IEndWorkAssignmentUseCase>()
-            .ExecuteAsync("aud2-wa-1", CancellationToken.None)
+            .ExecuteAsync(assignment.WorkAssignmentId, CancellationToken.None)
             .ConfigureAwait(true);
         await scope.ServiceProvider.GetRequiredService<IUpdateRoomNumberUseCase>()
             .ExecuteAsync(seeded.RoomCode, "999", CancellationToken.None)
@@ -123,11 +117,8 @@ public sealed class OperatorAuditWorkflowTests : IAsyncLifetime
             .ConfigureAwait(true);
 
         IReadOnlyList<OperatorAuditTrailItem> all = await QueryAsync(scope).ConfigureAwait(true);
-        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyTypeCreated && item.OperatorReference == "ops-user");
-        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyAccessPatternCreated);
+        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyAccessPatternCreated && item.OperatorReference == "ops-user");
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.PhysicalKeyCopyRegistered);
-        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyAccessPatternRoomAssignmentAdded);
-        Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyAccessPatternRoomAssignmentRemoved);
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyIssued);
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.KeyReturned);
         Assert.Contains(all, item => item.ActionType == OperatorAuditActions.WorkforceMemberMaintained);

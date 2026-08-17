@@ -466,6 +466,17 @@ input:focus, select:focus, textarea:focus {
     font-weight: 400;
 }
 
+.selection-context {
+    margin-top: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    border-left: 3px solid var(--ki-color-accent-interactive);
+    background: color-mix(in srgb, var(--ki-color-accent-interactive) 8%, transparent);
+}
+
+.selection-context p {
+    margin: 0.15rem 0;
+}
+
 .btn,
 button[type="submit"],
 .button {

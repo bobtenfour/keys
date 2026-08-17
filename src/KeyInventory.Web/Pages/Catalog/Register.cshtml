@@ -1,15 +1,16 @@
 @page
 @using KeyInventory.Application.Catalog
+@using KeyInventory.Domain.Catalog
 @using KeyInventory.Web.Presentation
 @model KeyInventory.Web.Pages.Catalog.RegisterModel
 @{
-    ViewData["Title"] = "Register Key";
+    ViewData["Title"] = "Create Key";
     ViewData["NavSection"] = "catalog";
 }
 
 <header class="page-header">
-    <h1>Register Key</h1>
-    <p class="lede">Register a physical MEDECO copy under an existing KEY #, or create a new KEY # with its first copy.</p>
+    <h1>Create Key</h1>
+    <p class="lede">Create a key under a KEY #, or replace a Lost key.</p>
 </header>
 
 <section class="card form-card">
@@ -21,149 +22,343 @@
     {
         <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
         <div class="next-actions">
-            <a class="btn btn-primary" asp-page="/Catalog/Register">Register another copy</a>
+            <a class="btn btn-primary" asp-page="/Catalog/Register">Create another key</a>
             <a class="btn btn-secondary" asp-page="/Operations/Issue">Issue key</a>
-            <a class="btn btn-secondary" asp-page="/Index">Return to Operations</a>
+            <a class="btn btn-secondary" asp-page="/Catalog/Keys">Browse Keys</a>
         </div>
     }
     else
     {
-        <div class="form-actions" style="margin-bottom: 1rem;">
-            <form method="post" asp-page-handler="SetMode" style="display:inline">
-                <input type="hidden" name="mode" value="@RegisterModel.ModeExisting" />
-                <button type="submit"
-                        class="btn @(Model.Mode == RegisterModel.ModeExisting ? "btn-primary" : "btn-secondary")">
-                    Register copy under existing KEY #
-                </button>
-            </form>
-            <form method="post" asp-page-handler="SetMode" style="display:inline">
-                <input type="hidden" name="mode" value="@RegisterModel.ModeNew" />
-                <button type="submit"
-                        class="btn @(Model.Mode == RegisterModel.ModeNew ? "btn-primary" : "btn-secondary")">
-                    Create new KEY #
-                </button>
-            </form>
+        <div class="form-actions" style="margin-bottom: 1rem;" role="tablist" aria-label="Create Key mode">
+            <a class="btn @(Model.Mode == RegisterModel.ModeNew ? "btn-primary" : "btn-secondary")"
+               asp-page="/Catalog/Register"
+               asp-route-mode="@RegisterModel.ModeNew"
+               role="tab"
+               aria-selected="@(Model.Mode == RegisterModel.ModeNew ? "true" : "false")">
+                New Key
+            </a>
+            <a class="btn @(Model.Mode == RegisterModel.ModeReplace ? "btn-primary" : "btn-secondary")"
+               asp-page="/Catalog/Register"
+               asp-route-mode="@RegisterModel.ModeReplace"
+               role="tab"
+               aria-selected="@(Model.Mode == RegisterModel.ModeReplace ? "true" : "false")">
+                Replace Lost Key
+            </a>
         </div>
 
-        @if (Model.Mode == RegisterModel.ModeExisting)
-        {
-            @if (Model.SelectedKeyPreview is null)
-            {
-                <form method="post" asp-page-handler="SearchKeyNumbers" class="form-grid">
-                    <label>
-                        Find existing KEY #
-                        <input asp-for="KeyNumberSearchText" placeholder="Search KEY #..." autocomplete="off" required />
-                        <span class="hint">Search an existing KEY #. Key Type and Rooms opened are derived after selection.</span>
-                    </label>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-secondary">Search</button>
-                        <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
-                    </div>
-                </form>
+        <h2 class="section-title">@Model.ModeHeading</h2>
+        <p class="lede">@Model.ModeHelp</p>
 
-                @if (Model.KeyNumberSearchPerformed)
-                {
-                    if (Model.KeyNumberMatches.Count == 0)
-                    {
-                        <div class="empty-state">
-                            <strong>No matching KEY #</strong>
-                            Refine the search, or create a new KEY #.
-                        </div>
-                    }
-                    else
-                    {
-                        <ul class="activity-list" aria-label="Matching KEY # values">
-                            @foreach (var match in Model.KeyNumberMatches)
-                            {
-                                <li>
-                                    <div class="activity-main">
-                                        <span class="activity-primary">KEY # @match.KeyNumber</span>
-                                        <span class="muted">Type @match.TypeCode</span>
-                                    </div>
-                                    <form method="post" asp-page-handler="SelectKeyNumber">
-                                        <input type="hidden" name="KeyNumber" value="@match.KeyNumber" />
-                                        <button type="submit" class="btn btn-secondary">Select</button>
-                                    </form>
-                                </li>
-                            }
-                        </ul>
-                    }
-                }
-            }
-            else
+        <form method="post" class="form-grid" id="register-form" asp-route-mode="@Model.Mode">
+            <input type="hidden" asp-for="Mode" />
+
+            @if (Model.Mode == RegisterModel.ModeNew)
             {
-                <dl class="search-person-identity">
-                    <div><dt>KEY #</dt><dd>@Model.SelectedKeyPreview.KeyNumber</dd></div>
-                    <div><dt>Key Type</dt><dd>@Model.SelectedKeyPreview.TypeCode</dd></div>
+                <label>
+                    KEY #
+                    <div class="searchable-combobox"
+                         id="new-key-number-combobox"
+                         data-searchable-combobox
+                         data-allow-custom-value="true"
+                         data-search-url="/Catalog/Register?handler=SearchKeyNumbers"
+                         data-value-field="keyNumber"
+                         data-display-fields="keyNumber,classification"
+                         data-secondary-fields="access">
+                        <input type="text"
+                               class="searchable-combobox-input"
+                               data-role="combobox-input"
+                               placeholder="Type or search KEY #..."
+                               autocomplete="off"
+                               value="@Model.KeyNumber"
+                               aria-label="KEY #" />
+                        <button type="button" class="searchable-combobox-toggle" data-role="combobox-toggle" aria-label="Browse KEY #">▾</button>
+                        <input type="hidden" asp-for="KeyNumber" data-role="combobox-value" />
+                        <ul class="searchable-combobox-panel" data-role="combobox-panel" role="listbox"></ul>
+                    </div>
+                    <span class="hint">Type an existing or new KEY #. Matching KEY # values appear as you type. Nothing is selected automatically.</span>
+                </label>
+
+                <dl class="search-person-identity" id="existing-key-derived" hidden="@(!Model.KeyNumberExists)">
+                    <div><dt>Classification</dt><dd id="existing-key-classification">@(Model.SelectedKeyPreview?.Classification.ToString() ?? "—")</dd></div>
                     <div>
-                        <dt>Rooms opened</dt>
-                        <dd>
+                        <dt>Access</dt>
+                        <dd id="existing-key-access">
                             @{
-                                string rooms = KeyOpenedRoomDisplayFormatter.Format(Model.SelectedKeyPreview.OpenedRooms);
+                                string existingAccess = Model.SelectedKeyPreview is null
+                                    ? "—"
+                                    : KeyOpenedRoomDisplayFormatter.FormatAccess(
+                                        Model.SelectedKeyPreview.Classification,
+                                        Model.SelectedKeyPreview.OpenedRooms);
                             }
-                            @(string.IsNullOrEmpty(rooms) ? "—" : rooms)
+                            @(string.IsNullOrEmpty(existingAccess) ? "—" : existingAccess)
                         </dd>
                     </div>
                 </dl>
-                <form method="post" asp-page-handler="ClearKeyNumber" class="form-actions">
-                    <button type="submit" class="btn btn-secondary">Change KEY #</button>
-                </form>
-                <form method="post" class="form-grid">
-                    <input type="hidden" asp-for="Mode" />
-                    <input type="hidden" asp-for="KeyNumber" value="@Model.SelectedKeyPreview.KeyNumber" />
-                    <label>
-                        MEDECO Key Code
-                        <input asp-for="MedecoKeyCode" autocomplete="off" required />
-                        <span class="hint">Enter the MEDECO code printed on this physical key copy.</span>
-                    </label>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Register physical copy</button>
-                        <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
+
+                <div id="new-key-authority" hidden="@Model.KeyNumberExists">
+                    <fieldset class="form-fieldset">
+                        <legend>Classification</legend>
+                        <label class="radio">
+                            <input type="radio" asp-for="Classification" value="@nameof(KeyAccessClassification.Regular)" data-role="classification-radio" />
+                            Regular
+                        </label>
+                        <label class="radio">
+                            <input type="radio" asp-for="Classification" value="@nameof(KeyAccessClassification.Master)" data-role="classification-radio" />
+                            Master
+                        </label>
+                        <span class="hint">Required when the KEY # does not yet exist. Regular opens one Room; Master opens all Rooms.</span>
+                    </fieldset>
+
+                    <div id="new-key-room-block">
+                        <label for="register-room-search">Room</label>
+                        <div class="searchable-combobox"
+                             id="new-key-room-combobox"
+                             data-searchable-combobox
+                             data-search-url="/Catalog/Register?handler=SearchRooms"
+                             data-value-field="roomCode"
+                             data-display-fields="roomNumber,description"
+                             data-secondary-fields="department">
+                            <input type="text"
+                                   id="register-room-search"
+                                   class="searchable-combobox-input"
+                                   data-role="combobox-input"
+                                   placeholder="Search room number or description..."
+                                   autocomplete="off"
+                                   aria-label="Room" />
+                            <button type="button" class="searchable-combobox-toggle" data-role="combobox-toggle" aria-label="Browse rooms">▾</button>
+                            <input type="hidden" asp-for="SelectedRoomCodes" id="register-room-codes" data-role="combobox-value" />
+                            <ul class="searchable-combobox-panel" data-role="combobox-panel" role="listbox"></ul>
+                        </div>
+                        <p class="hint" id="selected-room-display">@(string.IsNullOrWhiteSpace(Model.SelectedRoomCodes) ? "Select exactly one Room for a Regular KEY #." : $"Selected: {Model.SelectedRoomCodes}")</p>
                     </div>
-                </form>
-            }
-        }
-        else
-        {
-            @if (Model.KeyTypeOptions.Count == 0)
-            {
-                <div class="empty-state">
-                    <strong>No active Key Types</strong>
-                    Create a Key Type before creating a new KEY #.
+                    <p class="hint" id="master-access-hint" hidden>Master KEY # access: All Rooms. No Room selection.</p>
                 </div>
-                <div class="form-actions">
-                    <a class="btn btn-primary" asp-page="/Catalog/KeyTypes/Add">Add Key Type</a>
-                    <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
-                </div>
+
+                <label>
+                    MEDECO
+                    <input asp-for="MedecoKeyCode" autocomplete="off" required />
+                    <span class="hint">Required for every new key.</span>
+                </label>
             }
             else
             {
-                <form method="post" class="form-grid">
-                    <input type="hidden" asp-for="Mode" value="@RegisterModel.ModeNew" />
-                    <label>
-                        New KEY #
-                        <input asp-for="KeyNumber" autocomplete="off" required />
-                        <span class="hint">Enter the new KEY # that does not yet exist in the catalog.</span>
-                    </label>
-                    <label>
-                        Key Type
-                        <select asp-for="TypeCode" asp-items="Model.KeyTypeOptions" required>
-                            <option value="">Select an existing Key Type...</option>
-                        </select>
-                        <span class="hint">Select an existing Key Type. New types are created under Key Types.</span>
-                    </label>
-                    <label>
-                        MEDECO Key Code
-                        <input asp-for="MedecoKeyCode" autocomplete="off" required />
-                        <span class="hint">Enter the MEDECO code printed on the first physical key copy.</span>
-                    </label>
-                    <p class="hint">Rooms opened are assigned after creation on KEY # Rooms. They are not re-entered here.</p>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Create KEY # and register copy</button>
-                        <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
+                <label>
+                    Lost key
+                    <div class="searchable-combobox"
+                         data-searchable-combobox
+                         data-search-url="/Catalog/Register?handler=SearchLostKeys"
+                         data-value-field="keyAssetId"
+                         data-display-fields="label,classification"
+                         data-secondary-fields="access">
+                        <input type="text"
+                               class="searchable-combobox-input"
+                               data-role="combobox-input"
+                               placeholder="Search Lost keys by KEY # or MEDECO..."
+                               autocomplete="off"
+                               value="@(Model.SelectedLostKey is null ? string.Empty : $"KEY # {Model.SelectedLostKey.KeyNumber} / MEDECO {Model.SelectedLostKey.MedecoKeyCode}")"
+                               aria-label="Lost key" />
+                        <button type="button" class="searchable-combobox-toggle" data-role="combobox-toggle" aria-label="Browse Lost keys">▾</button>
+                        <input type="hidden" asp-for="LostKeyAssetId" data-role="combobox-value" />
+                        <ul class="searchable-combobox-panel" data-role="combobox-panel" role="listbox"></ul>
                     </div>
-                </form>
+                    <span class="hint">Only Lost keys appear. Available, Issued, and Destroyed keys are excluded.</span>
+                </label>
+
+                <dl class="search-person-identity" id="replace-key-derived" hidden="@(Model.SelectedLostKey is null)">
+                    <div><dt>KEY #</dt><dd id="replace-key-number">@(Model.SelectedLostKey?.KeyNumber ?? "—")</dd></div>
+                    <div><dt>Classification</dt><dd id="replace-key-classification">@(Model.SelectedLostKey?.Classification.ToString() ?? "—")</dd></div>
+                    <div>
+                        <dt>Access</dt>
+                        <dd id="replace-key-access">
+                            @{
+                                string replaceAccess = Model.SelectedLostKey is null
+                                    ? "—"
+                                    : KeyOpenedRoomDisplayFormatter.FormatAccess(
+                                        Model.SelectedLostKey.Classification,
+                                        Model.SelectedLostKey.OpenedRooms);
+                            }
+                            @(string.IsNullOrEmpty(replaceAccess) ? "—" : replaceAccess)
+                        </dd>
+                    </div>
+                </dl>
+
+                <label>
+                    New MEDECO
+                    <input asp-for="MedecoKeyCode" autocomplete="off" required />
+                    <span class="hint">Enter a new MEDECO. Reuse of the lost MEDECO is not allowed.</span>
+                </label>
             }
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">@Model.SubmitLabel</button>
+                <a class="btn btn-secondary" asp-page="/Catalog/Keys">Cancel</a>
+            </div>
+        </form>
+
+        @if (Model.Mode == RegisterModel.ModeNew)
+        {
+            <script>
+                (function () {
+                    var keyBox = document.getElementById('new-key-number-combobox');
+                    var derived = document.getElementById('existing-key-derived');
+                    var classificationEl = document.getElementById('existing-key-classification');
+                    var accessEl = document.getElementById('existing-key-access');
+                    var authority = document.getElementById('new-key-authority');
+                    var roomBlock = document.getElementById('new-key-room-block');
+                    var masterHint = document.getElementById('master-access-hint');
+                    var roomHidden = document.getElementById('register-room-codes');
+                    var roomDisplay = document.getElementById('selected-room-display');
+                    var roomSearch = document.getElementById('new-key-room-combobox');
+                    var classificationRadios = document.querySelectorAll('#new-key-authority input[data-role="classification-radio"]');
+                    if (!keyBox || !derived || !authority) { return; }
+
+                    var resolveTimer = null;
+                    var lastResolved = '';
+
+                    function selectedClassification() {
+                        for (var i = 0; i < classificationRadios.length; i++) {
+                            if (classificationRadios[i].checked) {
+                                return classificationRadios[i].value;
+                            }
+                        }
+                        return '';
+                    }
+
+                    function clearRoomSelection() {
+                        if (roomHidden) { roomHidden.value = ''; }
+                        if (roomDisplay) { roomDisplay.textContent = 'Select exactly one Room for a Regular KEY #.'; }
+                        if (roomSearch) {
+                            roomSearch.dispatchEvent(new CustomEvent('combobox:reset'));
+                        }
+                    }
+
+                    function clearNewAuthorityInputs() {
+                        classificationRadios.forEach(function (radio) { radio.checked = false; });
+                        clearRoomSelection();
+                        syncClassificationUi();
+                    }
+
+                    function syncClassificationUi() {
+                        var value = selectedClassification();
+                        var isMaster = value === 'Master';
+                        var isRegular = value === 'Regular';
+                        if (roomBlock) { roomBlock.hidden = !isRegular; }
+                        if (masterHint) { masterHint.hidden = !isMaster; }
+                        if (isMaster) {
+                            clearRoomSelection();
+                        }
+                    }
+
+                    function showExisting(item) {
+                        classificationEl.textContent = item.classification || '—';
+                        accessEl.textContent = item.access || '—';
+                        derived.hidden = false;
+                        authority.hidden = true;
+                        clearNewAuthorityInputs();
+                    }
+
+                    function showNewAuthority() {
+                        derived.hidden = true;
+                        authority.hidden = false;
+                        classificationEl.textContent = '—';
+                        accessEl.textContent = '—';
+                        syncClassificationUi();
+                    }
+
+                    function resolveKeyNumber(value) {
+                        var key = (value || '').trim();
+                        if (!key) {
+                            lastResolved = '';
+                            showNewAuthority();
+                            clearNewAuthorityInputs();
+                            return;
+                        }
+                        if (key === lastResolved) {
+                            return;
+                        }
+                        fetch('/Catalog/Register?handler=ResolveKeyNumber&keyNumber=' + encodeURIComponent(key), {
+                            credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json' }
+                        })
+                            .then(function (response) { return response.ok ? response.json() : { exists: false }; })
+                            .then(function (payload) {
+                                lastResolved = key;
+                                if (payload && payload.exists) {
+                                    showExisting(payload);
+                                } else {
+                                    showNewAuthority();
+                                }
+                            })
+                            .catch(function () {
+                                showNewAuthority();
+                            });
+                    }
+
+                    function scheduleResolve(value) {
+                        if (resolveTimer) { clearTimeout(resolveTimer); }
+                        resolveTimer = setTimeout(function () { resolveKeyNumber(value); }, 200);
+                    }
+
+                    keyBox.addEventListener('combobox:selected', function (event) {
+                        var detail = event.detail || {};
+                        var item = detail.item;
+                        var value = detail.value || '';
+                        lastResolved = '';
+                        if (item && item.classification) {
+                            lastResolved = String(value);
+                            showExisting(item);
+                        } else {
+                            scheduleResolve(value);
+                        }
+                    });
+
+                    keyBox.addEventListener('combobox:custom', function (event) {
+                        var value = (event.detail && event.detail.value) || '';
+                        lastResolved = '';
+                        scheduleResolve(value);
+                    });
+
+                    classificationRadios.forEach(function (radio) {
+                        radio.addEventListener('change', syncClassificationUi);
+                    });
+
+                    if (roomSearch) {
+                        roomSearch.addEventListener('combobox:selected', function (event) {
+                            var item = event.detail && event.detail.item;
+                            if (!item || !item.roomCode) { return; }
+                            if (roomHidden) { roomHidden.value = item.roomCode; }
+                            if (roomDisplay) {
+                                roomDisplay.textContent = 'Selected: '
+                                    + (item.roomNumber || item.roomCode)
+                                    + (item.description ? ' — ' + item.description : '');
+                            }
+                        });
+                    }
+
+                    syncClassificationUi();
+                })();
+            </script>
+        }
+        else
+        {
+            <script>
+                (function () {
+                    var box = document.querySelector('#register-form .searchable-combobox');
+                    var derived = document.getElementById('replace-key-derived');
+                    var keyNumber = document.getElementById('replace-key-number');
+                    var classification = document.getElementById('replace-key-classification');
+                    var access = document.getElementById('replace-key-access');
+                    if (!box || !derived || !keyNumber || !classification || !access) { return; }
+                    box.addEventListener('combobox:selected', function (event) {
+                        var item = event.detail && event.detail.item;
+                        if (!item) { return; }
+                        keyNumber.textContent = item.keyNumber || '—';
+                        classification.textContent = item.classification || '—';
+                        access.textContent = item.access || '—';
+                        derived.hidden = false;
+                    });
+                })();
+            </script>
         }
     }
 </section>

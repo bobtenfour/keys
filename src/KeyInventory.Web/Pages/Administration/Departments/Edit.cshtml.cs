@@ -52,7 +52,7 @@ public sealed class EditModel : PageModel
         {
             await _updateCode.ExecuteAsync(DepartmentId, DepartmentCode, cancellationToken)
                 .ConfigureAwait(false);
-            TempData["SuccessMessage"] = "Department code was updated.";
+            TempData["SuccessMessage"] = "Department was updated.";
             return RedirectToPage("./Edit", new { departmentId = DepartmentId });
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)

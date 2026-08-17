@@ -135,7 +135,7 @@ public sealed class UtcTimestampDomainInvariantTests
 
     private static Loan CreateLoan(DateTimeOffset issuedAtUtc, DateTimeOffset dueAtUtc)
     {
-        KeyAsset keyAsset = CatalogTestFactory.CreateCopy("key-1", "01", "mechanical");
+        KeyAsset keyAsset = CatalogTestFactory.CreateCopy("key-1", "01", KeyAccessClassification.Regular);
         Guid departmentId = Guid.Parse("33333333-3333-3333-3333-333333333333");
         return new Loan(
             "loan-1",

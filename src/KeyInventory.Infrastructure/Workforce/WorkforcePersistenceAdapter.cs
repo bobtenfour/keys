@@ -161,6 +161,15 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
             cancellationToken);
     }
 
+    public Task<int> CountRoomsForDepartmentAsync(
+        Guid departmentId,
+        CancellationToken cancellationToken)
+    {
+        return _dbContext.Rooms.CountAsync(
+            entity => entity.DepartmentId == departmentId,
+            cancellationToken);
+    }
+
     public Task<int> CountLoansJustifiedByDepartmentAsync(
         Guid departmentId,
         CancellationToken cancellationToken)
@@ -230,6 +239,7 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
 
         entity.RoomNumber = room.RoomNumber;
         entity.Description = room.Description;
+        entity.DepartmentId = room.DepartmentId;
         entity.IsActive = room.IsActive;
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -265,14 +275,18 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
 
     public async Task<IReadOnlyList<RoomListItem>> ListRoomsAsync(CancellationToken cancellationToken)
     {
-        return await _dbContext.Rooms.AsNoTracking()
-            .OrderBy(entity => entity.RoomNumber)
-            .ThenBy(entity => entity.RoomCode)
-            .Select(entity => new RoomListItem(
-                entity.RoomCode,
-                entity.RoomNumber,
-                entity.Description,
-                entity.IsActive))
+        return await (
+                from room in _dbContext.Rooms.AsNoTracking()
+                join department in _dbContext.Departments.AsNoTracking()
+                    on room.DepartmentId equals department.DepartmentId
+                orderby room.RoomNumber, room.RoomCode
+                select new RoomListItem(
+                    room.RoomCode,
+                    room.RoomNumber,
+                    room.Description,
+                    room.DepartmentId,
+                    department.DepartmentCode,
+                    room.IsActive))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
@@ -403,35 +417,46 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         int maxResults,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(searchText) || maxResults < 1)
+        if (maxResults < 1)
         {
             return [];
         }
 
-        string term = searchText.Trim();
+        string term = (searchText ?? string.Empty).Trim();
         int bound = Math.Min(maxResults, ISearchEligibleKeyHoldersUseCase.DefaultMaxResults);
 
-        return await (
-                from member in _dbContext.WorkforceMembers.AsNoTracking()
-                join party in _dbContext.Parties.AsNoTracking() on member.PartyCode equals party.PartyCode
-                join department in _dbContext.Departments.AsNoTracking()
-                    on member.DepartmentId equals department.DepartmentId
-                where member.Status == nameof(WorkforceMemberStatus.Active)
-                    && party.IsActive
-                    && department.IsActive
-                    && _dbContext.WorkAssignments.Any(assignment =>
-                        assignment.WorkforceMemberCode == member.WorkforceMemberCode
-                        && assignment.IsActive)
-                    && (party.FirstName.Contains(term)
-                        || party.LastName.Contains(term)
-                        || (party.FirstName + " " + party.LastName).Contains(term)
-                        || party.Uin.Contains(term))
-                orderby party.LastName, party.FirstName, member.WorkforceMemberCode
-                select new EligibleKeyHolderCandidate(
-                    member.WorkforceMemberCode,
-                    party.FirstName,
-                    party.LastName,
-                    party.Uin))
+        var query =
+            from member in _dbContext.WorkforceMembers.AsNoTracking()
+            join party in _dbContext.Parties.AsNoTracking() on member.PartyCode equals party.PartyCode
+            join department in _dbContext.Departments.AsNoTracking()
+                on member.DepartmentId equals department.DepartmentId
+            where member.Status == nameof(WorkforceMemberStatus.Active)
+                && party.IsActive
+                && department.IsActive
+                && _dbContext.WorkAssignments.Any(assignment =>
+                    assignment.WorkforceMemberCode == member.WorkforceMemberCode
+                    && assignment.IsActive)
+            select new { member, party, department };
+
+        if (term.Length > 0)
+        {
+            query = query.Where(item =>
+                item.party.FirstName.Contains(term)
+                || item.party.LastName.Contains(term)
+                || (item.party.FirstName + " " + item.party.LastName).Contains(term)
+                || item.party.Uin.Contains(term));
+        }
+
+        return await query
+            .OrderBy(item => item.party.LastName)
+            .ThenBy(item => item.party.FirstName)
+            .ThenBy(item => item.member.WorkforceMemberCode)
+            .Select(item => new EligibleKeyHolderCandidate(
+                item.member.WorkforceMemberCode,
+                item.party.FirstName,
+                item.party.LastName,
+                item.party.Uin,
+                item.department.DepartmentCode))
             .Take(bound)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -442,28 +467,41 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         int maxResults,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(searchText) || maxResults < 1)
+        if (maxResults < 1)
         {
             return [];
         }
 
-        string term = searchText.Trim();
+        string term = (searchText ?? string.Empty).Trim();
         int bound = Math.Min(maxResults, ISearchActiveWorkforceMembersUseCase.DefaultMaxResults);
 
-        return await (
-                from member in _dbContext.WorkforceMembers.AsNoTracking()
-                join party in _dbContext.Parties.AsNoTracking() on member.PartyCode equals party.PartyCode
-                where member.Status == nameof(WorkforceMemberStatus.Active)
-                    && (party.FirstName.Contains(term)
-                        || party.LastName.Contains(term)
-                        || (party.FirstName + " " + party.LastName).Contains(term)
-                        || party.Uin.Contains(term))
-                orderby party.LastName, party.FirstName, member.WorkforceMemberCode
-                select new EligibleKeyHolderCandidate(
-                    member.WorkforceMemberCode,
-                    party.FirstName,
-                    party.LastName,
-                    party.Uin))
+        var query =
+            from member in _dbContext.WorkforceMembers.AsNoTracking()
+            join party in _dbContext.Parties.AsNoTracking() on member.PartyCode equals party.PartyCode
+            join department in _dbContext.Departments.AsNoTracking()
+                on member.DepartmentId equals department.DepartmentId
+            where member.Status == nameof(WorkforceMemberStatus.Active)
+            select new { member, party, department };
+
+        if (term.Length > 0)
+        {
+            query = query.Where(item =>
+                item.party.FirstName.Contains(term)
+                || item.party.LastName.Contains(term)
+                || (item.party.FirstName + " " + item.party.LastName).Contains(term)
+                || item.party.Uin.Contains(term));
+        }
+
+        return await query
+            .OrderBy(item => item.party.LastName)
+            .ThenBy(item => item.party.FirstName)
+            .ThenBy(item => item.member.WorkforceMemberCode)
+            .Select(item => new EligibleKeyHolderCandidate(
+                item.member.WorkforceMemberCode,
+                item.party.FirstName,
+                item.party.LastName,
+                item.party.Uin,
+                item.department.DepartmentCode))
             .Take(bound)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -474,33 +512,114 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
         int maxResults,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(searchText) || maxResults < 1)
+        if (maxResults < 1)
         {
             return [];
         }
 
-        string term = searchText.Trim();
+        string term = (searchText ?? string.Empty).Trim();
         int bound = Math.Min(maxResults, ISearchActiveRoomsUseCase.DefaultMaxResults);
 
-        return await _dbContext.Rooms.AsNoTracking()
-            .Where(entity => entity.IsActive
-                && (entity.RoomNumber.Contains(term) || entity.Description.Contains(term)))
-            .OrderBy(entity => entity.RoomNumber)
-            .ThenBy(entity => entity.RoomCode)
-            .Select(entity => new RoomListItem(
-                entity.RoomCode,
-                entity.RoomNumber,
-                entity.Description,
-                entity.IsActive))
+        var query =
+            from room in _dbContext.Rooms.AsNoTracking()
+            join department in _dbContext.Departments.AsNoTracking()
+                on room.DepartmentId equals department.DepartmentId
+            where room.IsActive
+            select new { room, department };
+
+        if (term.Length > 0)
+        {
+            query = query.Where(item =>
+                item.room.RoomNumber.Contains(term) || item.room.Description.Contains(term));
+        }
+
+        return await query
+            .OrderBy(item => item.room.RoomNumber)
+            .ThenBy(item => item.room.RoomCode)
+            .Select(item => new RoomListItem(
+                item.room.RoomCode,
+                item.room.RoomNumber,
+                item.room.Description,
+                item.room.DepartmentId,
+                item.department.DepartmentCode,
+                item.room.IsActive))
             .Take(bound)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
-    public Task<bool> WorkAssignmentExistsAsync(string workAssignmentCode, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<RoomListItem>> SearchActiveRoomsInDepartmentAsync(
+        Guid departmentId,
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken)
+    {
+        if (departmentId == Guid.Empty || maxResults < 1)
+        {
+            return [];
+        }
+
+        string term = (searchText ?? string.Empty).Trim();
+        int bound = Math.Min(maxResults, ISearchActiveRoomsUseCase.DefaultMaxResults);
+
+        var query =
+            from room in _dbContext.Rooms.AsNoTracking()
+            join department in _dbContext.Departments.AsNoTracking()
+                on room.DepartmentId equals department.DepartmentId
+            where room.IsActive && room.DepartmentId == departmentId
+            select new { room, department };
+
+        if (term.Length > 0)
+        {
+            query = query.Where(item =>
+                item.room.RoomNumber.Contains(term) || item.room.Description.Contains(term));
+        }
+
+        return await query
+            .OrderBy(item => item.room.RoomNumber)
+            .ThenBy(item => item.room.RoomCode)
+            .Select(item => new RoomListItem(
+                item.room.RoomCode,
+                item.room.RoomNumber,
+                item.room.Description,
+                item.room.DepartmentId,
+                item.department.DepartmentCode,
+                item.room.IsActive))
+            .Take(bound)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<ActiveWorkAssignmentWithRoomDepartment>>
+        ListActiveWorkAssignmentsWithRoomDepartmentAsync(
+            string workforceMemberCode,
+            CancellationToken cancellationToken)
+    {
+        return await (
+                from assignment in _dbContext.WorkAssignments.AsNoTracking()
+                join room in _dbContext.Rooms.AsNoTracking() on assignment.RoomCode equals room.RoomCode
+                join department in _dbContext.Departments.AsNoTracking()
+                    on room.DepartmentId equals department.DepartmentId
+                where assignment.WorkforceMemberCode == workforceMemberCode
+                    && assignment.IsActive
+                select new ActiveWorkAssignmentWithRoomDepartment(
+                    assignment.WorkAssignmentId,
+                    assignment.RoomCode,
+                    room.DepartmentId,
+                    department.DepartmentCode))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public Task<bool> ActiveWorkAssignmentExistsAsync(
+        string workforceMemberCode,
+        string roomCode,
+        CancellationToken cancellationToken)
     {
         return _dbContext.WorkAssignments.AnyAsync(
-            entity => entity.WorkAssignmentCode == workAssignmentCode,
+            entity => entity.WorkforceMemberCode == workforceMemberCode
+                && entity.RoomCode == roomCode
+                && entity.IsActive,
             cancellationToken);
     }
 
@@ -515,22 +634,21 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
     {
         ArgumentNullException.ThrowIfNull(assignment);
         WorkAssignmentEntity? entity = await _dbContext.WorkAssignments
-            .FirstOrDefaultAsync(item => item.WorkAssignmentCode == assignment.WorkAssignmentCode, cancellationToken)
+            .FirstOrDefaultAsync(item => item.WorkAssignmentId == assignment.WorkAssignmentId, cancellationToken)
             .ConfigureAwait(false);
         if (entity is null)
         {
             throw new InvalidOperationException("The work assignment was not found in persistence.");
         }
 
-        entity.IsPrimary = assignment.IsPrimary;
         entity.IsActive = assignment.IsActive;
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task DeleteWorkAssignmentAsync(string workAssignmentCode, CancellationToken cancellationToken)
+    public async Task DeleteWorkAssignmentAsync(Guid workAssignmentId, CancellationToken cancellationToken)
     {
         WorkAssignmentEntity? entity = await _dbContext.WorkAssignments
-            .FirstOrDefaultAsync(item => item.WorkAssignmentCode == workAssignmentCode, cancellationToken)
+            .FirstOrDefaultAsync(item => item.WorkAssignmentId == workAssignmentId, cancellationToken)
             .ConfigureAwait(false);
         if (entity is null)
         {
@@ -542,34 +660,13 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
     }
 
     public async Task<WorkAssignment?> FindWorkAssignmentAsync(
-        string workAssignmentCode,
+        Guid workAssignmentId,
         CancellationToken cancellationToken)
     {
         WorkAssignmentEntity? entity = await _dbContext.WorkAssignments.AsNoTracking()
-            .FirstOrDefaultAsync(item => item.WorkAssignmentCode == workAssignmentCode, cancellationToken)
+            .FirstOrDefaultAsync(item => item.WorkAssignmentId == workAssignmentId, cancellationToken)
             .ConfigureAwait(false);
         return entity is null ? null : DomainWorkforceMapper.ToDomain(entity);
-    }
-
-    public async Task ClearPrimaryAssignmentsAsync(string workforceMemberCode, CancellationToken cancellationToken)
-    {
-        List<WorkAssignmentEntity> primaries = await _dbContext.WorkAssignments
-            .Where(entity =>
-                entity.WorkforceMemberCode == workforceMemberCode
-                && entity.IsActive
-                && entity.IsPrimary)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        foreach (WorkAssignmentEntity entity in primaries)
-        {
-            entity.IsPrimary = false;
-        }
-
-        if (primaries.Count > 0)
-        {
-            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
     }
 
     public async Task<IReadOnlyList<WorkAssignment>> ListActiveWorkAssignmentsAsync(
@@ -589,12 +686,11 @@ public sealed class WorkforcePersistenceAdapter : IWorkforcePersistencePort
     {
         return await _dbContext.WorkAssignments.AsNoTracking()
             .OrderBy(entity => entity.WorkforceMemberCode)
-            .ThenBy(entity => entity.WorkAssignmentCode)
+            .ThenBy(entity => entity.RoomCode)
             .Select(entity => new WorkAssignmentListItem(
-                entity.WorkAssignmentCode,
+                entity.WorkAssignmentId,
                 entity.WorkforceMemberCode,
                 entity.RoomCode,
-                entity.IsPrimary,
                 entity.IsActive))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);

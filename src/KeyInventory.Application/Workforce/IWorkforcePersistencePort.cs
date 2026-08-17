@@ -37,6 +37,10 @@ public interface IWorkforcePersistencePort
         Guid departmentId,
         CancellationToken cancellationToken);
 
+    Task<int> CountRoomsForDepartmentAsync(
+        Guid departmentId,
+        CancellationToken cancellationToken);
+
     Task<int> CountLoansJustifiedByDepartmentAsync(
         Guid departmentId,
         CancellationToken cancellationToken);
@@ -98,6 +102,8 @@ public interface IWorkforcePersistencePort
 
     /// <summary>
     /// Bounded name/UIN search of Active workforce members (no work-assignment eligibility filter).
+    /// Empty search text returns the first <paramref name="maxResults"/> active members
+    /// ordered by name.
     /// </summary>
     Task<IReadOnlyList<EligibleKeyHolderCandidate>> SearchActiveWorkforceMembersAsync(
         string searchText,
@@ -106,23 +112,45 @@ public interface IWorkforcePersistencePort
 
     /// <summary>
     /// Bounded RoomNumber/Description search of active rooms.
+    /// Empty search text returns the first <paramref name="maxResults"/> active rooms
+    /// ordered by RoomNumber. Results always include DepartmentId + DepartmentCode.
     /// </summary>
     Task<IReadOnlyList<RoomListItem>> SearchActiveRoomsAsync(
         string searchText,
         int maxResults,
         CancellationToken cancellationToken);
 
-    Task<bool> WorkAssignmentExistsAsync(string workAssignmentCode, CancellationToken cancellationToken);
+    /// <summary>
+    /// Bounded RoomNumber/Description search of active rooms restricted to a single Department.
+    /// Empty search text returns the first <paramref name="maxResults"/> active rooms in that
+    /// Department ordered by RoomNumber.
+    /// </summary>
+    Task<IReadOnlyList<RoomListItem>> SearchActiveRoomsInDepartmentAsync(
+        Guid departmentId,
+        string searchText,
+        int maxResults,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Active work assignments for a workforce member, with each assignment's Room DepartmentId.
+    /// Used by department reassignment guards to enforce Room.DepartmentId == Member.DepartmentId.
+    /// </summary>
+    Task<IReadOnlyList<ActiveWorkAssignmentWithRoomDepartment>> ListActiveWorkAssignmentsWithRoomDepartmentAsync(
+        string workforceMemberCode,
+        CancellationToken cancellationToken);
+
+    Task<bool> ActiveWorkAssignmentExistsAsync(
+        string workforceMemberCode,
+        string roomCode,
+        CancellationToken cancellationToken);
 
     Task AddWorkAssignmentAsync(WorkAssignment assignment, CancellationToken cancellationToken);
 
     Task UpdateWorkAssignmentAsync(WorkAssignment assignment, CancellationToken cancellationToken);
 
-    Task DeleteWorkAssignmentAsync(string workAssignmentCode, CancellationToken cancellationToken);
+    Task DeleteWorkAssignmentAsync(Guid workAssignmentId, CancellationToken cancellationToken);
 
-    Task<WorkAssignment?> FindWorkAssignmentAsync(string workAssignmentCode, CancellationToken cancellationToken);
-
-    Task ClearPrimaryAssignmentsAsync(string workforceMemberCode, CancellationToken cancellationToken);
+    Task<WorkAssignment?> FindWorkAssignmentAsync(Guid workAssignmentId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<WorkAssignment>> ListActiveWorkAssignmentsAsync(
         string workforceMemberCode,

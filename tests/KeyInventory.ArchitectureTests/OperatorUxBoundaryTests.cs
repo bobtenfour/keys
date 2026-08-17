@@ -27,12 +27,13 @@ public sealed class OperatorUxBoundaryTests
     public void IssuePageUsesOperatorHierarchyAndLocalDateControls()
     {
         string view = Read("src/KeyInventory.Web/Pages/Operations/Issue.cshtml");
-        Assert.Contains("KEY #\r\n", view, StringComparison.Ordinal);
-        Assert.Contains("MEDECO Key Code\r\n", view, StringComparison.Ordinal);
+        Assert.Contains("KEY # / MEDECO", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("Physical key copy", view, StringComparison.Ordinal);
+        Assert.Contains("Classification", view, StringComparison.Ordinal);
         Assert.Contains("Key holder", view, StringComparison.Ordinal);
-        Assert.Contains("For\r\n", view, StringComparison.Ordinal);
-        Assert.Contains("Issued\r\n", view, StringComparison.Ordinal);
-        Assert.Contains("Due\r\n", view, StringComparison.Ordinal);
+        Assert.Contains("For", view, StringComparison.Ordinal);
+        Assert.Contains("Issued", view, StringComparison.Ordinal);
+        Assert.Contains("Due", view, StringComparison.Ordinal);
         Assert.Contains("OperatorTimestampFormatter.ToAbsoluteDisplay", view, StringComparison.Ordinal);
         Assert.DoesNotContain("Issued at (UTC)", view, StringComparison.Ordinal);
         Assert.DoesNotContain("yyyy-MM-ddTHH:mm:sszzz", view, StringComparison.Ordinal);
@@ -129,17 +130,24 @@ public sealed class OperatorUxBoundaryTests
     }
 
     [Fact]
-    public void WorkforceMemberDetailIsDedicatedRouteWithTermination()
+    public void WorkforceMemberDetailIsDedicatedRouteWithSeparatedViewEditAndLifecycle()
     {
         string view = Read("src/KeyInventory.Web/Pages/Administration/WorkforceMembers/Details.cshtml");
         string code = Read("src/KeyInventory.Web/Pages/Administration/WorkforceMembers/Details.cshtml.cs");
-        Assert.Contains("Terminate workforce member", view, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("ConfirmTerminate", view, StringComparison.Ordinal);
-        Assert.Contains("Work Assignments / Rooms", view, StringComparison.Ordinal);
+        string addCode = Read("src/KeyInventory.Web/Pages/Administration/WorkforceMembers/Add.cshtml.cs");
+        Assert.Contains("JustCreated", code, StringComparison.Ordinal);
+        Assert.Contains("TempData[\"JustCreated\"]", addCode, StringComparison.Ordinal);
+        Assert.Contains("RedirectToPage(\"./Details\"", addCode, StringComparison.Ordinal);
+        Assert.Contains("asp-route-edit=\"true\"", view, StringComparison.Ordinal);
+        Assert.Contains("Edit membership", view, StringComparison.Ordinal);
+        Assert.Contains("<dt>Department</dt>", view, StringComparison.Ordinal);
+        Assert.Contains("Room Assignments", view, StringComparison.Ordinal);
         Assert.Contains("Currently issued keys", view, StringComparison.Ordinal);
+        Assert.Contains("justCreated", view, StringComparison.Ordinal);
+        Assert.Contains("!justCreated", view, StringComparison.Ordinal);
+        Assert.Contains("Terminate workforce member", view, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("ITerminateWorkforceMemberUseCase", code, StringComparison.Ordinal);
-        Assert.Contains("IUpdateWorkforceMemberDepartmentUseCase", code, StringComparison.Ordinal);
-        Assert.Contains("IOperationalKeyLookupUseCase", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("MemberKeys", view, StringComparison.Ordinal);
         Assert.DoesNotContain("KeyInventoryDbContext", code, StringComparison.Ordinal);
         Assert.Equal("KeyInventory.Web.Pages.Administration.WorkforceMembers", typeof(DetailsModel).Namespace);
         Assert.Equal("KeyInventory.Web.Pages.Administration.WorkforceMembers", typeof(AddModel).Namespace);

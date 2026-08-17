@@ -1,5 +1,14 @@
 # KEY-ACCESS-COPY-1 - KEY # Access Pattern and Physical MEDECO Copies
 
+## Active Structural Amendment — Classification defines KEY # access (2026-08-16)
+- Decision: SUPERSEDE KeyAccessPatternRoomAssignment join and arbitrary KEY #↔Room assign/remove.
+- Schema: `KeyAccessPatterns.RoomCode` nullable FK to Rooms; Regular requires RoomCode; Master RoomCode=NULL; drop `KeyAccessPatternRoomAssignments`.
+- Migration: `20260816180000_ClassificationDefinesKeyAccess`.
+- Display: Master → “Access: All Rooms”; Regular → single Room.
+- Does not rewrite Acceptance Record below.
+
+---
+
 ## Status
 Accepted
 
@@ -298,6 +307,26 @@ PASS.
 - Authority: Human Governance via active `documentation/product-experience-contract.md` (Operator Interaction Architecture; KEY-ACCESS-COPY-1 Product Experience).
 - Scope: Presentation and Application CreateKeyAsset / CreateKeyType orchestration. KeyAccessPattern remains KEY # / Room-access authority; KeyAsset remains physical MEDECO copy; KeyType remains classification. Migration STOP unchanged. Roadmap Next Allowed Slice remains STOP.
 - Active rules: Register copy under existing KEY # derives Type/Rooms; Create new KEY # requires selecting an existing Key Type; Key Types created on Catalog → Key Types → Add; no silent Key Type creation from Register.
+- Historical Accepted evidence above remains unchanged.
+
+## Active Structural Amendment — Regular/Master Classification supersedes KeyType; Master ≠ Room count (does not rewrite Acceptance Record)
+- Decision: SUPERSEDE KeyType entity classification and master=multi-room inference for the active KEY # model.
+- Date: 2026-08-14.
+- Authority: Human Governance via `documentation/key-inventory-domain-contract.md`, `documentation/key-inventory-erd.md`, `documentation/product-experience-contract.md`.
+- Scope: Active Domain/ERD/product classification authority only. Does not rewrite historical Acceptance Record. Migration STOP for ambiguous legacy CatalogKeyCode data unchanged. Roadmap Next Allowed Slice remains STOP.
+- Active rules:
+  - KeyAccessPattern owns Classification `Regular` | `Master` as the sole KEY # classification; KeyType is not an active entity or admin surface.
+  - Classification is explicit; it is not inferred from Room assignment count, KEY # text, MEDECO, holder, or Department. Master ≠ multi-room; Regular may open multiple Rooms.
+  - Physical copies derive Classification from parent KEY #; KeyAsset stores no holder/Department; Available/Issued derived from open Loan.
+  - Create Key for a new KEY # selects Regular or Master; no Catalog → Key Types page.
+- Historical Accepted evidence that stated KeyType classification and “master key = KEY # with multiple Rooms” remains Accepted history only; active authority follows this amendment.
+
+## Active Presentation Amendment — Create Key naming (does not rewrite Acceptance Record)
+- Decision: SUPERSEDE operator-facing “Register Key” naming for the key-creation capability with **Create Key**.
+- Date: 2026-08-16.
+- Authority: Human Governance presentation decision.
+- Scope: Operator-facing labels, Help, Operator Guide, and Product Experience presentation only. Internal `/Catalog/Register`, `RegisterNewKeyAsync`, and Domain/Application/DB authority remain unchanged. Issue Key remains exclusively Operations custody assignment. Roadmap Next Allowed Slice remains STOP.
+- Active rules: Catalog exposes Create Key; primary navigation order is Home → Catalog → Operations → remaining modules; Department operator label is Department (not Department Code); Room Assignment terminology preserved.
 - Historical Accepted evidence above remains unchanged.
 
 ## Next Allowed Slice

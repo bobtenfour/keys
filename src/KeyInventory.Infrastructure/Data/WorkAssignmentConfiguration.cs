@@ -9,8 +9,7 @@ public sealed class WorkAssignmentConfiguration : IEntityTypeConfiguration<WorkA
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.ToTable("WorkAssignments");
-        builder.HasKey(entity => entity.WorkAssignmentCode);
-        builder.Property(entity => entity.WorkAssignmentCode).HasMaxLength(128);
+        builder.HasKey(entity => entity.WorkAssignmentId);
         builder.Property(entity => entity.WorkforceMemberCode).HasMaxLength(128);
         builder.Property(entity => entity.RoomCode).HasMaxLength(128);
         builder.HasOne(entity => entity.WorkforceMember)
@@ -21,9 +20,10 @@ public sealed class WorkAssignmentConfiguration : IEntityTypeConfiguration<WorkA
             .WithMany()
             .HasForeignKey(entity => entity.RoomCode)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.HasIndex(entity => new { entity.WorkforceMemberCode, entity.IsPrimary })
-            .HasFilter("[IsActive] = 1 AND [IsPrimary] = 1")
+        builder.HasIndex(entity => new { entity.WorkforceMemberCode, entity.RoomCode })
+            .HasFilter("[IsActive] = 1")
             .IsUnique();
         builder.HasIndex(entity => entity.RoomCode);
+        builder.HasIndex(entity => entity.WorkforceMemberCode);
     }
 }

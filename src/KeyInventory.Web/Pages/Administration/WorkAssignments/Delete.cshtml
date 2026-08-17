@@ -1,15 +1,15 @@
 @page
 @model KeyInventory.Web.Pages.Administration.WorkAssignments.DeleteModel
 @{
-    ViewData["Title"] = "Delete Work Assignment";
+    ViewData["Title"] = "Delete Room Assignment";
     ViewData["NavSection"] = "administration";
     var item = Model.Item!;
 }
 
 <header class="page-header page-header-compact">
-    <p class="eyebrow"><a asp-page="./Index">Work Assignments</a></p>
-    <h1>Delete work assignment</h1>
-    <p class="lede">Delete work assignment &quot;@item.WorkAssignmentCode&quot;?</p>
+    <p class="eyebrow"><a asp-page="./Index">Room Assignments</a></p>
+    <h1>Delete room assignment</h1>
+    <p class="lede">Delete this room assignment?</p>
 </header>
 
 <section class="card form-card destructive-panel">
@@ -28,13 +28,13 @@
     </p>
 
     <form method="post" class="form-grid">
-        <input type="hidden" asp-for="WorkAssignmentCode" />
+        <input type="hidden" asp-for="WorkAssignmentId" />
         <label class="checkbox">
             <input asp-for="ConfirmDelete" />
-            I confirm permanent deletion of work assignment &quot;@item.WorkAssignmentCode&quot;
+            I confirm permanent deletion of this room assignment for @Model.MemberDisplay / @Model.RoomDisplay
         </label>
         <div class="form-actions">
-            <button type="submit" class="btn btn-danger">Delete work assignment</button>
+            <button type="submit" class="btn btn-danger">Delete room assignment</button>
             <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
         </div>
     </form>

@@ -55,9 +55,9 @@ public sealed class IssueLoanUseCase : IIssueLoanUseCase
             throw new InvalidOperationException("The selected physical key copy was not found.");
         }
 
-        if (!keyAsset.IsActive)
+        if (!keyAsset.IsIssuableCondition)
         {
-            throw new InvalidOperationException("An inactive physical key copy cannot be issued.");
+            throw new InvalidOperationException("Only an Active key may be issued.");
         }
 
         if (await _loans.HasOpenLoanForKeyAssetAsync(keyAsset.KeyAssetId, cancellationToken).ConfigureAwait(false))

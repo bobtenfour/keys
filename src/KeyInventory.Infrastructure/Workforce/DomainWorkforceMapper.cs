@@ -58,13 +58,14 @@ internal static class DomainWorkforceMapper
             RoomCode = room.RoomCode,
             RoomNumber = room.RoomNumber,
             Description = room.Description,
+            DepartmentId = room.DepartmentId,
             IsActive = room.IsActive
         };
     }
 
     internal static Room ToDomain(RoomEntity entity)
     {
-        Room room = new(entity.RoomCode, entity.RoomNumber, entity.Description);
+        Room room = new(entity.RoomCode, entity.RoomNumber, entity.DepartmentId, entity.Description);
         if (!entity.IsActive)
         {
             room.Retire();
@@ -106,10 +107,9 @@ internal static class DomainWorkforceMapper
     {
         return new WorkAssignmentEntity
         {
-            WorkAssignmentCode = assignment.WorkAssignmentCode,
+            WorkAssignmentId = assignment.WorkAssignmentId,
             WorkforceMemberCode = assignment.WorkforceMemberCode,
             RoomCode = assignment.RoomCode,
-            IsPrimary = assignment.IsPrimary,
             IsActive = assignment.IsActive
         };
     }
@@ -117,18 +117,13 @@ internal static class DomainWorkforceMapper
     internal static WorkAssignment ToDomain(WorkAssignmentEntity entity)
     {
         WorkAssignment assignment = new(
-            entity.WorkAssignmentCode,
+            entity.WorkAssignmentId,
             entity.WorkforceMemberCode,
-            entity.RoomCode,
-            entity.IsPrimary);
+            entity.RoomCode);
 
         if (!entity.IsActive)
         {
             assignment.End();
-        }
-        else if (!entity.IsPrimary)
-        {
-            assignment.ClearPrimary();
         }
 
         return assignment;

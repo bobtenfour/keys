@@ -1,77 +1,32 @@
+using KeyInventory.Application.Catalog;
 using KeyInventory.Application.OperatorAudit;
+using KeyInventory.Application.Workforce;
 using KeyInventory.Domain.Catalog;
+using KeyInventory.Domain.Locations;
 
 namespace KeyInventory.Application.Workflow;
 
 public sealed class CreateKeyAssetUseCase : ICreateKeyAssetUseCase
 {
     private readonly IKeyCatalogPersistencePort _catalog;
+    private readonly IWorkforcePersistencePort _workforce;
     private readonly IOperatorAuditRecorder _audit;
 
-    public CreateKeyAssetUseCase(IKeyCatalogPersistencePort catalog, IOperatorAuditRecorder audit)
+    public CreateKeyAssetUseCase(
+        IKeyCatalogPersistencePort catalog,
+        IWorkforcePersistencePort workforce,
+        IOperatorAuditRecorder audit)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
         _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
-    public Task ExecuteAsync(
+    public async Task<RegisterNewKeyResult> RegisterNewKeyAsync(
         string keyNumber,
         string medecoKeyCode,
-        string typeCode,
-        CancellationToken cancellationToken)
-    {
-        return CreateOrRegisterAsync(keyNumber, medecoKeyCode, typeCode, requireNewKeyNumber: false, cancellationToken);
-    }
-
-    public Task RegisterPhysicalCopyUnderExistingKeyNumberAsync(
-        string keyNumber,
-        string medecoKeyCode,
-        CancellationToken cancellationToken)
-    {
-        return CreateOrRegisterAsync(
-            keyNumber,
-            medecoKeyCode,
-            typeCode: null,
-            requireNewKeyNumber: false,
-            requireExistingKeyNumber: true,
-            cancellationToken);
-    }
-
-    public Task CreateNewKeyNumberWithFirstPhysicalCopyAsync(
-        string keyNumber,
-        string existingTypeCode,
-        string medecoKeyCode,
-        CancellationToken cancellationToken)
-    {
-        return CreateOrRegisterAsync(
-            keyNumber,
-            medecoKeyCode,
-            existingTypeCode,
-            requireNewKeyNumber: true,
-            requireExistingKeyNumber: false,
-            cancellationToken);
-    }
-
-    private Task CreateOrRegisterAsync(
-        string keyNumber,
-        string medecoKeyCode,
-        string? typeCode,
-        bool requireNewKeyNumber,
-        CancellationToken cancellationToken)
-        => CreateOrRegisterAsync(
-            keyNumber,
-            medecoKeyCode,
-            typeCode,
-            requireNewKeyNumber,
-            requireExistingKeyNumber: false,
-            cancellationToken);
-
-    private async Task CreateOrRegisterAsync(
-        string keyNumber,
-        string medecoKeyCode,
-        string? typeCode,
-        bool requireNewKeyNumber,
-        bool requireExistingKeyNumber,
+        KeyAccessClassification? classification,
+        IReadOnlyList<string>? roomCodes,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(keyNumber);
@@ -79,57 +34,59 @@ public sealed class CreateKeyAssetUseCase : ICreateKeyAssetUseCase
 
         string normalizedKeyNumber = keyNumber.Trim();
         string normalizedMedeco = medecoKeyCode.Trim();
+        IReadOnlyList<string> normalizedRooms = NormalizeRoomCodes(roomCodes);
 
         KeyAccessPattern? pattern = await _catalog.FindKeyAccessPatternAsync(normalizedKeyNumber, cancellationToken)
             .ConfigureAwait(false);
 
-        if (requireExistingKeyNumber && pattern is null)
+        if (pattern is not null)
         {
-            throw new InvalidOperationException("The KEY # was not found. Select an existing KEY # or create a new KEY #.");
+            return await RegisterUnderExistingAsync(
+                    pattern,
+                    normalizedMedeco,
+                    classification,
+                    normalizedRooms,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        if (requireNewKeyNumber && pattern is not null)
+        return await CreateNewKeyNumberAtomicallyAsync(
+                normalizedKeyNumber,
+                normalizedMedeco,
+                classification,
+                normalizedRooms,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private async Task<RegisterNewKeyResult> RegisterUnderExistingAsync(
+        KeyAccessPattern pattern,
+        string normalizedMedeco,
+        KeyAccessClassification? classification,
+        IReadOnlyList<string> roomCodes,
+        CancellationToken cancellationToken)
+    {
+        if (classification is not null)
         {
             throw new InvalidOperationException(
-                "That KEY # already exists. Register a physical copy under the existing KEY # instead.");
+                "Classification cannot be changed when registering a key under an existing KEY #.");
         }
 
-        if (pattern is null)
+        if (roomCodes.Count > 0)
         {
-            if (string.IsNullOrWhiteSpace(typeCode))
-            {
-                throw new InvalidOperationException("Select an existing Key Type for the new KEY #.");
-            }
-
-            KeyType keyType = await RequireExistingActiveKeyTypeAsync(typeCode, cancellationToken)
-                .ConfigureAwait(false);
-            pattern = new KeyAccessPattern(normalizedKeyNumber, keyType);
-            _audit.Stage(
-                OperatorAuditActions.KeyAccessPatternCreated,
-                OperatorAuditSubjects.KeyAccessPattern,
-                pattern.KeyNumber,
-                $"typeCode={keyType.TypeCode}");
-            await _catalog.AddKeyAccessPatternAsync(pattern, cancellationToken).ConfigureAwait(false);
+            throw new InvalidOperationException(
+                "Room cannot be changed when registering a key under an existing KEY #.");
         }
-        else
-        {
-            if (!pattern.IsActive)
-            {
-                throw new InvalidOperationException("An inactive KEY # cannot receive new physical copies.");
-            }
 
-            if (!string.IsNullOrWhiteSpace(typeCode)
-                && !string.Equals(pattern.KeyType.TypeCode, typeCode.Trim(), StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    "Physical copies under an existing KEY # must use that KEY #'s Key Type.");
-            }
+        if (!pattern.IsActive)
+        {
+            throw new InvalidOperationException("An inactive KEY # cannot receive new keys.");
         }
 
         if (await _catalog.MedecoExistsUnderPatternAsync(pattern.KeyNumber, normalizedMedeco, cancellationToken)
                 .ConfigureAwait(false))
         {
-            throw new InvalidOperationException("A MEDECO Key Code already exists under this KEY #.");
+            throw new InvalidOperationException("That MEDECO already exists under this KEY #.");
         }
 
         KeyAsset keyAsset = new(Guid.NewGuid(), pattern, normalizedMedeco);
@@ -137,24 +94,97 @@ public sealed class CreateKeyAssetUseCase : ICreateKeyAssetUseCase
             OperatorAuditActions.PhysicalKeyCopyRegistered,
             OperatorAuditSubjects.PhysicalKeyCopy,
             $"{keyAsset.KeyNumber}/{keyAsset.MedecoKeyCode}",
-            $"KeyAssetId={keyAsset.KeyAssetId:D}; typeCode={pattern.KeyType.TypeCode}");
+            $"KEY#={keyAsset.KeyNumber}; MEDECO={keyAsset.MedecoKeyCode}; classification={pattern.Classification}");
         await _catalog.AddKeyAssetAsync(keyAsset, cancellationToken).ConfigureAwait(false);
+
+        return new RegisterNewKeyResult(pattern.KeyNumber, keyAsset.MedecoKeyCode, CreatedNewKeyNumber: false);
     }
 
-    private async Task<KeyType> RequireExistingActiveKeyTypeAsync(string typeCode, CancellationToken cancellationToken)
+    private async Task<RegisterNewKeyResult> CreateNewKeyNumberAtomicallyAsync(
+        string normalizedKeyNumber,
+        string normalizedMedeco,
+        KeyAccessClassification? classification,
+        IReadOnlyList<string> roomCodes,
+        CancellationToken cancellationToken)
     {
-        KeyType? keyType = await _catalog.FindKeyTypeAsync(typeCode.Trim(), cancellationToken).ConfigureAwait(false);
-        if (keyType is null)
+        if (classification is null
+            || classification is not (KeyAccessClassification.Regular or KeyAccessClassification.Master))
         {
             throw new InvalidOperationException(
-                "The Key Type was not found. Create the Key Type first, then create the KEY #.");
+                "Select Regular or Master. Classification is required when the KEY # does not yet exist.");
         }
 
-        if (!keyType.IsActive)
+        string? roomCode = null;
+        if (classification == KeyAccessClassification.Regular)
         {
-            throw new InvalidOperationException("The key type is inactive and cannot be used for a new KEY # or copy.");
+            if (roomCodes.Count != 1)
+            {
+                throw new InvalidOperationException(
+                    "Regular KEY # requires exactly one Room.");
+            }
+
+            roomCode = roomCodes[0];
+            Room? room = await _workforce.FindRoomAsync(roomCode, cancellationToken).ConfigureAwait(false);
+            if (room is null || !room.IsActive)
+            {
+                throw new InvalidOperationException($"Room '{roomCode}' was not found or is not active.");
+            }
+
+            roomCode = room.RoomCode;
+        }
+        else if (roomCodes.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Master KEY # cannot have a Room. Access derives all Rooms from Classification.");
         }
 
-        return keyType;
+        KeyAccessPattern pattern = new(normalizedKeyNumber, classification.Value, roomCode);
+        KeyAsset keyAsset = new(Guid.NewGuid(), pattern, normalizedMedeco);
+
+        _audit.Stage(
+            OperatorAuditActions.KeyAccessPatternCreated,
+            OperatorAuditSubjects.KeyAccessPattern,
+            pattern.KeyNumber,
+            roomCode is null
+                ? $"classification={pattern.Classification}; access=All Rooms"
+                : $"classification={pattern.Classification}; Room={roomCode}");
+
+        _audit.Stage(
+            OperatorAuditActions.PhysicalKeyCopyRegistered,
+            OperatorAuditSubjects.PhysicalKeyCopy,
+            $"{keyAsset.KeyNumber}/{keyAsset.MedecoKeyCode}",
+            $"KEY#={keyAsset.KeyNumber}; MEDECO={keyAsset.MedecoKeyCode}; classification={pattern.Classification}");
+
+        await _catalog
+            .AddNewKeyNumberWithFirstKeyAsync(pattern, keyAsset, cancellationToken)
+            .ConfigureAwait(false);
+
+        return new RegisterNewKeyResult(pattern.KeyNumber, keyAsset.MedecoKeyCode, CreatedNewKeyNumber: true);
+    }
+
+    private static List<string> NormalizeRoomCodes(IReadOnlyList<string>? roomCodes)
+    {
+        if (roomCodes is null || roomCodes.Count == 0)
+        {
+            return [];
+        }
+
+        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+        List<string> normalized = [];
+        foreach (string raw in roomCodes)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                continue;
+            }
+
+            string trimmed = raw.Trim();
+            if (seen.Add(trimmed))
+            {
+                normalized.Add(trimmed);
+            }
+        }
+
+        return normalized;
     }
 }

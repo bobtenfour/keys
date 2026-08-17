@@ -9,7 +9,7 @@
 
 <header class="page-header page-header-compact">
     <h1>Find Key</h1>
-    <p class="lede">Key-specific search by KEY #, MEDECO, Key Type, or Room #. For people by name or UIN, use the header search.</p>
+    <p class="lede">Key-specific search by KEY #, MEDECO, or Room #. For people by name or UIN, use the header search.</p>
 </header>
 
 <section class="card form-card">
@@ -19,8 +19,8 @@
             <input type="search"
                    name="q"
                    value="@Model.Query"
-                   placeholder="Search by KEY #, MEDECO, Key Type, or Room #..."
-                   aria-label="Search by KEY #, MEDECO, Key Type, or Room #" />
+                   placeholder="Search by KEY #, MEDECO, or Room #..."
+                   aria-label="Search by KEY #, MEDECO, or Room #" />
         </label>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Search</button>
@@ -49,9 +49,10 @@
                         <tr>
                             <th>KEY #</th>
                             <th>MEDECO</th>
-                            <th>Type</th>
-                            <th>Rooms opened</th>
-                            <th>Status</th>
+                            <th>Classification</th>
+                            <th>Access</th>
+                            <th>Condition</th>
+                            <th>Custody</th>
                             <th>Current holder</th>
                             <th></th>
                         </tr>
@@ -62,10 +63,10 @@
                         <tr>
                             <td>@item.KeyNumber</td>
                             <td>@item.MedecoKeyCode</td>
-                            <td>@item.TypeCode</td>
+                            <td>@item.Classification</td>
                             <td>
                                 @{
-                                    string rooms = KeyOpenedRoomDisplayFormatter.Format(item.OpenedRooms);
+                                    string rooms = KeyOpenedRoomDisplayFormatter.FormatAccess(item.Classification, item.OpenedRooms);
                                 }
                                 @if (string.IsNullOrEmpty(rooms))
                                 {
@@ -76,14 +77,19 @@
                                     @rooms
                                 }
                             </td>
+                            <td>@item.Condition</td>
                             <td>
                                 @if (string.Equals(item.AvailabilityStatus, OperationalKeyAvailability.Issued, StringComparison.Ordinal))
                                 {
                                     <span class="badge badge-attention">Issued</span>
                                 }
-                                else
+                                else if (string.Equals(item.AvailabilityStatus, OperationalKeyAvailability.Available, StringComparison.Ordinal))
                                 {
                                     <span class="badge badge-success">Available</span>
+                                }
+                                else
+                                {
+                                    <span>—</span>
                                 }
                             </td>
                             <td>
@@ -102,11 +108,15 @@
                                 {
                                     <a asp-page="/Operations/Receive" asp-route-issueReference="@item.OpenLoanCode">Receive</a>
                                 }
-                                else
+                                else if (string.Equals(item.AvailabilityStatus, OperationalKeyAvailability.Available, StringComparison.Ordinal))
                                 {
                                     <a asp-page="/Operations/Issue"
                                        asp-route-keyNumber="@item.KeyNumber"
                                        asp-route-medecoKeyCode="@item.MedecoKeyCode">Issue</a>
+                                }
+                                else
+                                {
+                                    <span>—</span>
                                 }
                             </td>
                         </tr>

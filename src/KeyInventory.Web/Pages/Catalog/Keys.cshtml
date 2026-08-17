@@ -1,6 +1,7 @@
 @page
 @using KeyInventory.Application.Catalog
 @using KeyInventory.Application.Lookup
+@using KeyInventory.Domain.Catalog
 @model KeyInventory.Web.Pages.Catalog.KeysModel
 @{
     ViewData["Title"] = "Keys";
@@ -9,7 +10,7 @@
 
 <header class="page-header page-header-compact">
     <h1>Keys</h1>
-    <p class="lede">KEY # access patterns and physical MEDECO copies.</p>
+    <p class="lede">KEY # access patterns and keys.</p>
 </header>
 
 @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
@@ -23,7 +24,7 @@
 
 <section class="card">
     <div class="toolbar">
-        <a class="btn btn-primary" asp-page="/Catalog/Register">Register Key</a>
+        <a class="btn btn-primary" asp-page="/Catalog/Register">Create Key</a>
         <a class="btn btn-secondary" asp-page="/Operations/Issue">Issue Key</a>
     </div>
 
@@ -32,7 +33,7 @@
     {
         <div class="empty-state">
             <strong>No KEY # patterns</strong>
-            Register a physical copy to create a KEY #.
+            Create a key to establish a KEY #.
         </div>
     }
     else
@@ -42,8 +43,8 @@
                 <thead>
                     <tr>
                         <th>KEY #</th>
-                        <th>Type</th>
-                        <th>Physical copies</th>
+                        <th>Classification</th>
+                        <th>Keys</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -53,13 +54,10 @@
                 {
                     <tr>
                         <td>@pattern.KeyNumber</td>
-                        <td>@pattern.TypeCode</td>
+                        <td>@pattern.Classification</td>
                         <td>@pattern.PhysicalCopyCount</td>
                         <td>@(pattern.IsActive ? "Active" : "Retired")</td>
                         <td class="table-actions">
-                            <a class="btn btn-secondary"
-                               asp-page="/Catalog/KeyRooms"
-                               asp-route-keyNumber="@pattern.KeyNumber">Rooms</a>
                             @if (pattern.Capabilities.CanDelete)
                             {
                                 <a class="btn btn-danger"
@@ -90,12 +88,12 @@
 </section>
 
 <section class="card">
-    <h2 class="section-title">Physical MEDECO copies</h2>
+    <h2 class="section-title">Keys</h2>
     @if (Model.Keys.Count == 0)
     {
         <div class="empty-state">
-            <strong>No keys registered</strong>
-            Register your first physical copy using the button above.
+            <strong>No keys</strong>
+            Create your first key using the button above.
         </div>
     }
     else
@@ -106,9 +104,10 @@
                     <tr>
                         <th>KEY #</th>
                         <th>MEDECO</th>
-                        <th>Type</th>
-                        <th>Rooms opened</th>
-                        <th>Status</th>
+                        <th>Classification</th>
+                        <th>Access</th>
+                        <th>Condition</th>
+                        <th>Custody</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -118,28 +117,42 @@
                     <tr>
                         <td>@key.KeyNumber</td>
                         <td>@key.MedecoKeyCode</td>
-                        <td>@key.TypeCode</td>
+                        <td>@key.Classification</td>
                         <td>
                             @{
                                 IReadOnlyList<KeyOpenedRoomItem> opened =
                                     Model.OpenedRoomsByAssetId.TryGetValue(key.KeyAssetId, out var rooms)
                                         ? rooms
                                         : [];
-                                string roomsText = KeyOpenedRoomDisplayFormatter.Format(opened);
+                                string accessText = KeyOpenedRoomDisplayFormatter.FormatAccess(key.Classification, opened);
                             }
-                            @if (string.IsNullOrEmpty(roomsText))
+                            @if (string.IsNullOrEmpty(accessText))
                             {
                                 <span>—</span>
                             }
                             else
                             {
-                                @roomsText
+                                @accessText
                             }
                         </td>
                         <td>
-                            @if (!key.IsActive)
+                            @if (key.Condition == KeyPhysicalCondition.Lost)
                             {
-                                <span class="badge badge-warning">Inactive</span>
+                                <span class="badge badge-warning">Lost</span>
+                            }
+                            else if (key.Condition == KeyPhysicalCondition.Destroyed)
+                            {
+                                <span class="badge badge-danger">Destroyed</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-success">Active</span>
+                            }
+                        </td>
+                        <td>
+                            @if (key.Condition != KeyPhysicalCondition.Active)
+                            {
+                                <span>—</span>
                             }
                             else if (string.Equals(
                                          key.AvailabilityStatus,
@@ -154,28 +167,31 @@
                             }
                         </td>
                         <td class="table-actions">
-                            <a class="btn btn-secondary"
-                               asp-page="/Catalog/KeyRooms"
-                               asp-route-keyNumber="@key.KeyNumber">Rooms</a>
+                            @if (key.CanMarkLost)
+                            {
+                                <form method="post" asp-page-handler="MarkLost" style="display:inline">
+                                    <input type="hidden" name="keyAssetId" value="@key.KeyAssetId" />
+                                    <button type="submit" class="btn btn-secondary">Mark Lost</button>
+                                </form>
+                            }
+                            @if (key.CanReplace)
+                            {
+                                <a class="btn btn-secondary"
+                                   asp-page="/Catalog/Register"
+                                   asp-route-mode="Replace">Replace</a>
+                            }
+                            @if (key.CanDestroy)
+                            {
+                                <form method="post" asp-page-handler="Destroy" style="display:inline">
+                                    <input type="hidden" name="keyAssetId" value="@key.KeyAssetId" />
+                                    <button type="submit" class="btn btn-danger">Destroy</button>
+                                </form>
+                            }
                             @if (key.Capabilities.CanDelete)
                             {
                                 <a class="btn btn-danger"
                                    asp-page="/Catalog/Keys/Delete"
                                    asp-route-keyAssetId="@key.KeyAssetId">Delete</a>
-                            }
-                            @if (key.Capabilities.CanRetire)
-                            {
-                                <form method="post" asp-page-handler="Retire" style="display:inline">
-                                    <input type="hidden" name="keyAssetId" value="@key.KeyAssetId" />
-                                    <button type="submit" class="btn btn-secondary">Retire</button>
-                                </form>
-                            }
-                            @if (key.Capabilities.CanActivate)
-                            {
-                                <form method="post" asp-page-handler="Activate" style="display:inline">
-                                    <input type="hidden" name="keyAssetId" value="@key.KeyAssetId" />
-                                    <button type="submit" class="btn btn-secondary">Activate</button>
-                                </form>
                             }
                         </td>
                     </tr>

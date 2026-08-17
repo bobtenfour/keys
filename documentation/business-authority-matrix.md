@@ -6,6 +6,11 @@ This document assigns ownership for business and technical decision areas.
 ## Purpose
 Prevent duplicated authority.
 
+## Active Structural Amendment — Classification defines KEY # access (2026-08-16)
+- KEY # Room access ownership: Classification on KeyAccessPattern (Regular = one RoomCode; Master = all Rooms).
+- Retired: KEY #↔Room assign/remove Application use cases and `/Catalog/KeyRooms`.
+- Preserved: WorkAssignment Assign Room (member↔room) under Workforce Eligibility.
+
 | Area | Owning Authority |
 |---|---|
 | Product vision | product-vision.md |
@@ -23,14 +28,20 @@ Prevent duplicated authority.
 | SQL Server persistence testing | testing-strategy.md |
 | Business concepts and aggregate boundaries | key-inventory-domain-contract.md |
 | Key catalog identity | key-inventory-domain-contract.md |
-| Key catalog classifications | key-inventory-domain-contract.md |
+| KEY # Classification Regular\|Master (sole KEY # classification; replaces KeyType) | key-inventory-domain-contract.md |
+| KeyType catalog entity | Removed from active model; superseded by Regular\|Master on KeyAccessPattern |
 | KEY # / KeyAccessPattern access-pattern identity | key-inventory-domain-contract.md |
 | KeyAccessPattern-to-Room current opening assignments | key-inventory-domain-contract.md |
-| Physical key copy (KeyAsset) and MEDECO within KEY # | key-inventory-domain-contract.md |
+| Physical key (KeyAsset) and MEDECO within KEY # | key-inventory-domain-contract.md |
+| KeyAsset physical condition (Active \| Lost \| Destroyed) | key-inventory-domain-contract.md |
+| KeyAsset custody Available / Issued | Derived (Active + open Loan); not persisted on KeyAsset |
+| Lost-key Replacement lineage (ReplacesKeyAssetId) | key-inventory-domain-contract.md |
+| KeyAsset holder / Department attributes | Forbidden on KeyAsset; custody holder via open Loan |
+| Physical KeyAsset Retire / Activate / IsActive | Removed; KEY # Activate/Retire remains separate |
 | KeyAsset-to-Room current opening assignments | Superseded active authority; historical KEY-ROOM-ASSIGNMENT-1 only; KEY-ACCESS-COPY-1 moves Room openings to KeyAccessPattern |
 | Location hierarchy | key-inventory-domain-contract.md |
 | Lock as intermediate room-opening authority | Forbidden; KeyAccessPattern↔Room is sole operational room-opening authority in key-inventory-domain-contract.md |
-| Master/sub-master key hierarchy | Forbidden; a master key is only a KEY # with multiple Rooms (KEY-ACCESS-COPY-1); no inheritance engine |
+| Master/sub-master key hierarchy | Forbidden; Classification Master is explicit Regular\|Master on KEY # and is not inferred from Room count |
 | KeySeries as KEY # or Room-access authority | Forbidden; KeySeries is non-operational classification seed only |
 | Loan issuance workflow | key-inventory-domain-contract.md |
 | Return completion workflow | key-inventory-domain-contract.md |
@@ -49,6 +60,7 @@ Prevent duplicated authority.
 | Person FirstName LastName and UIN | key-inventory-domain-contract.md |
 | Building place authority | Removed from active model; key-inventory-domain-contract.md |
 | Room place authority and global RoomNumber uniqueness | key-inventory-domain-contract.md |
+| Room → Department membership (Room.DepartmentId required) | key-inventory-domain-contract.md |
 | Workforce eligibility boundary | key-inventory-domain-contract.md |
 | Organization | Removed from active model; key-inventory-domain-contract.md |
 | Department membership for workforce (DepartmentId identity; global unique editable DepartmentCode) | key-inventory-domain-contract.md |
@@ -57,6 +69,8 @@ Prevent duplicated authority.
 | WorkforceType Employee and Contractor | key-inventory-domain-contract.md |
 | ResponsibleManager relationship | Removed from active model; key-inventory-domain-contract.md |
 | WorkAssignment to Room | key-inventory-domain-contract.md |
+| WorkAssignment Room.Department == WorkforceMember.Department consistency | key-inventory-domain-contract.md |
+| WorkAssignment technical identity (WorkAssignmentId); no WorkAssignmentCode; no Primary | key-inventory-domain-contract.md |
 | Key issue eligibility for WorkforceMember | key-inventory-domain-contract.md |
 | Single-site structural simplification / Application readiness query | documentation/slices/OPERATOR-EXPERIENCE-1.md |
 | First-use/onboarding presentation (no permanent Home setup UI) | product-experience-contract.md |
@@ -71,7 +85,7 @@ Prevent duplicated authority.
 | Audit Event aggregate | key-inventory-domain-contract.md |
 | Immutable audit history | key-inventory-domain-contract.md |
 | Product experience | product-experience-contract.md |
-| Operator interaction architecture (page purpose, control taxonomy, no duplicate capability, bounded search, Register existing/new KEY #) | product-experience-contract.md |
+| Operator interaction architecture (page purpose, searchable combobox, no duplicate capability, Issue physical-key-first, Receive custody combobox, Register Regular/Master, no Key Types admin) | product-experience-contract.md |
 | Testing requirements | testing-strategy.md |
 | Cross-system integrity | system-integrity-contract.md |
 

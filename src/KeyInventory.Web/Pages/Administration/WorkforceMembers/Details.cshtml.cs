@@ -50,6 +50,12 @@ public sealed class DetailsModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Member { get; set; }
 
+    /// <summary>
+    /// Explicit Edit intent. Default View shows membership as information.
+    /// </summary>
+    [BindProperty(SupportsGet = true)]
+    public bool Edit { get; set; }
+
     [BindProperty]
     public string FirstName { get; set; } = string.Empty;
 
@@ -72,7 +78,7 @@ public sealed class DetailsModel : PageModel
 
     public IReadOnlyList<SelectListItem> DepartmentOptions { get; private set; } = [];
 
-    public IReadOnlyList<WorkforceMemberWorkAssignmentRow> WorkAssignments { get; private set; } = [];
+    public IReadOnlyList<WorkforceMemberRoomAssignmentRow> RoomAssignments { get; private set; } = [];
 
     public IReadOnlyList<IssuedKeyForMemberItem> IssuedKeys { get; private set; } = [];
 
@@ -82,9 +88,17 @@ public sealed class DetailsModel : PageModel
 
     public string? ErrorMessage { get; private set; }
 
+    public bool JustCreated { get; private set; }
+
+    public bool IsEditMode => Edit;
+
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         SuccessMessage = TempData["SuccessMessage"] as string;
+        JustCreated = (TempData.ContainsKey("JustCreated") && TempData["JustCreated"] is true)
+            || (SuccessMessage is not null
+                && SuccessMessage.Contains("was created", StringComparison.OrdinalIgnoreCase));
+
         if (!await LoadAsync(cancellationToken).ConfigureAwait(false))
         {
             return NotFound();
@@ -117,19 +131,20 @@ public sealed class DetailsModel : PageModel
                 await _correctPartyUin.ExecuteAsync(selected.PartyCode, Uin, cancellationToken).ConfigureAwait(false);
             }
 
-            SuccessMessage = "Workforce member was updated.";
+            TempData["SuccessMessage"] = "Workforce member was updated.";
+            return RedirectToPage("./Details", new { member = Member });
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
             ErrorMessage = exception.Message;
-        }
+            Edit = true;
+            if (!await LoadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                return NotFound();
+            }
 
-        if (!await LoadAsync(cancellationToken).ConfigureAwait(false))
-        {
-            return NotFound();
+            return Page();
         }
-
-        return Page();
     }
 
     public async Task<IActionResult> OnPostTerminateAsync(CancellationToken cancellationToken)
@@ -153,20 +168,19 @@ public sealed class DetailsModel : PageModel
         try
         {
             await _terminate.ExecuteAsync(Member, cancellationToken).ConfigureAwait(false);
-            Obligations = await _obligations.ExecuteAsync(Member, cancellationToken).ConfigureAwait(false);
-            SuccessMessage = "Workforce member was terminated.";
+            TempData["SuccessMessage"] = "Workforce member was terminated.";
+            return RedirectToPage("./Details", new { member = Member });
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
             ErrorMessage = exception.Message;
-        }
+            if (!await LoadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                return NotFound();
+            }
 
-        if (!await LoadAsync(cancellationToken).ConfigureAwait(false))
-        {
-            return NotFound();
+            return Page();
         }
-
-        return Page();
     }
 
     private async Task<WorkforceMemberListItem?> FindSelectedAsync(CancellationToken cancellationToken)
@@ -194,25 +208,48 @@ public sealed class DetailsModel : PageModel
         }
 
         Member = Selected.WorkforceMemberCode;
-        if (string.IsNullOrWhiteSpace(ErrorMessage) && string.IsNullOrWhiteSpace(SuccessMessage))
+
+        if (IsEditMode || !string.IsNullOrWhiteSpace(ErrorMessage))
         {
-            FirstName = Selected.FirstName;
-            LastName = Selected.LastName;
-            Uin = Selected.Uin;
-            WorkforceType = Selected.WorkforceType;
-            DepartmentCode = Selected.DepartmentCode;
+            if (string.IsNullOrWhiteSpace(FirstName))
+            {
+                FirstName = Selected.FirstName;
+            }
+
+            if (string.IsNullOrWhiteSpace(LastName))
+            {
+                LastName = Selected.LastName;
+            }
+
+            if (string.IsNullOrWhiteSpace(Uin))
+            {
+                Uin = Selected.Uin;
+            }
+
+            if (string.IsNullOrWhiteSpace(WorkforceType))
+            {
+                WorkforceType = Selected.WorkforceType;
+            }
+
+            if (string.IsNullOrWhiteSpace(DepartmentCode))
+            {
+                DepartmentCode = Selected.DepartmentCode;
+            }
         }
 
         IReadOnlyList<DepartmentListItem> departments = await _listDepartments.ExecuteAsync(cancellationToken)
             .ConfigureAwait(false);
+        string selectedDepartment = string.IsNullOrWhiteSpace(DepartmentCode)
+            ? Selected.DepartmentCode
+            : DepartmentCode;
         DepartmentOptions = departments
             .Where(item =>
                 item.IsActive
-                || string.Equals(item.DepartmentCode, DepartmentCode, StringComparison.OrdinalIgnoreCase))
+                || string.Equals(item.DepartmentCode, selectedDepartment, StringComparison.OrdinalIgnoreCase))
             .Select(item => new SelectListItem(
                 item.DepartmentCode,
                 item.DepartmentCode,
-                string.Equals(item.DepartmentCode, DepartmentCode, StringComparison.OrdinalIgnoreCase)))
+                string.Equals(item.DepartmentCode, selectedDepartment, StringComparison.OrdinalIgnoreCase)))
             .ToArray();
 
         IReadOnlyList<WorkAssignmentListItem> assignments = await _listAssignments.ExecuteAsync(cancellationToken)
@@ -222,7 +259,7 @@ public sealed class DetailsModel : PageModel
             item => item.RoomCode,
             StringComparer.OrdinalIgnoreCase);
 
-        WorkAssignments = assignments
+        RoomAssignments = assignments
             .Where(item => item.IsActive
                 && string.Equals(item.WorkforceMemberCode, Selected.WorkforceMemberCode, StringComparison.Ordinal))
             .Select(item =>
@@ -230,11 +267,7 @@ public sealed class DetailsModel : PageModel
                 roomsByCode.TryGetValue(item.RoomCode, out RoomListItem? room);
                 string roomNumber = room?.RoomNumber ?? item.RoomCode;
                 string description = room?.Description ?? string.Empty;
-                return new WorkforceMemberWorkAssignmentRow(
-                    item.WorkAssignmentCode,
-                    roomNumber,
-                    description,
-                    item.IsPrimary);
+                return new WorkforceMemberRoomAssignmentRow(roomNumber, description);
             })
             .ToArray();
 
@@ -242,12 +275,21 @@ public sealed class DetailsModel : PageModel
             .ListIssuedKeysForWorkforceMemberAsync(Selected.WorkforceMemberCode, cancellationToken)
             .ConfigureAwait(false);
 
+        // Outstanding return obligations are an Application capability for Terminated members only.
+        if (string.Equals(Selected.Status, "Terminated", StringComparison.Ordinal))
+        {
+            Obligations = await _obligations.ExecuteAsync(Selected.WorkforceMemberCode, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        else
+        {
+            Obligations = [];
+        }
+
         return true;
     }
 }
 
-public sealed record WorkforceMemberWorkAssignmentRow(
-    string WorkAssignmentCode,
+public sealed record WorkforceMemberRoomAssignmentRow(
     string RoomNumber,
-    string Description,
-    bool IsPrimary);
+    string Description);

@@ -14,38 +14,32 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
     private readonly IKeyCatalogPersistencePort _catalog;
     private readonly ILoanPersistencePort _loans;
     private readonly IOperatorAuditRecorder _audit;
-    private readonly IKeyAccessPatternRoomAssignmentPersistencePort _roomAssignments;
+    private readonly IKeyAccessResolutionPort _accessResolution;
     private readonly IActivateDepartmentUseCase _activateDepartment;
     private readonly IRetireDepartmentUseCase _retireDepartment;
     private readonly IActivateRoomUseCase _activateRoom;
     private readonly IRetireRoomUseCase _retireRoom;
-    private readonly IActivateKeyTypeUseCase _activateKeyType;
-    private readonly IRetireKeyTypeUseCase _retireKeyType;
 
     public ConfigurationLifecycleUseCase(
         IWorkforcePersistencePort workforce,
         IKeyCatalogPersistencePort catalog,
         ILoanPersistencePort loans,
         IOperatorAuditRecorder audit,
-        IKeyAccessPatternRoomAssignmentPersistencePort roomAssignments,
+        IKeyAccessResolutionPort accessResolution,
         IActivateDepartmentUseCase activateDepartment,
         IRetireDepartmentUseCase retireDepartment,
         IActivateRoomUseCase activateRoom,
-        IRetireRoomUseCase retireRoom,
-        IActivateKeyTypeUseCase activateKeyType,
-        IRetireKeyTypeUseCase retireKeyType)
+        IRetireRoomUseCase retireRoom)
     {
         _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _loans = loans ?? throw new ArgumentNullException(nameof(loans));
         _audit = audit ?? throw new ArgumentNullException(nameof(audit));
-        _roomAssignments = roomAssignments ?? throw new ArgumentNullException(nameof(roomAssignments));
+        _accessResolution = accessResolution ?? throw new ArgumentNullException(nameof(accessResolution));
         _activateDepartment = activateDepartment ?? throw new ArgumentNullException(nameof(activateDepartment));
         _retireDepartment = retireDepartment ?? throw new ArgumentNullException(nameof(retireDepartment));
         _activateRoom = activateRoom ?? throw new ArgumentNullException(nameof(activateRoom));
         _retireRoom = retireRoom ?? throw new ArgumentNullException(nameof(retireRoom));
-        _activateKeyType = activateKeyType ?? throw new ArgumentNullException(nameof(activateKeyType));
-        _retireKeyType = retireKeyType ?? throw new ArgumentNullException(nameof(retireKeyType));
     }
 
     public async Task<IReadOnlyList<DepartmentLifecycleItem>> ListDepartmentsAsync(
@@ -134,6 +128,8 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
                 room.RoomCode,
                 room.RoomNumber,
                 room.Description,
+                room.DepartmentId,
+                room.DepartmentCode,
                 room.IsActive,
                 new LifecycleCapabilities(
                     CanEdit: true,
@@ -281,10 +277,9 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
                 .ConfigureAwait(false);
 
             items.Add(new WorkAssignmentLifecycleItem(
-                assignment.WorkAssignmentCode,
+                assignment.WorkAssignmentId,
                 assignment.WorkforceMemberCode,
                 assignment.RoomCode,
-                assignment.IsPrimary,
                 assignment.IsActive,
                 new LifecycleCapabilities(
                     CanEdit: false,
@@ -299,24 +294,25 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
     }
 
     public async Task DeleteWorkAssignmentAsync(
-        string workAssignmentCode,
+        Guid workAssignmentId,
         CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(workAssignmentCode);
-        string code = workAssignmentCode.Trim();
+        if (workAssignmentId == Guid.Empty)
+        {
+            throw new ArgumentException("WorkAssignmentId is required.", nameof(workAssignmentId));
+        }
 
-        WorkAssignment? assignment = await _workforce.FindWorkAssignmentAsync(code, cancellationToken)
+        WorkAssignment? assignment = await _workforce.FindWorkAssignmentAsync(workAssignmentId, cancellationToken)
             .ConfigureAwait(false);
         if (assignment is null)
         {
-            throw new InvalidOperationException("The work assignment was not found.");
+            throw new InvalidOperationException("The room assignment was not found.");
         }
 
         WorkAssignmentListItem snapshot = new(
-            assignment.WorkAssignmentCode,
+            assignment.WorkAssignmentId,
             assignment.WorkforceMemberCode,
             assignment.RoomCode,
-            assignment.IsPrimary,
             assignment.IsActive);
 
         (bool canDelete, string? blockedReason) = await EvaluateWorkAssignmentDeleteAsync(
@@ -326,78 +322,17 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
         if (!canDelete)
         {
             throw new InvalidOperationException(
-                "This work assignment can no longer be deleted because it has historical significance. End it instead to preserve history.");
+                "This room assignment can no longer be deleted because it has historical significance. End it instead to preserve history.");
         }
 
         _audit.Stage(
             OperatorAuditActions.WorkAssignmentDeleted,
             OperatorAuditSubjects.WorkAssignment,
-            assignment.WorkAssignmentCode);
-        await _workforce.DeleteWorkAssignmentAsync(assignment.WorkAssignmentCode, cancellationToken)
+            assignment.WorkAssignmentId.ToString("D"),
+            $"WorkforceMember={assignment.WorkforceMemberCode}; Room={assignment.RoomCode}");
+        await _workforce.DeleteWorkAssignmentAsync(assignment.WorkAssignmentId, cancellationToken)
             .ConfigureAwait(false);
     }
-
-    public async Task<IReadOnlyList<KeyTypeLifecycleItem>> ListKeyTypesAsync(CancellationToken cancellationToken)
-    {
-        IReadOnlyList<KeyTypeListItem> types = await _catalog.ListKeyTypesAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        List<KeyTypeLifecycleItem> items = new(types.Count);
-        foreach (KeyTypeListItem keyType in types)
-        {
-            int allPatterns = await _catalog
-                .CountAllKeyAccessPatternsForTypeAsync(keyType.TypeCode, cancellationToken)
-                .ConfigureAwait(false);
-            (bool canDelete, string? blockedReason) = EvaluateKeyTypeDelete(allPatterns);
-
-            items.Add(new KeyTypeLifecycleItem(
-                keyType.TypeCode,
-                keyType.IsActive,
-                keyType.ActiveKeyAssetCount,
-                new LifecycleCapabilities(
-                    CanEdit: false,
-                    CanDelete: canDelete,
-                    CanRetire: keyType.IsActive && keyType.ActiveKeyAssetCount == 0,
-                    CanActivate: !keyType.IsActive,
-                    DeleteBlockedReason: blockedReason)));
-        }
-
-        return items;
-    }
-
-    public async Task DeleteKeyTypeAsync(string typeCode, CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(typeCode);
-        string code = typeCode.Trim();
-
-        KeyType? keyType = await _catalog.FindKeyTypeAsync(code, cancellationToken).ConfigureAwait(false);
-        if (keyType is null)
-        {
-            throw new InvalidOperationException("The key type was not found.");
-        }
-
-        int allPatterns = await _catalog
-            .CountAllKeyAccessPatternsForTypeAsync(keyType.TypeCode, cancellationToken)
-            .ConfigureAwait(false);
-        (bool canDelete, string? blockedReason) = EvaluateKeyTypeDelete(allPatterns);
-        if (!canDelete)
-        {
-            throw new InvalidOperationException(
-                "This key type can no longer be deleted because it is referenced by KEY # access patterns. Retire it instead to preserve history.");
-        }
-
-        _audit.Stage(
-            OperatorAuditActions.KeyTypeDeleted,
-            OperatorAuditSubjects.KeyType,
-            keyType.TypeCode);
-        await _catalog.DeleteKeyTypeAsync(keyType.TypeCode, cancellationToken).ConfigureAwait(false);
-    }
-
-    public Task ActivateKeyTypeAsync(string typeCode, CancellationToken cancellationToken)
-        => _activateKeyType.ExecuteAsync(typeCode, cancellationToken);
-
-    public Task RetireKeyTypeAsync(string typeCode, CancellationToken cancellationToken)
-        => _retireKeyType.ExecuteAsync(typeCode, cancellationToken);
 
     public async Task<IReadOnlyList<KeyAssetLifecycleItem>> ListKeyAssetsAsync(
         CancellationToken cancellationToken)
@@ -416,18 +351,25 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
                     cancellationToken)
                 .ConfigureAwait(false);
 
+            string availability = asset.Condition == KeyPhysicalCondition.Active
+                ? (isIssued ? OperationalKeyAvailability.Issued : OperationalKeyAvailability.Available)
+                : string.Empty;
+
             items.Add(new KeyAssetLifecycleItem(
                 asset.KeyAssetId,
                 asset.KeyNumber,
                 asset.MedecoKeyCode,
-                asset.TypeCode,
-                asset.IsActive,
-                isIssued ? OperationalKeyAvailability.Issued : OperationalKeyAvailability.Available,
+                asset.Classification,
+                asset.Condition,
+                availability,
+                CanMarkLost: asset.Condition == KeyPhysicalCondition.Active,
+                CanDestroy: asset.Condition is KeyPhysicalCondition.Active or KeyPhysicalCondition.Lost,
+                CanReplace: asset.Condition == KeyPhysicalCondition.Lost && !isIssued,
                 new LifecycleCapabilities(
                     CanEdit: false,
-                    CanDelete: canDelete,
-                    CanRetire: asset.IsActive,
-                    CanActivate: !asset.IsActive,
+                    CanDelete: canDelete && asset.Condition == KeyPhysicalCondition.Active,
+                    CanRetire: false,
+                    CanActivate: false,
                     DeleteBlockedReason: blockedReason)));
         }
 
@@ -445,7 +387,12 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
             .ConfigureAwait(false);
         if (keyAsset is null)
         {
-            throw new InvalidOperationException("The physical key copy was not found.");
+            throw new InvalidOperationException("The key was not found.");
+        }
+
+        if (keyAsset.Condition != KeyPhysicalCondition.Active)
+        {
+            throw new InvalidOperationException("Only an Active unused key may be deleted.");
         }
 
         (bool canDelete, string? blockedReason) = await EvaluateKeyAssetDeleteAsync(
@@ -455,7 +402,7 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
         if (!canDelete)
         {
             throw new InvalidOperationException(
-                "This physical key copy can no longer be deleted because it has loan history. Retire it instead to preserve history.");
+                "This key can no longer be deleted because it has loan history.");
         }
 
         _audit.Stage(
@@ -464,52 +411,6 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
             $"{keyAsset.KeyNumber}/{keyAsset.MedecoKeyCode}",
             $"KeyAssetId={keyAsset.KeyAssetId:D}");
         await _catalog.DeleteKeyAssetAsync(keyAsset.KeyAssetId, cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task ActivateKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken)
-    {
-        if (keyAssetId == Guid.Empty)
-        {
-            throw new ArgumentException("KeyAssetId is required.", nameof(keyAssetId));
-        }
-
-        KeyAsset? keyAsset = await _catalog.FindKeyAssetAsync(keyAssetId, cancellationToken)
-            .ConfigureAwait(false);
-        if (keyAsset is null)
-        {
-            throw new InvalidOperationException("The physical key copy was not found.");
-        }
-
-        keyAsset.Activate();
-        _audit.Stage(
-            OperatorAuditActions.PhysicalKeyCopyActivated,
-            OperatorAuditSubjects.PhysicalKeyCopy,
-            $"{keyAsset.KeyNumber}/{keyAsset.MedecoKeyCode}",
-            $"KeyAssetId={keyAsset.KeyAssetId:D}");
-        await _catalog.UpdateKeyAssetAsync(keyAsset, cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task RetireKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken)
-    {
-        if (keyAssetId == Guid.Empty)
-        {
-            throw new ArgumentException("KeyAssetId is required.", nameof(keyAssetId));
-        }
-
-        KeyAsset? keyAsset = await _catalog.FindKeyAssetAsync(keyAssetId, cancellationToken)
-            .ConfigureAwait(false);
-        if (keyAsset is null)
-        {
-            throw new InvalidOperationException("The physical key copy was not found.");
-        }
-
-        keyAsset.Retire();
-        _audit.Stage(
-            OperatorAuditActions.PhysicalKeyCopyRetired,
-            OperatorAuditSubjects.PhysicalKeyCopy,
-            $"{keyAsset.KeyNumber}/{keyAsset.MedecoKeyCode}",
-            $"KeyAssetId={keyAsset.KeyAssetId:D}");
-        await _catalog.UpdateKeyAssetAsync(keyAsset, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<KeyAccessPatternLifecycleItem>> ListKeyAccessPatternsAsync(
@@ -530,11 +431,11 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
             IReadOnlyList<KeyAssetListItem> copies = await _catalog
                 .ListKeyAssetsForPatternAsync(pattern.KeyNumber, cancellationToken)
                 .ConfigureAwait(false);
-            bool hasActivePhysicalCopies = copies.Any(copy => copy.IsActive);
+            bool hasActivePhysicalCopies = copies.Any(copy => copy.Condition == KeyPhysicalCondition.Active);
 
             items.Add(new KeyAccessPatternLifecycleItem(
                 pattern.KeyNumber,
-                pattern.TypeCode,
+                pattern.Classification,
                 pattern.IsActive,
                 pattern.PhysicalCopyCount,
                 new LifecycleCapabilities(
@@ -583,7 +484,7 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
         IReadOnlyList<KeyAssetListItem> copies = await _catalog
             .ListKeyAssetsForPatternAsync(pattern.KeyNumber, cancellationToken)
             .ConfigureAwait(false);
-        bool hasActivePhysicalCopies = copies.Any(copy => copy.IsActive);
+        bool hasActivePhysicalCopies = copies.Any(copy => copy.Condition == KeyPhysicalCondition.Active);
         pattern.Retire(hasActivePhysicalCopies);
         _audit.Stage(
             OperatorAuditActions.KeyAccessPatternRetired,
@@ -634,6 +535,14 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
             return (false, "Department is referenced by workforce members.");
         }
 
+        int roomsForDepartment = await _workforce
+            .CountRoomsForDepartmentAsync(departmentId, cancellationToken)
+            .ConfigureAwait(false);
+        if (roomsForDepartment > 0)
+        {
+            return (false, "Department is referenced by rooms.");
+        }
+
         int justifiedLoanCount = await _loans
             .CountLoansJustifiedByDepartmentAsync(departmentId, cancellationToken)
             .ConfigureAwait(false);
@@ -654,15 +563,15 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
             .ConfigureAwait(false);
         if (assignmentCount > 0)
         {
-            return (false, "Room is referenced by work assignments.");
+            return (false, "Room is referenced by room assignments.");
         }
 
-        IReadOnlyList<string> keyNumbers = await _roomAssignments
-            .ListKeyNumbersForRoomAsync(roomCode, cancellationToken)
+        bool regularReferencesRoom = await _accessResolution
+            .RegularKeyReferencesRoomAsync(roomCode, cancellationToken)
             .ConfigureAwait(false);
-        if (keyNumbers.Count > 0)
+        if (regularReferencesRoom)
         {
-            return (false, "Room is referenced by KEY #↔Room assignments.");
+            return (false, "Room is referenced by a Regular KEY #.");
         }
 
         int justifiedLoanCount = await _loans
@@ -686,7 +595,7 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
             .ConfigureAwait(false);
         if (assignmentCount > 0)
         {
-            return (false, "Workforce member has work assignments.");
+            return (false, "Workforce member has room assignments.");
         }
 
         int loanCount = await _loans.CountLoansForPartyAsync(partyCode, cancellationToken)
@@ -705,7 +614,7 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
     {
         if (!assignment.IsActive)
         {
-            return (false, "Ended work assignments are historical and cannot be deleted.");
+            return (false, "Ended room assignments are historical and cannot be deleted.");
         }
 
         WorkforceMember? member = await _workforce
@@ -721,16 +630,6 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
         if (loanCount > 0)
         {
             return (false, "Member has loan history; end the assignment instead of deleting.");
-        }
-
-        return (true, null);
-    }
-
-    private static (bool CanDelete, string? BlockedReason) EvaluateKeyTypeDelete(int allPatternCount)
-    {
-        if (allPatternCount > 0)
-        {
-            return (false, "Key type is referenced by KEY # access patterns.");
         }
 
         return (true, null);
@@ -760,14 +659,6 @@ public sealed class ConfigurationLifecycleUseCase : IConfigurationLifecycleUseCa
         if (assetCount > 0)
         {
             return (false, "KEY # has physical key copies.");
-        }
-
-        IReadOnlyList<KeyOpenedRoomItem> rooms = await _roomAssignments
-            .ListForKeyNumberAsync(keyNumber, cancellationToken)
-            .ConfigureAwait(false);
-        if (rooms.Count > 0)
-        {
-            return (false, "KEY # has room assignments.");
         }
 
         return (true, null);

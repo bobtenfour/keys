@@ -5,7 +5,7 @@ namespace KeyInventory.Application.Workflow;
 
 public sealed record KeyNumberRegistrationPreview(
     string KeyNumber,
-    string TypeCode,
+    KeyAccessClassification Classification,
     bool IsActive,
     IReadOnlyList<KeyOpenedRoomItem> OpenedRooms);
 
@@ -27,14 +27,14 @@ public interface ISearchKeyNumbersForRegistrationUseCase
 public sealed class GetKeyNumberRegistrationPreviewUseCase : IGetKeyNumberRegistrationPreviewUseCase
 {
     private readonly IKeyCatalogPersistencePort _catalog;
-    private readonly IKeyAccessPatternRoomAssignmentPersistencePort _assignments;
+    private readonly IKeyAccessResolutionPort _accessResolution;
 
     public GetKeyNumberRegistrationPreviewUseCase(
         IKeyCatalogPersistencePort catalog,
-        IKeyAccessPatternRoomAssignmentPersistencePort assignments)
+        IKeyAccessResolutionPort accessResolution)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-        _assignments = assignments ?? throw new ArgumentNullException(nameof(assignments));
+        _accessResolution = accessResolution ?? throw new ArgumentNullException(nameof(accessResolution));
     }
 
     public async Task<KeyNumberRegistrationPreview?> ExecuteAsync(
@@ -53,12 +53,12 @@ public sealed class GetKeyNumberRegistrationPreviewUseCase : IGetKeyNumberRegist
             return null;
         }
 
-        IReadOnlyList<KeyOpenedRoomItem> rooms = await _assignments
-            .ListForKeyNumberAsync(pattern.KeyNumber, cancellationToken)
+        IReadOnlyList<KeyOpenedRoomItem> rooms = await _accessResolution
+            .ResolveForKeyNumberAsync(pattern.KeyNumber, expandMaster: false, cancellationToken)
             .ConfigureAwait(false);
         return new KeyNumberRegistrationPreview(
             pattern.KeyNumber,
-            pattern.KeyType.TypeCode,
+            pattern.Classification,
             pattern.IsActive,
             rooms);
     }
@@ -78,16 +78,11 @@ public sealed class SearchKeyNumbersForRegistrationUseCase : ISearchKeyNumbersFo
         int maxResults,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(searchText))
-        {
-            return [];
-        }
-
         int bound = maxResults < 1
             ? ISearchKeyNumbersForRegistrationUseCase.DefaultMaxResults
             : Math.Min(maxResults, ISearchKeyNumbersForRegistrationUseCase.DefaultMaxResults);
 
-        string term = searchText.Trim();
+        string term = (searchText ?? string.Empty).Trim();
         IReadOnlyList<KeyAccessPatternListItem> patterns = await _catalog
             .SearchActiveKeyAccessPatternsAsync(term, bound, cancellationToken)
             .ConfigureAwait(false);
@@ -95,7 +90,7 @@ public sealed class SearchKeyNumbersForRegistrationUseCase : ISearchKeyNumbersFo
         return patterns
             .Select(pattern => new KeyNumberRegistrationPreview(
                 pattern.KeyNumber,
-                pattern.TypeCode,
+                pattern.Classification,
                 pattern.IsActive,
                 pattern.OpenedRooms))
             .ToArray();

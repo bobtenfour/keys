@@ -7,6 +7,7 @@ using KeyInventory.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -55,11 +56,9 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "rp")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "electronic").ConfigureAwait(true);
-        await createKey.ExecuteAsync("RP-KEY-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("RP-KEY-2", "01", "electronic", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("RP-KEY-3", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "RP-KEY-1", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "RP-KEY-2", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "RP-KEY-3", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 1, 12, 0, 0, TimeSpan.Zero);
         DateTimeOffset duePast = new(2026, 8, 2, 12, 0, 0, TimeSpan.Zero);
@@ -178,7 +177,7 @@ public sealed class ReportsWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "rp-flow")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "rp-flow-key", "01", "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "rp-flow-key", "01", KeyAccessClassification.Regular).ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 8, 15, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-rp-flow",

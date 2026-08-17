@@ -38,7 +38,7 @@ public sealed class OperatorInteractionArchitectureTests
     public void PersonSearchResultsDoNotUseNavigationAsInformationSubstitute()
     {
         string page = File.ReadAllText(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Search.cshtml"));
-        Assert.Contains("Work Assignment", page, StringComparison.Ordinal);
+        Assert.Contains("Room Assignment", page, StringComparison.Ordinal);
         Assert.Contains("Current Key Custody", page, StringComparison.Ordinal);
         Assert.Contains("No keys currently issued.", page, StringComparison.Ordinal);
         Assert.DoesNotContain("Member details", page, StringComparison.Ordinal);
@@ -48,26 +48,44 @@ public sealed class OperatorInteractionArchitectureTests
     }
 
     [Fact]
-    public void RegisterKeyDistinguishesExistingAndNewKeyNumberPaths()
+    public void RegisterKeyExposesExactlyTwoModes()
     {
         string page = File.ReadAllText(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Catalog/Register.cshtml"));
         string code = File.ReadAllText(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Catalog/Register.cshtml.cs"));
-        Assert.Contains("Register copy under existing KEY #", page, StringComparison.Ordinal);
-        Assert.Contains("Create new KEY #", page, StringComparison.Ordinal);
-        Assert.Contains("MEDECO Key Code", page, StringComparison.Ordinal);
-        Assert.Contains("Enter the MEDECO code printed on this physical key copy.", page, StringComparison.Ordinal);
-        Assert.Contains("RegisterPhysicalCopyUnderExistingKeyNumberAsync", code, StringComparison.Ordinal);
-        Assert.Contains("CreateNewKeyNumberWithFirstPhysicalCopyAsync", code, StringComparison.Ordinal);
-        Assert.DoesNotContain("New types are created when needed.", page, StringComparison.Ordinal);
+        Assert.Contains("New Key", page, StringComparison.Ordinal);
+        Assert.Contains("Replace Lost Key", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("Add New Key", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("Create New KEY #", page, StringComparison.Ordinal);
+        Assert.DoesNotContain(">Add Key<", page, StringComparison.Ordinal);
+        Assert.Contains("ModeNew", code, StringComparison.Ordinal);
+        Assert.Contains("ModeReplace", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("ModeAdd", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("ModeCreate", code, StringComparison.Ordinal);
+        Assert.Contains("\"Create Key\"", code, StringComparison.Ordinal);
+        Assert.Contains("\"Replace Key\"", code, StringComparison.Ordinal);
+        Assert.Contains("RegisterNewKeyAsync", code, StringComparison.Ordinal);
+        Assert.Contains("ResolveKeyNumber", code, StringComparison.Ordinal);
+        Assert.Contains("IReplaceLostKeyUseCase", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("RegisterPhysicalCopyUnderExistingKeyNumberAsync", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("CreateNewKeyNumberWithFirstPhysicalCopyAsync", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("Register physical copy", page, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("MEDECO Key Code", page, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("physical MEDECO copy", page, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("IKeyAccessPatternRoomAssignmentUseCase", code, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void CreateKeyAssetDoesNotSilentlyCreateKeyType()
+    public void CreateKeyAssetOwnsSingleNewKeyOperationWithoutKeyType()
     {
         string useCase = File.ReadAllText(
             Path.Combine(RepoRoot(), "src/KeyInventory.Application/Workflow/CreateKeyAssetUseCase.cs"));
-        Assert.Contains("RequireExistingActiveKeyTypeAsync", useCase, StringComparison.Ordinal);
-        Assert.DoesNotContain("new KeyType(typeCode)", useCase, StringComparison.Ordinal);
+        Assert.Contains("RegisterNewKeyAsync", useCase, StringComparison.Ordinal);
+        Assert.Contains("AddNewKeyNumberWithFirstKeyAsync", useCase, StringComparison.Ordinal);
+        Assert.Contains("KeyAccessClassification", useCase, StringComparison.Ordinal);
+        Assert.DoesNotContain("CreateNewKeyNumberWithFirstPhysicalCopyAsync", useCase, StringComparison.Ordinal);
+        Assert.DoesNotContain("RegisterPhysicalCopyUnderExistingKeyNumberAsync", useCase, StringComparison.Ordinal);
+        Assert.DoesNotContain("KeyType", useCase, StringComparison.Ordinal);
+        Assert.DoesNotContain("RequireExistingActiveKeyTypeAsync", useCase, StringComparison.Ordinal);
         Assert.DoesNotContain("AddKeyTypeAsync", useCase, StringComparison.Ordinal);
     }
 
@@ -76,8 +94,9 @@ public sealed class OperatorInteractionArchitectureTests
     {
         string page = File.ReadAllText(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Operations/Receive.cshtml"));
         string code = File.ReadAllText(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Operations/Receive.cshtml.cs"));
-        Assert.Contains("Search active issue", page, StringComparison.Ordinal);
-        Assert.Contains("SearchOpenLoansWithHoldersAsync", code, StringComparison.Ordinal);
+        Assert.Contains("Search KEY #, MEDECO, holder name, or UIN...", page, StringComparison.Ordinal);
+        Assert.Contains("ISearchOpenCustodyUseCase", code, StringComparison.Ordinal);
+        Assert.Contains("OnGetSearchOpenCustodyAsync", code, StringComparison.Ordinal);
         Assert.DoesNotContain("asp-items=\"Model.ActiveIssueOptions\"", page, StringComparison.Ordinal);
         Assert.DoesNotContain("Select an issued key...", page, StringComparison.Ordinal);
         Assert.DoesNotContain("ListOpenLoansWithHoldersAsync", code, StringComparison.Ordinal);
@@ -89,8 +108,8 @@ public sealed class OperatorInteractionArchitectureTests
         string page = File.ReadAllText(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Operations/Issue.cshtml"));
         string code = File.ReadAllText(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Operations/Issue.cshtml.cs"));
         Assert.Contains("Search KEY # or MEDECO", page, StringComparison.Ordinal);
-        Assert.Contains("ISearchAvailableKeyCopiesUseCase", code, StringComparison.Ordinal);
-        Assert.Contains("SearchKeyCopies", code, StringComparison.Ordinal);
+        Assert.Contains("ISearchIssuablePhysicalCopiesUseCase", code, StringComparison.Ordinal);
+        Assert.Contains("OnGetSearchIssuableCopiesAsync", code, StringComparison.Ordinal);
         Assert.DoesNotContain("asp-items=\"Model.KeyNumberOptions\"", page, StringComparison.Ordinal);
         Assert.DoesNotContain("issue-key-copy-data", page, StringComparison.Ordinal);
         Assert.DoesNotContain("Select a KEY #...", page, StringComparison.Ordinal);
@@ -105,5 +124,9 @@ public sealed class OperatorInteractionArchitectureTests
             Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Administration/WorkAssignments/Add.cshtml.cs"));
         Assert.Contains("SearchActiveWorkforceMembers", code, StringComparison.Ordinal);
         Assert.Contains("SearchActiveRooms", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("WorkAssignmentCode", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("IsPrimary", page, StringComparison.Ordinal);
+        Assert.DoesNotContain("Primary assignment", page, StringComparison.Ordinal);
+        Assert.Contains("wa-member-context", page, StringComparison.Ordinal);
     }
 }

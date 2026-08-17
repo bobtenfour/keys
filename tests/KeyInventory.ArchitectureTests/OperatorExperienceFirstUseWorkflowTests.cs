@@ -9,6 +9,7 @@ using KeyInventory.Infrastructure.OperatorAudit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -58,7 +59,7 @@ public sealed class OperatorExperienceFirstUseWorkflowTests : IAsyncLifetime
             .ConfigureAwait(true);
         Assert.False(empty.HasDepartment);
         Assert.False(empty.HasRoom);
-        Assert.False(empty.HasKeyType);
+        Assert.False(empty.HasKey);
         Assert.False(empty.HasWorkforceMember);
         Assert.False(empty.CanIssueKey);
 
@@ -66,7 +67,7 @@ public sealed class OperatorExperienceFirstUseWorkflowTests : IAsyncLifetime
             .ExecuteAsync("FACILITIES", CancellationToken.None)
             .ConfigureAwait(true);
         string roomCode = await services.GetRequiredService<ICreateRoomUseCase>()
-            .ExecuteAsync("101", "Key room", CancellationToken.None)
+            .ExecuteAsync("FACILITIES", "101", "Key room", CancellationToken.None)
             .ConfigureAwait(true);
 
         string memberCode = await services.GetRequiredService<IRegisterWorkforceMemberUseCase>()
@@ -78,21 +79,17 @@ public sealed class OperatorExperienceFirstUseWorkflowTests : IAsyncLifetime
             .ConfigureAwait(true));
 
         await services.GetRequiredService<ICreateWorkAssignmentUseCase>()
-            .ExecuteAsync("WA-1", memberCode, roomCode, isPrimary: true, CancellationToken.None)
+            .ExecuteAsync(memberCode, roomCode, CancellationToken.None)
             .ConfigureAwait(true);
 
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(services, "KEY-101", "01", "STD")
-            .ConfigureAwait(true);
-
-        await services.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>()
-            .AssignRoomAsync("KEY-101", roomCode, CancellationToken.None)
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(services, "KEY-101", "01", KeyAccessClassification.Regular, roomCode)
             .ConfigureAwait(true);
 
         OperationalReadinessSnapshot ready = await services.GetRequiredService<IOperationalReadinessUseCase>()
             .ExecuteAsync(CancellationToken.None)
             .ConfigureAwait(true);
         Assert.True(ready.CanIssueKey);
-        Assert.True(ready.HasKeyAccessPatternRoomAssignment);
+        Assert.True(ready.HasValidKeyAccess);
 
         DateTimeOffset issued = DateTimeOffset.UtcNow;
         DateTimeOffset due = issued.AddHours(8);

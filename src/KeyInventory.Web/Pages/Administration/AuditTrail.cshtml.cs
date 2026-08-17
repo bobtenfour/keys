@@ -128,6 +128,11 @@ public sealed class AuditTrailModel : PageModel
             OperatorAuditActions.KeyRegistered,
             OperatorAuditActions.KeyAccessPatternCreated,
             OperatorAuditActions.PhysicalKeyCopyRegistered,
+            OperatorAuditActions.KeyMarkedLost,
+            OperatorAuditActions.KeyDestroyed,
+            OperatorAuditActions.CustodyClosedLost,
+            OperatorAuditActions.CustodyClosedDestroyed,
+            OperatorAuditActions.LostKeyReplaced,
             OperatorAuditActions.KeyRoomAssignmentAdded,
             OperatorAuditActions.KeyRoomAssignmentRemoved,
             OperatorAuditActions.KeyAccessPatternRoomAssignmentAdded,
@@ -139,7 +144,6 @@ public sealed class AuditTrailModel : PageModel
             OperatorAuditActions.WorkforceMemberTerminated,
             OperatorAuditActions.WorkAssignmentCreated,
             OperatorAuditActions.WorkAssignmentEnded,
-            OperatorAuditActions.WorkAssignmentPrimaryChanged,
             OperatorAuditActions.OrganizationCreated,
             OperatorAuditActions.OrganizationActivated,
             OperatorAuditActions.OrganizationRetired,
@@ -150,11 +154,9 @@ public sealed class AuditTrailModel : PageModel
             OperatorAuditActions.BuildingActivated,
             OperatorAuditActions.BuildingRetired,
             OperatorAuditActions.RoomCreated,
+            OperatorAuditActions.RoomUpdated,
             OperatorAuditActions.RoomActivated,
-            OperatorAuditActions.RoomRetired,
-            OperatorAuditActions.KeyTypeCreated,
-            OperatorAuditActions.KeyTypeActivated,
-            OperatorAuditActions.KeyTypeRetired
+            OperatorAuditActions.RoomRetired
         ];
 
         return actions

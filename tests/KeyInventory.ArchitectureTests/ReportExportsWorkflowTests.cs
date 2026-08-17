@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -58,10 +59,8 @@ public sealed class ReportExportsWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "rx")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "electronic").ConfigureAwait(true);
-        await createKey.ExecuteAsync("RX-KEY-1", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("RX-KEY-2", "01", "electronic", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "RX-KEY-1", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "RX-KEY-2", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 1, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(

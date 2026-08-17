@@ -47,10 +47,10 @@
                             </dl>
                         </header>
 
-                        <h4>Work Assignment</h4>
+                        <h4>Room Assignment</h4>
                         @if (person.WorkAssignments.Count == 0)
                         {
-                            <p class="muted">No active work assignment.</p>
+                            <p class="muted">No active room assignment.</p>
                         }
                         else
                         {
@@ -59,10 +59,6 @@
                                 {
                                     <li>
                                         Room: @assignment.RoomNumber
-                                        @if (assignment.IsPrimary)
-                                        {
-                                            <span class="muted">(primary)</span>
-                                        }
                                     </li>
                                 }
                             </ul>
@@ -81,7 +77,7 @@
                                         <tr>
                                             <th>KEY #</th>
                                             <th>MEDECO</th>
-                                            <th>Rooms opened</th>
+                                            <th>Access</th>
                                             <th>Issued</th>
                                         </tr>
                                     </thead>
@@ -93,7 +89,7 @@
                                             <td>@key.MedecoKeyCode</td>
                                             <td>
                                                 @{
-                                                    string rooms = KeyOpenedRoomDisplayFormatter.Format(key.OpenedRooms);
+                                                    string rooms = KeyOpenedRoomDisplayFormatter.FormatAccess(key.Classification, key.OpenedRooms);
                                                 }
                                                 @(string.IsNullOrEmpty(rooms) ? "—" : rooms)
                                             </td>
@@ -152,10 +148,10 @@
                         <header class="search-hit-header">
                             <h3>KEY # @key.KeyNumber</h3>
                             <p class="search-hit-meta">
-                                Type @key.TypeCode
-                                · Rooms opened:
+                                @key.Classification
+                                · Access:
                                 @{
-                                    string rooms = KeyOpenedRoomDisplayFormatter.Format(key.OpenedRooms);
+                                    string rooms = KeyOpenedRoomDisplayFormatter.FormatAccess(key.Classification, key.OpenedRooms);
                                 }
                                 @(string.IsNullOrEmpty(rooms) ? "—" : rooms)
                             </p>
@@ -172,7 +168,8 @@
                                     <thead>
                                         <tr>
                                             <th>MEDECO</th>
-                                            <th>Status</th>
+                                            <th>Condition</th>
+                                            <th>Custody</th>
                                             <th>Key holder</th>
                                         </tr>
                                     </thead>
@@ -181,14 +178,19 @@
                                     {
                                         <tr>
                                             <td>@copy.MedecoKeyCode</td>
+                                            <td>@copy.Condition</td>
                                             <td>
                                                 @if (string.Equals(copy.AvailabilityStatus, OperationalKeyAvailability.Issued, StringComparison.Ordinal))
                                                 {
                                                     <span class="badge badge-attention">Issued</span>
                                                 }
-                                                else
+                                                else if (string.Equals(copy.AvailabilityStatus, OperationalKeyAvailability.Available, StringComparison.Ordinal))
                                                 {
                                                     <span class="badge badge-success">Available</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>—</span>
                                                 }
                                             </td>
                                             <td>
@@ -210,16 +212,17 @@
         @if (Model.Results.MedecoCopies.Count > 0)
         {
             <section class="card search-group" aria-labelledby="search-medeco-heading">
-                <h2 id="search-medeco-heading">MEDECO Key Code</h2>
+                <h2 id="search-medeco-heading">MEDECO</h2>
                 <div class="table-shell">
                     <table>
                         <thead>
                             <tr>
                                 <th>KEY #</th>
                                 <th>MEDECO</th>
-                                <th>Type</th>
-                                <th>Rooms opened</th>
-                                <th>Status</th>
+                                <th>Classification</th>
+                                <th>Access</th>
+                                <th>Condition</th>
+                                <th>Custody</th>
                                 <th>Key holder</th>
                             </tr>
                         </thead>
@@ -229,21 +232,26 @@
                             <tr>
                                 <td>@copy.KeyNumber</td>
                                 <td>@copy.MedecoKeyCode</td>
-                                <td>@copy.TypeCode</td>
+                                <td>@copy.Classification</td>
                                 <td>
                                     @{
-                                        string rooms = KeyOpenedRoomDisplayFormatter.Format(copy.OpenedRooms);
+                                        string rooms = KeyOpenedRoomDisplayFormatter.FormatAccess(copy.Classification, copy.OpenedRooms);
                                     }
                                     @(string.IsNullOrEmpty(rooms) ? "—" : rooms)
                                 </td>
+                                <td>@copy.Condition</td>
                                 <td>
                                     @if (string.Equals(copy.AvailabilityStatus, OperationalKeyAvailability.Issued, StringComparison.Ordinal))
                                     {
                                         <span class="badge badge-attention">Issued</span>
                                     }
-                                    else
+                                    else if (string.Equals(copy.AvailabilityStatus, OperationalKeyAvailability.Available, StringComparison.Ordinal))
                                     {
                                         <span class="badge badge-success">Available</span>
+                                    }
+                                    else
+                                    {
+                                        <span>—</span>
                                     }
                                 </td>
                                 <td>

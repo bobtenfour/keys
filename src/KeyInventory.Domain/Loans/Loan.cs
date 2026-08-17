@@ -88,7 +88,7 @@ public sealed class Loan
     public bool IsOpenForReturn => Status == LoanStatus.Open;
 
     /// <summary>
-    /// Reconstitutes a Loan from persistence. Allows Open or Returned status.
+    /// Reconstitutes a Loan from persistence. Allows Open or closed statuses.
     /// Legacy rows may omit justification (all justification fields unset / Kind None).
     /// </summary>
     public static Loan Rehydrate(
@@ -103,9 +103,14 @@ public sealed class Loan
         string? justificationDepartmentCodeSnapshot,
         string? justificationRoomCode)
     {
-        if (status is not (LoanStatus.Open or LoanStatus.Returned))
+        if (status is not (
+            LoanStatus.Open
+            or LoanStatus.Returned
+            or LoanStatus.Lost
+            or LoanStatus.Destroyed
+            or LoanStatus.Cancelled))
         {
-            throw new ArgumentOutOfRangeException(nameof(status), "Only Open or Returned loans may be rehydrated.");
+            throw new ArgumentOutOfRangeException(nameof(status), "Unrecognized loan status.");
         }
 
         ArgumentNullException.ThrowIfNull(keyAsset);
@@ -156,6 +161,34 @@ public sealed class Loan
         }
 
         Status = LoanStatus.Returned;
+    }
+
+    /// <summary>
+    /// Closes an Open Loan because the physical key was marked Lost.
+    /// Must not create a Return record; not a normal return.
+    /// </summary>
+    public void CloseAsLost()
+    {
+        if (Status != LoanStatus.Open)
+        {
+            throw new InvalidOperationException("Only an Open Loan may be closed as Lost.");
+        }
+
+        Status = LoanStatus.Lost;
+    }
+
+    /// <summary>
+    /// Closes an Open Loan because the physical key was Destroyed.
+    /// Must not create a Return record; not a normal return.
+    /// </summary>
+    public void CloseAsDestroyed()
+    {
+        if (Status != LoanStatus.Open)
+        {
+            throw new InvalidOperationException("Only an Open Loan may be closed as Destroyed.");
+        }
+
+        Status = LoanStatus.Destroyed;
     }
 
     private void ApplyJustification(

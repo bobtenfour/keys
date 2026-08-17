@@ -74,7 +74,7 @@ public sealed class AuditDomainInvariantTests
     [Fact]
     public void AuditEventMayOptionallyReferencePartyKeyAssetLoanOrReturnWithoutMutatingThem()
     {
-        KeyAsset keyAsset = CatalogTestFactory.CreateCopy("key-1", "01", "mechanical");
+        KeyAsset keyAsset = CatalogTestFactory.CreateCopy("key-1", "01", KeyAccessClassification.Regular);
         Guid departmentId = Guid.Parse("44444444-4444-4444-4444-444444444444");
         Loan loan = new(
             "loan-1",

@@ -2,6 +2,7 @@ using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Workforce;
 using KeyInventory.Application.Workflow;
+using KeyInventory.Domain.Catalog;
 using KeyInventory.Infrastructure;
 using KeyInventory.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -50,32 +51,35 @@ public sealed class RoomReverseLookupTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task RoomSearchReturnsAllAssociatedKeyNumbersAndCopyStates()
+    public async Task RoomSearchReturnsRegularMatchPlusAllMasters()
     {
         using IServiceScope scope = CreateScope();
         ICreateRoomUseCase createRoom = scope.ServiceProvider.GetRequiredService<ICreateRoomUseCase>();
-        ICreateKeyAssetUseCase createKey = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
-        IKeyAccessPatternRoomAssignmentUseCase assignments =
-            scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>();
         IIssueLoanUseCase issue = scope.ServiceProvider.GetRequiredService<IIssueLoanUseCase>();
         IOperationalKeyLookupUseCase lookup = scope.ServiceProvider.GetRequiredService<IOperationalKeyLookupUseCase>();
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "rr-room")
             .ConfigureAwait(true);
-        string room410 = await createRoom.ExecuteAsync("410D", "Office", CancellationToken.None).ConfigureAwait(true);
-        string room411 = await createRoom.ExecuteAsync("411A", "Lab", CancellationToken.None).ConfigureAwait(true);
+        string room410 = await createRoom.ExecuteAsync(seeded.DepartmentCode, "410D", "Office", CancellationToken.None)
+            .ConfigureAwait(true);
+        string room411 = await createRoom.ExecuteAsync(seeded.DepartmentCode, "411A", "Lab", CancellationToken.None)
+            .ConfigureAwait(true);
 
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "master").ConfigureAwait(true);
-        await createKey.ExecuteAsync("66800", "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("66800", "27", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("66800", "28", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("MASTER1", "01", "master", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("UNRELATED", "99", "mechanical", CancellationToken.None).ConfigureAwait(true);
-
-        await assignments.AssignRoomAsync("66800", room410, CancellationToken.None).ConfigureAwait(true);
-        await assignments.AssignRoomAsync("MASTER1", room410, CancellationToken.None).ConfigureAwait(true);
-        await assignments.AssignRoomAsync("MASTER1", room411, CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(
+                scope.ServiceProvider, "66800", "26", KeyAccessClassification.Regular, room410, CancellationToken.None)
+            .ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(
+                scope.ServiceProvider, "66800", "27", KeyAccessClassification.Regular, CancellationToken.None)
+            .ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(
+                scope.ServiceProvider, "66800", "28", KeyAccessClassification.Regular, CancellationToken.None)
+            .ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(
+                scope.ServiceProvider, "MASTER1", "01", KeyAccessClassification.Master, CancellationToken.None)
+            .ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(
+                scope.ServiceProvider, "UNRELATED", "99", KeyAccessClassification.Regular, room411, CancellationToken.None)
+            .ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 12, 15, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
@@ -100,33 +104,25 @@ public sealed class RoomReverseLookupTests : IAsyncLifetime
         Assert.Contains(
             by410,
             item => item.KeyNumber == "66800"
-                && item.MedecoKeyCode == "26"
-                && item.AvailabilityStatus == OperationalKeyAvailability.Available);
-        Assert.Contains(
-            by410,
-            item => item.KeyNumber == "66800"
                 && item.MedecoKeyCode == "27"
                 && item.AvailabilityStatus == OperationalKeyAvailability.Issued
                 && item.CurrentHolder is not null);
-        Assert.Contains(
-            by410,
-            item => item.KeyNumber == "66800"
-                && item.MedecoKeyCode == "28"
-                && item.AvailabilityStatus == OperationalKeyAvailability.Available);
 
         KeyLookupResult issuedCopy = by410.Single(item => item.KeyNumber == "66800" && item.MedecoKeyCode == "27");
         Assert.Contains(issuedCopy.OpenedRooms, room => room.RoomNumber == "410D");
-        Assert.DoesNotContain(issuedCopy.OpenedRooms, room => room.RoomNumber == "411A");
+        Assert.Single(issuedCopy.OpenedRooms);
 
         KeyLookupResult master = by410.Single(item => item.KeyNumber == "MASTER1");
-        Assert.Contains(master.OpenedRooms, room => room.RoomNumber == "410D");
-        Assert.Contains(master.OpenedRooms, room => room.RoomNumber == "411A");
+        Assert.Empty(master.OpenedRooms);
+        Assert.Equal(
+            KeyOpenedRoomDisplayFormatter.MasterAccessDisplay,
+            KeyOpenedRoomDisplayFormatter.FormatAccess(master.Classification, master.OpenedRooms));
 
         IReadOnlyList<KeyLookupResult> by411 = await lookup.SearchKeysAsync("411A", CancellationToken.None)
             .ConfigureAwait(true);
         Assert.Contains(by411, item => item.KeyNumber == "MASTER1");
+        Assert.Contains(by411, item => item.KeyNumber == "UNRELATED");
         Assert.DoesNotContain(by411, item => item.KeyNumber == "66800");
-        Assert.DoesNotContain(by411, item => item.KeyNumber == "UNRELATED");
     }
 
     [Fact]
@@ -135,14 +131,15 @@ public sealed class RoomReverseLookupTests : IAsyncLifetime
         using IServiceScope scope = CreateScope();
         ICreateRoomUseCase createRoom = scope.ServiceProvider.GetRequiredService<ICreateRoomUseCase>();
         IUpdateRoomNumberUseCase updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoomNumberUseCase>();
-        ICreateKeyAssetUseCase createKey = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
-        IKeyAccessPatternRoomAssignmentUseCase assignments =
-            scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>();
         IOperationalKeyLookupUseCase lookup = scope.ServiceProvider.GetRequiredService<IOperationalKeyLookupUseCase>();
 
-        string roomCode = await createRoom.ExecuteAsync("410D", "Office", CancellationToken.None).ConfigureAwait(true);
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "66800", "26", "mechanical").ConfigureAwait(true);
-        await assignments.AssignRoomAsync("66800", roomCode, CancellationToken.None).ConfigureAwait(true);
+        await scope.ServiceProvider.GetRequiredService<ICreateDepartmentUseCase>()
+            .ExecuteAsync("rr-rename-dept", CancellationToken.None).ConfigureAwait(true);
+        string roomCode = await createRoom.ExecuteAsync("rr-rename-dept", "410D", "Office", CancellationToken.None)
+            .ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(
+                scope.ServiceProvider, "66800", "26", KeyAccessClassification.Regular, roomCode)
+            .ConfigureAwait(true);
 
         Assert.Contains(
             await lookup.SearchKeysAsync("410D", CancellationToken.None).ConfigureAwait(true),
@@ -163,21 +160,22 @@ public sealed class RoomReverseLookupTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ExistingKeyNumberMedecoAndTypeSearchRemainIntact()
+    public async Task ExistingKeyNumberMedecoAndClassificationSearchRemainIntact()
     {
         using IServiceScope scope = CreateScope();
         ICreateRoomUseCase createRoom = scope.ServiceProvider.GetRequiredService<ICreateRoomUseCase>();
-        ICreateKeyAssetUseCase createKey = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
-        IKeyAccessPatternRoomAssignmentUseCase assignments =
-            scope.ServiceProvider.GetRequiredService<IKeyAccessPatternRoomAssignmentUseCase>();
         IOperationalKeyLookupUseCase lookup = scope.ServiceProvider.GetRequiredService<IOperationalKeyLookupUseCase>();
 
-        string roomCode = await createRoom.ExecuteAsync("410D", "Office", CancellationToken.None).ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical").ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "master").ConfigureAwait(true);
-        await createKey.ExecuteAsync("66800", "26", "mechanical", CancellationToken.None).ConfigureAwait(true);
-        await createKey.ExecuteAsync("MASTER1", "01", "master", CancellationToken.None).ConfigureAwait(true);
-        await assignments.AssignRoomAsync("66800", roomCode, CancellationToken.None).ConfigureAwait(true);
+        await scope.ServiceProvider.GetRequiredService<ICreateDepartmentUseCase>()
+            .ExecuteAsync("rr-search-dept", CancellationToken.None).ConfigureAwait(true);
+        string roomCode = await createRoom.ExecuteAsync("rr-search-dept", "410D", "Office", CancellationToken.None)
+            .ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(
+                scope.ServiceProvider, "66800", "26", KeyAccessClassification.Regular, roomCode, CancellationToken.None)
+            .ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(
+                scope.ServiceProvider, "MASTER1", "01", KeyAccessClassification.Master, CancellationToken.None)
+            .ConfigureAwait(true);
 
         Assert.Contains(
             await lookup.SearchKeysAsync("66800", CancellationToken.None).ConfigureAwait(true),
@@ -200,7 +198,8 @@ public sealed class RoomReverseLookupTests : IAsyncLifetime
             RepoRoot(),
             "src/KeyInventory.Infrastructure/Lookup/OperationalKeyLookupAdapter.cs"));
         Assert.Contains("RoomNumber.Contains", adapter, StringComparison.Ordinal);
-        Assert.Contains("KeyAccessPatternRoomAssignments", adapter, StringComparison.Ordinal);
+        Assert.Contains("KeyAccessClassification.Master", adapter, StringComparison.Ordinal);
+        Assert.DoesNotContain("KeyAccessPatternRoomAssignments", adapter, StringComparison.Ordinal);
 
         string findPage = File.ReadAllText(Path.Combine(
             RepoRoot(),
@@ -208,7 +207,6 @@ public sealed class RoomReverseLookupTests : IAsyncLifetime
         Assert.Contains("IOperationalKeyLookupUseCase", findPage, StringComparison.Ordinal);
         Assert.DoesNotContain("KeyInventoryDbContext", findPage, StringComparison.Ordinal);
         Assert.DoesNotContain("KeyAccessPatternRoomAssignment", findPage, StringComparison.Ordinal);
-        Assert.DoesNotContain("Rooms", findPage, StringComparison.Ordinal);
     }
 
     private static string RepoRoot()

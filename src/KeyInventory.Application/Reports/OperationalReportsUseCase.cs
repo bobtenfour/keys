@@ -468,15 +468,17 @@ public sealed class OperationalReportsUseCase : IOperationalReportsUseCase
             "Key Catalog",
             "Key Catalog",
             filterContext,
-            ["KEY #", "MEDECO", "Type", "Active", "Availability", "Rooms Opened"],
+            ["KEY #", "MEDECO", "Classification", "Condition", "Custody", "Access"],
             rows.Select(row => (IReadOnlyList<ReportExportCell>)
             [
                 ReportExportCell.FromText(row.KeyNumber),
                 ReportExportCell.FromText(row.MedecoKeyCode),
-                ReportExportCell.FromText(row.TypeCode),
-                ReportExportCell.FromText(row.IsActive ? "Yes" : "No"),
-                ReportExportCell.FromText(row.AvailabilityStatus),
-                ReportExportCell.FromText(KeyOpenedRoomDisplayFormatter.Format(row.OpenedRooms))
+                ReportExportCell.FromText(row.Classification.ToString()),
+                ReportExportCell.FromText(row.Condition.ToString()),
+                ReportExportCell.FromText(
+                    string.IsNullOrEmpty(row.AvailabilityStatus) ? "—" : row.AvailabilityStatus),
+                ReportExportCell.FromText(
+                    KeyOpenedRoomDisplayFormatter.FormatAccess(row.Classification, row.OpenedRooms))
             ]).ToArray());
     }
 

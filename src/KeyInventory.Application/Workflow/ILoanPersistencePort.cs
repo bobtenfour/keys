@@ -12,9 +12,21 @@ public interface ILoanPersistencePort
 
     Task AddReturnAsync(Return completedReturn, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Persists Loan status change without creating a Return (Lost/Destroyed closure).
+    /// </summary>
+    Task UpdateLoanAsync(Loan loan, CancellationToken cancellationToken);
+
+    Task<Loan?> FindOpenLoanForKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken);
+
     Task<IReadOnlyList<LoanListItem>> ListOpenLoansAsync(CancellationToken cancellationToken);
 
     Task<IReadOnlyList<LoanListItem>> ListReturnedLoansAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Closed loans for history: Returned, Lost, and Destroyed (not Cancelled).
+    /// </summary>
+    Task<IReadOnlyList<LoanListItem>> ListClosedLoansAsync(CancellationToken cancellationToken);
 
     Task<bool> HasOpenLoanForKeyAssetAsync(Guid keyAssetId, CancellationToken cancellationToken);
 

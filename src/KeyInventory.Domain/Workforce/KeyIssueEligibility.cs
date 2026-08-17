@@ -54,11 +54,6 @@ public static class KeyIssueEligibility
         {
             throw new InvalidOperationException("At least one active WorkAssignment is required for key issue.");
         }
-
-        if (active.Count(assignment => assignment.IsPrimary) > 1)
-        {
-            throw new InvalidOperationException("At most one active WorkAssignment may be primary.");
-        }
     }
 
     public static void EnsureEligible(

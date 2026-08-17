@@ -6,6 +6,8 @@ public sealed record RoomListItem(
     string RoomCode,
     string RoomNumber,
     string Description,
+    Guid DepartmentId,
+    string DepartmentCode,
     bool IsActive);
 
 public sealed record PartyListItem(
@@ -25,10 +27,9 @@ public sealed record WorkforceMemberListItem(
     string Status);
 
 public sealed record WorkAssignmentListItem(
-    string WorkAssignmentCode,
+    Guid WorkAssignmentId,
     string WorkforceMemberCode,
     string RoomCode,
-    bool IsPrimary,
     bool IsActive);
 
 public sealed record OutstandingReturnObligationItem(
@@ -38,3 +39,9 @@ public sealed record OutstandingReturnObligationItem(
     string BorrowerPartyReference,
     DateTimeOffset IssuedAtUtc,
     DateTimeOffset DueAtUtc);
+
+public sealed record ActiveWorkAssignmentWithRoomDepartment(
+    Guid WorkAssignmentId,
+    string RoomCode,
+    Guid RoomDepartmentId,
+    string RoomDepartmentCode);

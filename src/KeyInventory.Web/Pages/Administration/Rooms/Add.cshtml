@@ -7,7 +7,7 @@
 
 <header class="page-header page-header-compact">
     <h1>Add Room</h1>
-    <p class="lede">Create a room. Room number must be globally unique; room code is generated automatically.</p>
+    <p class="lede">Create a room in an existing Department. Room number must be globally unique; room code is generated automatically.</p>
 </header>
 
 <section class="card form-card admin-task-form">
@@ -17,6 +17,13 @@
     }
 
     <form method="post" class="form-grid">
+        <label>
+            Department
+            <select asp-for="DepartmentId" asp-items="Model.DepartmentOptions" required>
+                <option value="">Select a Department...</option>
+            </select>
+            <span class="hint">Every Room belongs to exactly one Department. Departments are selected, not free-text.</span>
+        </label>
         <label>
             Room number
             <input asp-for="RoomNumber" autocomplete="off" required />

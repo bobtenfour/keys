@@ -21,7 +21,7 @@ public sealed class WorkforceDomainInvariantTests
     [Fact]
     public void RoomNumberAndDescriptionAreOwnedByRoom()
     {
-        Room room = new("r1", "101", "Lab A");
+        Room room = new("r1", "101", DepartmentId, "Lab A");
         Assert.Equal("101", room.RoomNumber);
         Assert.Equal("Lab A", room.Description);
     }
@@ -36,13 +36,12 @@ public sealed class WorkforceDomainInvariantTests
     }
 
     [Fact]
-    public void WorkAssignmentSupportsPrimaryAndEnd()
+    public void WorkAssignmentSupportsEnd()
     {
-        WorkAssignment assignment = new("wa1", "wm1", "r1", isPrimary: true);
-        Assert.True(assignment.IsPrimary);
+        WorkAssignment assignment = new(Guid.Parse("22222222-2222-2222-2222-222222222222"), "wm1", "r1");
+        Assert.True(assignment.IsActive);
         assignment.End();
         Assert.False(assignment.IsActive);
-        Assert.False(assignment.IsPrimary);
     }
 
     [Fact]
@@ -51,7 +50,10 @@ public sealed class WorkforceDomainInvariantTests
         Party party = new("p1", "Ada", "Lovelace", "123456789");
         Department department = new(DepartmentId, "dept");
         WorkforceMember member = new("wm1", "p1", WorkforceType.Employee, DepartmentId);
-        WorkAssignment[] assignments = [new("wa1", "wm1", "r1", isPrimary: true)];
+        WorkAssignment[] assignments =
+        [
+            new(Guid.Parse("22222222-2222-2222-2222-222222222222"), "wm1", "r1")
+        ];
 
         KeyIssueEligibility.EnsureEligible(
             member,
@@ -88,7 +90,10 @@ public sealed class WorkforceDomainInvariantTests
                 KeyIssueJustificationKind.Department,
                 "dept"));
 
-        WorkAssignment[] assignments = [new("wa1", "wm1", "r1", isPrimary: false)];
+        WorkAssignment[] assignments =
+        [
+            new(Guid.Parse("22222222-2222-2222-2222-222222222222"), "wm1", "r1")
+        ];
         Assert.Throws<InvalidOperationException>(() =>
             KeyIssueEligibility.EnsureEligible(
                 member,

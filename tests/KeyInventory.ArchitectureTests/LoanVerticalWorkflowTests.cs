@@ -4,6 +4,7 @@ using KeyInventory.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -43,24 +44,17 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CreateKeyAssetSucceedsForNewTypeAndKeyNumberMedeco()
+    public async Task CreateKeyAssetSucceedsForNewKeyNumberMedecoWithClassification()
     {
         using IServiceScope scope = CreateScope();
-        ICreateKeyAssetUseCase create = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
         IListKeyAssetsUseCase list = scope.ServiceProvider.GetRequiredService<IListKeyAssetsUseCase>();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                create.ExecuteAsync("key-100", "01", "mechanical", CancellationToken.None))
-            .ConfigureAwait(true);
-
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "mechanical")
-            .ConfigureAwait(true);
-        await create.ExecuteAsync("key-100", "01", "mechanical", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-100", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
 
         IReadOnlyList<KeyAssetListItem> keys = await list.ExecuteAsync(CancellationToken.None).ConfigureAwait(true);
         Assert.Contains(
             keys,
-            key => key.KeyNumber == "key-100" && key.MedecoKeyCode == "01" && key.TypeCode == "mechanical");
+            key => key.KeyNumber == "key-100" && key.MedecoKeyCode == "01" && key.Classification == KeyAccessClassification.Regular);
     }
 
     [Fact]
@@ -72,7 +66,7 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lv200")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-200", "01", "mechanical")
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-200", "01", KeyAccessClassification.Regular)
             .ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 3, 12, 0, 0, TimeSpan.Zero);
@@ -92,7 +86,7 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
         IReadOnlyList<LoanListItem> openLoans = await listOpen.ExecuteAsync(CancellationToken.None).ConfigureAwait(true);
         Assert.Contains(openLoans, loan => loan.LoanCode == "loan-200" && loan.BorrowerPartyReference == seeded.PartyCode);
 
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-201", "01", "mechanical")
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-201", "01", KeyAccessClassification.Regular)
             .ConfigureAwait(true);
         DateTimeOffset nonUtc = new(2026, 8, 3, 12, 0, 0, TimeSpan.FromHours(-5));
         await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -118,7 +112,7 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lv300")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-300", "01", "mechanical")
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-300", "01", KeyAccessClassification.Regular)
             .ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 3, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
@@ -158,7 +152,7 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "lv400")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-400", "01", "mechanical")
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-400", "01", KeyAccessClassification.Regular)
             .ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 3, 10, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
@@ -172,7 +166,7 @@ public sealed class LoanVerticalWorkflowTests : IAsyncLifetime
                 issued.AddDays(1),
                 CancellationToken.None)
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-401", "01", "mechanical")
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-401", "01", KeyAccessClassification.Regular)
             .ConfigureAwait(true);
         await issue.ExecuteAsync(
                 "loan-done",

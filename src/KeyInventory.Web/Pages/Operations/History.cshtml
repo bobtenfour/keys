@@ -1,5 +1,6 @@
 @page
 @using KeyInventory.Application.Lookup
+@using KeyInventory.Domain.Loans
 @model KeyInventory.Web.Pages.Operations.HistoryModel
 @{
     ViewData["Title"] = "History";
@@ -8,7 +9,7 @@
 
 <header class="page-header page-header-compact">
     <h1>History</h1>
-    <p class="lede">Completed issue and receive activity.</p>
+    <p class="lede">Closed custody: Returned, Lost, and Destroyed.</p>
 </header>
 
 <section class="card">
@@ -16,7 +17,7 @@
     {
         <div class="empty-state">
             <strong>No history yet</strong>
-            Completed receives will appear here after you issue and receive a key.
+            Closed custody events appear here after receive, Lost, or Destroy.
             <div class="form-actions">
                 <a class="btn btn-primary" asp-page="/Operations/Issue">Issue Key</a>
             </div>
@@ -32,8 +33,8 @@
                         <th>MEDECO</th>
                         <th>Holder</th>
                         <th>Issued</th>
-                        <th>Received</th>
-                        <th>Status</th>
+                        <th>Closed</th>
+                        <th>Closure</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -45,7 +46,24 @@
                         <td>@PartyHolderDisplayFormatter.Format(item.HolderFirstName, item.HolderLastName, item.HolderUin)</td>
                         <td>@OperatorTimestampFormatter.ToFriendlyDisplay(item.IssuedAtUtc)</td>
                         <td>@(item.ReturnedAtUtc is null ? "—" : OperatorTimestampFormatter.ToFriendlyDisplay(item.ReturnedAtUtc.Value))</td>
-                        <td><span class="badge badge-success">Received</span></td>
+                        <td>
+                            @if (string.Equals(item.Status, nameof(LoanStatus.Returned), StringComparison.Ordinal))
+                            {
+                                <span class="badge badge-success">Returned</span>
+                            }
+                            else if (string.Equals(item.Status, nameof(LoanStatus.Lost), StringComparison.Ordinal))
+                            {
+                                <span class="badge badge-warning">Lost</span>
+                            }
+                            else if (string.Equals(item.Status, nameof(LoanStatus.Destroyed), StringComparison.Ordinal))
+                            {
+                                <span class="badge badge-danger">Destroyed</span>
+                            }
+                            else
+                            {
+                                <span class="badge">@item.Status</span>
+                            }
+                        </td>
                     </tr>
                 }
                 </tbody>

@@ -85,7 +85,6 @@ public sealed class MigrationBoundaryTests
             .ToArray();
 
         Assert.Contains("KeyAssets", tableNames);
-        Assert.Contains("KeyTypes", tableNames);
         Assert.Contains("Loans", tableNames);
         Assert.Contains("Returns", tableNames);
         Assert.Contains("Parties", tableNames);
@@ -94,17 +93,16 @@ public sealed class MigrationBoundaryTests
         Assert.Contains("WorkforceMembers", tableNames);
         Assert.Contains("WorkAssignments", tableNames);
         Assert.Contains("KeyAccessPatterns", tableNames);
-        Assert.Contains("KeyAccessPatternRoomAssignments", tableNames);
+        Assert.DoesNotContain("KeyAccessPatternRoomAssignments", tableNames);
         Assert.DoesNotContain("KeyRoomAssignments", tableNames);
         Assert.Contains("AspNetUsers", tableNames);
         Assert.DoesNotContain("Organizations", tableNames);
         Assert.DoesNotContain("Buildings", tableNames);
 
         Type[] clrTypes = model.GetEntityTypes().Select(entityType => entityType.ClrType).ToArray();
-        Assert.Contains(typeof(KeyTypeEntity), clrTypes);
         Assert.Contains(typeof(KeyAccessPatternEntity), clrTypes);
         Assert.Contains(typeof(KeyAssetEntity), clrTypes);
-        Assert.Contains(typeof(KeyAccessPatternRoomAssignmentEntity), clrTypes);
+        Assert.DoesNotContain(clrTypes, type => string.Equals(type.Name, "KeyAccessPatternRoomAssignmentEntity", StringComparison.Ordinal));
         Assert.DoesNotContain(clrTypes, type => string.Equals(type.Name, "KeyRoomAssignmentEntity", StringComparison.Ordinal));
         Assert.Contains(typeof(LoanEntity), clrTypes);
         Assert.Contains(typeof(ReturnEntity), clrTypes);
@@ -153,6 +151,17 @@ public sealed class MigrationBoundaryTests
             .ToArray();
         Assert.DoesNotContain("OrganizationCode", workforceMemberProperties);
         Assert.DoesNotContain("ResponsibleManagerWorkforceMemberCode", workforceMemberProperties);
+
+        IEntityType workAssignmentEntity = model.FindEntityType(typeof(WorkAssignmentEntity))
+            ?? throw new InvalidOperationException("WorkAssignmentEntity was not found.");
+        Assert.Equal(
+            ["WorkAssignmentId"],
+            workAssignmentEntity.FindPrimaryKey()!.Properties.Select(property => property.Name));
+        string[] workAssignmentProperties = workAssignmentEntity.GetProperties()
+            .Select(property => property.Name)
+            .ToArray();
+        Assert.DoesNotContain("WorkAssignmentCode", workAssignmentProperties);
+        Assert.DoesNotContain("IsPrimary", workAssignmentProperties);
     }
 
     [Fact]

@@ -4,6 +4,10 @@ public interface ISearchActiveWorkforceMembersUseCase
 {
     const int DefaultMaxResults = 25;
 
+    /// <summary>
+    /// Bounded name/UIN search of active workforce members. Empty query returns the first
+    /// <see cref="DefaultMaxResults"/> active members ordered by name.
+    /// </summary>
     Task<IReadOnlyList<EligibleKeyHolderCandidate>> ExecuteAsync(
         string searchText,
         int maxResults,
@@ -24,17 +28,13 @@ public sealed class SearchActiveWorkforceMembersUseCase : ISearchActiveWorkforce
         int maxResults,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(searchText))
-        {
-            return [];
-        }
-
         int bound = maxResults < 1
             ? ISearchActiveWorkforceMembersUseCase.DefaultMaxResults
             : Math.Min(maxResults, ISearchActiveWorkforceMembersUseCase.DefaultMaxResults);
 
+        string term = (searchText ?? string.Empty).Trim();
         return await _workforce
-            .SearchActiveWorkforceMembersAsync(searchText.Trim(), bound, cancellationToken)
+            .SearchActiveWorkforceMembersAsync(term, bound, cancellationToken)
             .ConfigureAwait(false);
     }
 }

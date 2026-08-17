@@ -11,11 +11,14 @@ public sealed class KeyAccessPatternConfiguration : IEntityTypeConfiguration<Key
         builder.ToTable("KeyAccessPatterns");
         builder.HasKey(entity => entity.KeyNumber);
         builder.Property(entity => entity.KeyNumber).HasMaxLength(128).IsRequired();
-        builder.Property(entity => entity.KeyTypeCode).HasMaxLength(128).IsRequired();
+        builder.Property(entity => entity.Classification).HasMaxLength(32).IsRequired();
+        builder.Property(entity => entity.RoomCode).HasMaxLength(128);
         builder.Property(entity => entity.IsActive).IsRequired();
-        builder.HasOne(entity => entity.KeyType)
+        builder.HasIndex(entity => entity.RoomCode);
+        builder.HasOne(entity => entity.Room)
             .WithMany()
-            .HasForeignKey(entity => entity.KeyTypeCode)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey(entity => entity.RoomCode)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
     }
 }

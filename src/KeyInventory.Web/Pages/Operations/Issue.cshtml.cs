@@ -13,12 +13,10 @@ namespace KeyInventory.Web.Pages.Operations;
 public sealed class IssueModel : PageModel
 {
     private const string SuccessTempDataKey = "IssueSuccessMessage";
-    private const string SelectedHolderTempDataKey = "IssueSelectedHolderCode";
-    private const string SelectedKeyNumberTempDataKey = "IssueSelectedKeyNumber";
-    private const string SelectedMedecoTempDataKey = "IssueSelectedMedeco";
 
     private readonly IIssueLoanUseCase _issueLoan;
     private readonly ISearchAvailableKeyCopiesUseCase _searchCopies;
+    private readonly ISearchIssuablePhysicalCopiesUseCase _searchIssuable;
     private readonly ISearchEligibleKeyHoldersUseCase _searchHolders;
     private readonly IGetKeyHolderIssueOptionsUseCase _holderOptions;
     private readonly IOperationalReadinessUseCase _readiness;
@@ -26,12 +24,14 @@ public sealed class IssueModel : PageModel
     public IssueModel(
         IIssueLoanUseCase issueLoan,
         ISearchAvailableKeyCopiesUseCase searchCopies,
+        ISearchIssuablePhysicalCopiesUseCase searchIssuable,
         ISearchEligibleKeyHoldersUseCase searchHolders,
         IGetKeyHolderIssueOptionsUseCase holderOptions,
         IOperationalReadinessUseCase readiness)
     {
         _issueLoan = issueLoan ?? throw new ArgumentNullException(nameof(issueLoan));
         _searchCopies = searchCopies ?? throw new ArgumentNullException(nameof(searchCopies));
+        _searchIssuable = searchIssuable ?? throw new ArgumentNullException(nameof(searchIssuable));
         _searchHolders = searchHolders ?? throw new ArgumentNullException(nameof(searchHolders));
         _holderOptions = holderOptions ?? throw new ArgumentNullException(nameof(holderOptions));
         _readiness = readiness ?? throw new ArgumentNullException(nameof(readiness));
@@ -61,29 +61,17 @@ public sealed class IssueModel : PageModel
     [BindProperty]
     public string DueLocalText { get; set; } = string.Empty;
 
-    [BindProperty]
-    public string HolderSearchText { get; set; } = string.Empty;
-
-    [BindProperty]
-    public string KeyCopySearchText { get; set; } = string.Empty;
-
-    public IReadOnlyList<SelectListItem> MedecoOptions { get; private set; } = [];
+    public string ClassificationDisplay { get; private set; } = string.Empty;
 
     public string OpenedRoomsDisplay { get; private set; } = "—";
+
+    public string? SelectedHolderDisplay { get; private set; }
+
+    public string SelectedKeyDisplay { get; private set; } = string.Empty;
 
     public IReadOnlyList<SelectListItem> DepartmentOptions { get; private set; } = [];
 
     public IReadOnlyList<SelectListItem> RoomOptions { get; private set; } = [];
-
-    public IReadOnlyList<EligibleKeyHolderCandidate> HolderMatches { get; private set; } = [];
-
-    public IReadOnlyList<AvailableKeyCopyCandidate> KeyCopyMatches { get; private set; } = [];
-
-    public string? SelectedHolderDisplay { get; private set; }
-
-    public bool HolderSearchPerformed { get; private set; }
-
-    public bool KeyCopySearchPerformed { get; private set; }
 
     public bool HasAvailableCopies { get; private set; }
 
@@ -100,136 +88,52 @@ public sealed class IssueModel : PageModel
             SuccessMessage = text;
         }
 
-        ResetCleanBusinessChoices();
         await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
         IssuedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
         DueLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow.AddDays(1));
+    }
 
-        if (TempData.Peek(SelectedHolderTempDataKey) is string selectedCode
-            && !string.IsNullOrWhiteSpace(selectedCode)
-            && string.IsNullOrWhiteSpace(SuccessMessage))
-        {
-            WorkforceMemberCode = selectedCode;
-            await LoadSelectedHolderAsync(cancellationToken).ConfigureAwait(false);
-        }
+    /// <summary>
+    /// JSON handler used by the searchable combobox to browse/search issuable physical copies.
+    /// </summary>
+    public async Task<IActionResult> OnGetSearchIssuableCopiesAsync(string? q, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<IssuablePhysicalCopyItem> matches = await _searchIssuable
+            .ExecuteAsync(q ?? string.Empty, ISearchIssuablePhysicalCopiesUseCase.DefaultMaxResults, cancellationToken)
+            .ConfigureAwait(false);
 
-        if (TempData.Peek(SelectedKeyNumberTempDataKey) is string selectedKey
-            && !string.IsNullOrWhiteSpace(selectedKey)
-            && string.IsNullOrWhiteSpace(SuccessMessage))
-        {
-            KeyNumber = selectedKey;
-            await LoadSelectedKeyAsync(cancellationToken).ConfigureAwait(false);
-            if (TempData.Peek(SelectedMedecoTempDataKey) is string selectedMedeco
-                && !string.IsNullOrWhiteSpace(selectedMedeco))
+        object[] result = matches
+            .Select(item => new
             {
-                MedecoKeyCode = selectedMedeco;
-            }
-        }
+                keyNumber = item.KeyNumber,
+                medecoKeyCode = item.MedecoKeyCode,
+                classification = item.Classification.ToString(),
+                rooms = KeyOpenedRoomDisplayFormatter.FormatAccess(item.Classification, item.OpenedRooms)
+            })
+            .ToArray();
+        return new JsonResult(result);
     }
 
-    public async Task<IActionResult> OnPostSearchHoldersAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// JSON handler used by the searchable combobox to browse/search eligible key holders.
+    /// </summary>
+    public async Task<IActionResult> OnGetSearchHoldersAsync(string? q, CancellationToken cancellationToken)
     {
-        TempData.Remove(SelectedHolderTempDataKey);
-        await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
-        EnsureDefaultTimestamps();
-        HolderSearchPerformed = true;
-        WorkforceMemberCode = string.Empty;
-        SelectedHolderDisplay = null;
-        JustificationKind = string.Empty;
-        JustificationCode = string.Empty;
-        DepartmentOptions = [];
-        RoomOptions = [];
-        await RestoreSelectedKeyFromTempDataAsync(cancellationToken).ConfigureAwait(false);
-
-        HolderMatches = await _searchHolders
-            .ExecuteAsync(HolderSearchText, ISearchEligibleKeyHoldersUseCase.DefaultMaxResults, cancellationToken)
+        IReadOnlyList<EligibleKeyHolderCandidate> matches = await _searchHolders
+            .ExecuteAsync(q ?? string.Empty, ISearchEligibleKeyHoldersUseCase.DefaultMaxResults, cancellationToken)
             .ConfigureAwait(false);
 
-        return Page();
-    }
-
-    public async Task<IActionResult> OnPostSelectHolderAsync(CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(WorkforceMemberCode))
-        {
-            ErrorMessage = "Select a key holder.";
-            await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
-            EnsureDefaultTimestamps();
-            return Page();
-        }
-
-        KeyHolderIssueOptions? options = await _holderOptions
-            .ExecuteAsync(WorkforceMemberCode, cancellationToken)
-            .ConfigureAwait(false);
-        if (options is null)
-        {
-            ErrorMessage = "The selected key holder is not eligible to receive a key.";
-            await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
-            EnsureDefaultTimestamps();
-            return Page();
-        }
-
-        TempData[SelectedHolderTempDataKey] = WorkforceMemberCode;
-        return RedirectToPage();
-    }
-
-    public IActionResult OnPostClearHolder()
-    {
-        TempData.Remove(SelectedHolderTempDataKey);
-        return RedirectToPage();
-    }
-
-    public async Task<IActionResult> OnPostSearchKeyCopiesAsync(CancellationToken cancellationToken)
-    {
-        TempData.Remove(SelectedKeyNumberTempDataKey);
-        TempData.Remove(SelectedMedecoTempDataKey);
-        await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
-        EnsureDefaultTimestamps();
-        await RestoreSelectedHolderFromTempDataAsync(cancellationToken).ConfigureAwait(false);
-        KeyCopySearchPerformed = true;
-        KeyNumber = string.Empty;
-        MedecoKeyCode = string.Empty;
-        OpenedRoomsDisplay = "—";
-        MedecoOptions = [];
-        KeyCopyMatches = await _searchCopies
-            .ExecuteAsync(KeyCopySearchText, ISearchAvailableKeyCopiesUseCase.DefaultMaxResults, cancellationToken)
-            .ConfigureAwait(false);
-        return Page();
-    }
-
-    public async Task<IActionResult> OnPostSelectKeyNumberAsync(CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(KeyNumber))
-        {
-            ErrorMessage = "Select a KEY #.";
-            await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
-            EnsureDefaultTimestamps();
-            await RestoreSelectedHolderFromTempDataAsync(cancellationToken).ConfigureAwait(false);
-            return Page();
-        }
-
-        IReadOnlyList<AvailableKeyCopyCandidate> copies = await _searchCopies
-            .ListAvailableForKeyNumberAsync(KeyNumber, cancellationToken)
-            .ConfigureAwait(false);
-        if (copies.Count == 0)
-        {
-            ErrorMessage = "No available MEDECO copies were found for that KEY #.";
-            await LoadReadinessAsync(cancellationToken).ConfigureAwait(false);
-            EnsureDefaultTimestamps();
-            await RestoreSelectedHolderFromTempDataAsync(cancellationToken).ConfigureAwait(false);
-            return Page();
-        }
-
-        TempData[SelectedKeyNumberTempDataKey] = copies[0].KeyNumber;
-        TempData.Remove(SelectedMedecoTempDataKey);
-        return RedirectToPage();
-    }
-
-    public IActionResult OnPostClearKeyNumber()
-    {
-        TempData.Remove(SelectedKeyNumberTempDataKey);
-        TempData.Remove(SelectedMedecoTempDataKey);
-        return RedirectToPage();
+        object[] result = matches
+            .Select(candidate => new
+            {
+                workforceMemberCode = candidate.WorkforceMemberCode,
+                display = PartyHolderDisplayFormatter.Format(candidate.FirstName, candidate.LastName, candidate.Uin),
+                uin = candidate.Uin,
+                firstName = candidate.FirstName,
+                lastName = candidate.LastName
+            })
+            .ToArray();
+        return new JsonResult(result);
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
@@ -247,12 +151,17 @@ public sealed class IssueModel : PageModel
 
             if (string.IsNullOrWhiteSpace(KeyNumber) || string.IsNullOrWhiteSpace(MedecoKeyCode))
             {
-                throw new InvalidOperationException("Select KEY # and an available MEDECO Key Code.");
+                throw new InvalidOperationException("Select an issuable KEY # / MEDECO.");
             }
 
             if (string.IsNullOrWhiteSpace(JustificationKind))
             {
                 throw new InvalidOperationException("Select whether the issue is for a Department or a Room.");
+            }
+
+            if (string.IsNullOrWhiteSpace(JustificationCode))
+            {
+                throw new InvalidOperationException("Select the justification Department or Room.");
             }
 
             if (!OperatorLocalTimestamp.TryParseToUtc(IssuedLocalText, out DateTimeOffset issuedAtUtc, out string? issuedError))
@@ -277,9 +186,6 @@ public sealed class IssueModel : PageModel
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            TempData.Remove(SelectedHolderTempDataKey);
-            TempData.Remove(SelectedKeyNumberTempDataKey);
-            TempData.Remove(SelectedMedecoTempDataKey);
             TempData[SuccessTempDataKey] =
                 $"{PartyHolderDisplayFormatter.FormatKeyCopy(KeyNumber, MedecoKeyCode)} was issued to {SelectedHolderDisplay}.";
             return RedirectToPage();
@@ -287,56 +193,7 @@ public sealed class IssueModel : PageModel
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
             ErrorMessage = exception.Message;
-            if (!string.IsNullOrWhiteSpace(WorkforceMemberCode))
-            {
-                TempData[SelectedHolderTempDataKey] = WorkforceMemberCode;
-            }
-
-            if (!string.IsNullOrWhiteSpace(KeyNumber))
-            {
-                TempData[SelectedKeyNumberTempDataKey] = KeyNumber;
-            }
-
-            if (!string.IsNullOrWhiteSpace(MedecoKeyCode))
-            {
-                TempData[SelectedMedecoTempDataKey] = MedecoKeyCode;
-            }
-
             return Page();
-        }
-    }
-
-    private void ResetCleanBusinessChoices()
-    {
-        LoanCode = string.Empty;
-        KeyNumber = string.Empty;
-        MedecoKeyCode = string.Empty;
-        WorkforceMemberCode = string.Empty;
-        JustificationKind = string.Empty;
-        JustificationCode = string.Empty;
-        HolderSearchText = string.Empty;
-        KeyCopySearchText = string.Empty;
-        HolderMatches = [];
-        KeyCopyMatches = [];
-        HolderSearchPerformed = false;
-        KeyCopySearchPerformed = false;
-        SelectedHolderDisplay = null;
-        DepartmentOptions = [];
-        RoomOptions = [];
-        OpenedRoomsDisplay = "—";
-        MedecoOptions = [];
-    }
-
-    private void EnsureDefaultTimestamps()
-    {
-        if (string.IsNullOrWhiteSpace(IssuedLocalText))
-        {
-            IssuedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
-        }
-
-        if (string.IsNullOrWhiteSpace(DueLocalText))
-        {
-            DueLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow.AddDays(1));
         }
     }
 
@@ -347,68 +204,33 @@ public sealed class IssueModel : PageModel
         HasAvailableCopies = await _searchCopies.HasAnyAvailableAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task RestoreSelectedHolderFromTempDataAsync(CancellationToken cancellationToken)
-    {
-        if (TempData.Peek(SelectedHolderTempDataKey) is string selectedCode
-            && !string.IsNullOrWhiteSpace(selectedCode))
-        {
-            WorkforceMemberCode = selectedCode;
-            await LoadSelectedHolderAsync(cancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    private async Task RestoreSelectedKeyFromTempDataAsync(CancellationToken cancellationToken)
-    {
-        if (TempData.Peek(SelectedKeyNumberTempDataKey) is string selectedKey
-            && !string.IsNullOrWhiteSpace(selectedKey))
-        {
-            KeyNumber = selectedKey;
-            await LoadSelectedKeyAsync(cancellationToken).ConfigureAwait(false);
-            if (TempData.Peek(SelectedMedecoTempDataKey) is string selectedMedeco
-                && !string.IsNullOrWhiteSpace(selectedMedeco))
-            {
-                MedecoKeyCode = selectedMedeco;
-            }
-        }
-    }
-
     private async Task LoadSelectedKeyAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(KeyNumber))
+        if (string.IsNullOrWhiteSpace(KeyNumber) || string.IsNullOrWhiteSpace(MedecoKeyCode))
         {
             OpenedRoomsDisplay = "—";
-            MedecoOptions = [];
+            ClassificationDisplay = string.Empty;
+            SelectedKeyDisplay = string.Empty;
             return;
         }
 
-        IReadOnlyList<AvailableKeyCopyCandidate> copies = await _searchCopies
-            .ListAvailableForKeyNumberAsync(KeyNumber, cancellationToken)
+        AvailableKeyCopyCandidate? candidate = await _searchCopies
+            .FindAsync(KeyNumber, MedecoKeyCode, cancellationToken)
             .ConfigureAwait(false);
-        if (copies.Count == 0)
+        if (candidate is null)
         {
             OpenedRoomsDisplay = "—";
-            MedecoOptions = [];
+            ClassificationDisplay = string.Empty;
+            SelectedKeyDisplay = string.Empty;
             KeyNumber = string.Empty;
             MedecoKeyCode = string.Empty;
-            TempData.Remove(SelectedKeyNumberTempDataKey);
-            TempData.Remove(SelectedMedecoTempDataKey);
             return;
         }
 
-        KeyNumber = copies[0].KeyNumber;
-        string rooms = KeyOpenedRoomDisplayFormatter.Format(copies[0].OpenedRooms);
+        ClassificationDisplay = candidate.Classification.ToString();
+        string rooms = KeyOpenedRoomDisplayFormatter.FormatAccess(candidate.Classification, candidate.OpenedRooms);
         OpenedRoomsDisplay = string.IsNullOrEmpty(rooms) ? "—" : rooms;
-        MedecoOptions = copies
-            .Select(copy => new SelectListItem(
-                copy.MedecoKeyCode,
-                copy.MedecoKeyCode,
-                string.Equals(copy.MedecoKeyCode, MedecoKeyCode, StringComparison.OrdinalIgnoreCase)))
-            .ToArray();
-        // Do not auto-select first/only MEDECO.
-        if (!MedecoOptions.Any(item => item.Selected))
-        {
-            MedecoKeyCode = string.Empty;
-        }
+        SelectedKeyDisplay = PartyHolderDisplayFormatter.FormatKeyCopy(candidate.KeyNumber, candidate.MedecoKeyCode);
     }
 
     private async Task LoadSelectedHolderAsync(CancellationToken cancellationToken)

@@ -1,14 +1,13 @@
 @page
-@using KeyInventory.Web.Presentation
 @model KeyInventory.Web.Pages.Administration.WorkAssignments.AddModel
 @{
-    ViewData["Title"] = "Add Work Assignment";
+    ViewData["Title"] = "Assign Room";
     ViewData["NavSection"] = "administration";
 }
 
 <header class="page-header page-header-compact">
-    <h1>Add Work Assignment</h1>
-    <p class="lede">Assign a workforce member to a room. One active assignment may be primary.</p>
+    <h1>Assign Room</h1>
+    <p class="lede">Assign an active workforce member to a Room in the same Department.</p>
 </header>
 
 <section class="card form-card admin-task-form">
@@ -16,155 +15,121 @@
     {
         <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
     }
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+    }
 
-    <div class="form-grid">
+    <form method="post" class="form-grid" id="room-assignment-form">
         <div class="form-span-2">
             <label>
                 Workforce member
-                @if (!string.IsNullOrWhiteSpace(Model.SelectedMemberDisplay))
-                {
-                    <input type="text" value="@Model.SelectedMemberDisplay" readonly />
-                }
-                else
-                {
-                    <span class="hint">Search by name or UIN. Nothing is selected automatically.</span>
-                }
+                <div class="searchable-combobox"
+                     id="wa-member-combobox"
+                     data-searchable-combobox
+                     data-search-url="/Administration/WorkAssignments/Add?handler=SearchMembers"
+                     data-value-field="workforceMemberCode"
+                     data-display-fields="display"
+                     data-secondary-fields="departmentCode">
+                    <input type="text"
+                           class="searchable-combobox-input"
+                           data-role="combobox-input"
+                           placeholder="Search by name or UIN..."
+                           autocomplete="off"
+                           aria-label="Search active workforce members" />
+                    <button type="button" class="searchable-combobox-toggle" data-role="combobox-toggle" aria-label="Browse workforce members">▾</button>
+                    <input type="hidden" asp-for="WorkforceMemberCode" data-role="combobox-value" />
+                    <ul class="searchable-combobox-panel" data-role="combobox-panel" role="listbox"></ul>
+                </div>
             </label>
-
-            @if (string.IsNullOrWhiteSpace(Model.SelectedMemberDisplay))
-            {
-                <form method="post" asp-page-handler="SearchMembers" class="form-grid">
-                    <label>
-                        Search
-                        <input asp-for="MemberSearchText" placeholder="Search by name or UIN..." autocomplete="off" required />
-                    </label>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-secondary">Search</button>
-                    </div>
-                </form>
-
-                @if (Model.MemberSearchPerformed)
-                {
-                    if (Model.MemberMatches.Count == 0)
-                    {
-                        <div class="empty-state">
-                            <strong>No active workforce members matched</strong>
-                            Refine the name or UIN search.
-                        </div>
-                    }
-                    else
-                    {
-                        <ul class="activity-list" aria-label="Matching workforce members">
-                            @foreach (var match in Model.MemberMatches)
-                            {
-                                string label = PartyHolderDisplayFormatter.Format(match.FirstName, match.LastName, match.Uin);
-                                <li>
-                                    <div class="activity-main">
-                                        <span class="activity-primary">@label</span>
-                                    </div>
-                                    <form method="post" asp-page-handler="SelectMember">
-                                        <input type="hidden" name="workforceMemberCode" value="@match.WorkforceMemberCode" />
-                                        <input type="hidden" name="memberDisplay" value="@label" />
-                                        <button type="submit" class="btn btn-secondary">Select</button>
-                                    </form>
-                                </li>
-                            }
-                        </ul>
-                    }
-                }
-            }
-            else
-            {
-                <form method="post" asp-page-handler="ClearMember" class="form-actions">
-                    <button type="submit" class="btn btn-secondary">Change workforce member</button>
-                </form>
-            }
+            <div id="wa-member-context" class="selection-context" hidden>
+                <p><strong>Name:</strong> <span data-role="member-name"></span></p>
+                <p><strong>UIN:</strong> <span data-role="member-uin"></span></p>
+                <p><strong>Department:</strong> <span data-role="member-department"></span></p>
+            </div>
         </div>
 
         <div class="form-span-2">
             <label>
                 Room
-                @if (!string.IsNullOrWhiteSpace(Model.SelectedRoomDisplay))
-                {
-                    <input type="text" value="@Model.SelectedRoomDisplay" readonly />
-                }
-                else
-                {
-                    <span class="hint">Search by room number or description. Nothing is selected automatically.</span>
-                }
+                <div class="searchable-combobox"
+                     id="wa-room-combobox"
+                     data-searchable-combobox
+                     data-search-url="/Administration/WorkAssignments/Add?handler=SearchRooms"
+                     data-value-field="roomCode"
+                     data-display-fields="roomNumber,description"
+                     data-secondary-fields="departmentCode">
+                    <input type="text"
+                           class="searchable-combobox-input"
+                           data-role="combobox-input"
+                           placeholder="Select a workforce member first..."
+                           autocomplete="off"
+                           aria-label="Search rooms in the selected member's Department"
+                           disabled />
+                    <button type="button" class="searchable-combobox-toggle" data-role="combobox-toggle" aria-label="Browse rooms" disabled>▾</button>
+                    <input type="hidden" asp-for="RoomCode" data-role="combobox-value" />
+                    <ul class="searchable-combobox-panel" data-role="combobox-panel" role="listbox"></ul>
+                </div>
             </label>
-
-            @if (string.IsNullOrWhiteSpace(Model.SelectedRoomDisplay))
-            {
-                <form method="post" asp-page-handler="SearchRooms" class="form-grid">
-                    <label>
-                        Search
-                        <input asp-for="RoomSearchText" placeholder="Search room number or description..." autocomplete="off" required />
-                    </label>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-secondary">Search</button>
-                    </div>
-                </form>
-
-                @if (Model.RoomSearchPerformed)
-                {
-                    if (Model.RoomMatches.Count == 0)
-                    {
-                        <div class="empty-state">
-                            <strong>No active rooms matched</strong>
-                            Refine the room number or description search.
-                        </div>
-                    }
-                    else
-                    {
-                        <ul class="activity-list" aria-label="Matching rooms">
-                            @foreach (var match in Model.RoomMatches)
-                            {
-                                string label = RoomDisplayFormatter.Format(match);
-                                <li>
-                                    <div class="activity-main">
-                                        <span class="activity-primary">@label</span>
-                                    </div>
-                                    <form method="post" asp-page-handler="SelectRoom">
-                                        <input type="hidden" name="roomCode" value="@match.RoomCode" />
-                                        <input type="hidden" name="roomDisplay" value="@label" />
-                                        <button type="submit" class="btn btn-secondary">Select</button>
-                                    </form>
-                                </li>
-                            }
-                        </ul>
-                    }
-                }
-            }
-            else
-            {
-                <form method="post" asp-page-handler="ClearRoom" class="form-actions">
-                    <button type="submit" class="btn btn-secondary">Change room</button>
-                </form>
-            }
         </div>
-    </div>
 
-    @if (!string.IsNullOrWhiteSpace(Model.SelectedMemberDisplay) && !string.IsNullOrWhiteSpace(Model.SelectedRoomDisplay))
-    {
-        <form method="post" class="form-grid">
-            <input type="hidden" asp-for="WorkforceMemberCode" />
-            <input type="hidden" asp-for="RoomCode" />
-            <label>Work assignment code<input asp-for="WorkAssignmentCode" required /></label>
-            <label class="checkbox">
-                <input asp-for="IsPrimary" />
-                Primary assignment
-            </label>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Create Work Assignment</button>
-                <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
-            </div>
-        </form>
-    }
-    else
-    {
-        <div class="form-actions">
+        <div class="form-actions form-span-2">
+            <button type="submit" class="btn btn-primary">Assign Room</button>
             <a class="btn btn-secondary" asp-page="./Index">Cancel</a>
         </div>
-    }
+    </form>
+    <script>
+        (function () {
+            var memberCombobox = document.getElementById('wa-member-combobox');
+            var roomCombobox = document.getElementById('wa-room-combobox');
+            var context = document.getElementById('wa-member-context');
+            if (!memberCombobox || !roomCombobox || !context) { return; }
+
+            var roomInput = roomCombobox.querySelector('[data-role="combobox-input"]');
+            var roomToggle = roomCombobox.querySelector('[data-role="combobox-toggle"]');
+            var nameEl = context.querySelector('[data-role="member-name"]');
+            var uinEl = context.querySelector('[data-role="member-uin"]');
+            var deptEl = context.querySelector('[data-role="member-department"]');
+
+            function setRoomEnabled(enabled) {
+                if (roomInput) {
+                    roomInput.disabled = !enabled;
+                    roomInput.placeholder = enabled
+                        ? 'Search room number or description...'
+                        : 'Select a workforce member first...';
+                }
+                if (roomToggle) {
+                    roomToggle.disabled = !enabled;
+                }
+            }
+
+            setRoomEnabled(false);
+
+            memberCombobox.addEventListener('combobox:selected', function (event) {
+                var detail = event.detail || {};
+                var code = detail.value;
+                var item = detail.item || {};
+                if (code) {
+                    roomCombobox.setAttribute(
+                        'data-extra-query',
+                        'workforceMemberCode=' + encodeURIComponent(code));
+                    setRoomEnabled(true);
+                    var first = item.firstName || '';
+                    var last = item.lastName || '';
+                    nameEl.textContent = (first + ' ' + last).trim() || (item.display || '');
+                    uinEl.textContent = item.uin || '';
+                    deptEl.textContent = item.departmentCode || '';
+                    context.hidden = false;
+                } else {
+                    roomCombobox.removeAttribute('data-extra-query');
+                    setRoomEnabled(false);
+                    context.hidden = true;
+                    nameEl.textContent = '';
+                    uinEl.textContent = '';
+                    deptEl.textContent = '';
+                }
+                roomCombobox.dispatchEvent(new CustomEvent('combobox:reset'));
+            });
+        })();
+    </script>
 </section>

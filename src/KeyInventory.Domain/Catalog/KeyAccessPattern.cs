@@ -1,52 +1,44 @@
 namespace KeyInventory.Domain.Catalog;
 
 /// <summary>
-/// KEY # / shared access-pattern aggregate. Owns KeyType and Room openings for all physical copies.
+/// KEY # / shared access-pattern aggregate.
+/// Classification defines access: Regular opens exactly one Room; Master opens all Rooms.
+/// Does not own Department; Departments of a KEY # are derived through opened Rooms.
 /// </summary>
 public sealed class KeyAccessPattern
 {
-    private readonly HashSet<string> _openedRoomCodes = new(StringComparer.Ordinal);
-
-    public KeyAccessPattern(string keyNumber, KeyType keyType)
+    public KeyAccessPattern(string keyNumber, KeyAccessClassification classification, string? regularRoomCode)
     {
         KeyNumber = CatalogText.Require(keyNumber, nameof(keyNumber));
-        KeyType = RequireActiveKeyType(keyType);
+        Classification = RequireClassification(classification);
+        RoomCode = RequireRoomCodeForClassification(classification, regularRoomCode);
         IsActive = true;
     }
 
     public string KeyNumber { get; }
 
-    public KeyType KeyType { get; private set; }
+    public KeyAccessClassification Classification { get; }
+
+    /// <summary>
+    /// Room opened by a Regular KEY #. Always null for Master.
+    /// </summary>
+    public string? RoomCode { get; }
+
+    /// <summary>
+    /// True when Classification is Master — access derives all current Rooms without storing them.
+    /// </summary>
+    public bool OpensAllRooms => Classification == KeyAccessClassification.Master;
 
     public bool IsActive { get; private set; }
 
     /// <summary>
-    /// Current Room codes opened by every physical copy under this KEY #.
+    /// Stored Room codes on the pattern. Regular returns the single RoomCode;
+    /// Master returns empty (Application expands to all Rooms when needed).
     /// </summary>
-    public IReadOnlyCollection<string> OpenedRoomCodes => _openedRoomCodes;
-
-    public void AssignKeyType(KeyType keyType)
-    {
-        KeyType = RequireActiveKeyType(keyType);
-    }
-
-    public void AssignOpenedRoom(string roomCode)
-    {
-        string normalized = CatalogText.Require(roomCode, nameof(roomCode));
-        if (!_openedRoomCodes.Add(normalized))
-        {
-            throw new InvalidOperationException("A current KEY # to Room assignment for this KEY # and Room already exists.");
-        }
-    }
-
-    public void RemoveOpenedRoom(string roomCode)
-    {
-        string normalized = CatalogText.Require(roomCode, nameof(roomCode));
-        if (!_openedRoomCodes.Remove(normalized))
-        {
-            throw new InvalidOperationException("The KEY # to Room assignment was not found.");
-        }
-    }
+    public IReadOnlyCollection<string> OpenedRoomCodes =>
+        RoomCode is null
+            ? Array.Empty<string>()
+            : new[] { RoomCode };
 
     public void Activate()
     {
@@ -64,15 +56,33 @@ public sealed class KeyAccessPattern
         IsActive = false;
     }
 
-    private static KeyType RequireActiveKeyType(KeyType keyType)
+    private static KeyAccessClassification RequireClassification(KeyAccessClassification classification)
     {
-        ArgumentNullException.ThrowIfNull(keyType);
-
-        if (!keyType.IsActive)
+        if (classification is not (KeyAccessClassification.Regular or KeyAccessClassification.Master))
         {
-            throw new InvalidOperationException("KEY # cannot reference an inactive KeyType for new catalog assignment.");
+            throw new ArgumentOutOfRangeException(
+                nameof(classification),
+                "KEY # classification must be Regular or Master.");
         }
 
-        return keyType;
+        return classification;
+    }
+
+    private static string? RequireRoomCodeForClassification(
+        KeyAccessClassification classification,
+        string? regularRoomCode)
+    {
+        if (classification == KeyAccessClassification.Master)
+        {
+            if (!string.IsNullOrWhiteSpace(regularRoomCode))
+            {
+                throw new InvalidOperationException(
+                    "Master KEY # cannot have a Room. Access derives all Rooms from Classification.");
+            }
+
+            return null;
+        }
+
+        return CatalogText.Require(regularRoomCode, nameof(regularRoomCode));
     }
 }

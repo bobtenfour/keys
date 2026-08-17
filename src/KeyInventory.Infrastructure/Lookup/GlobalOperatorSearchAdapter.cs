@@ -1,7 +1,9 @@
 using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Lookup;
+using KeyInventory.Domain.Catalog;
 using KeyInventory.Domain.Loans;
 using KeyInventory.Infrastructure.Data;
+using KeyInventory.Infrastructure.Workflow;
 using Microsoft.EntityFrameworkCore;
 
 namespace KeyInventory.Infrastructure.Lookup;
@@ -12,14 +14,14 @@ namespace KeyInventory.Infrastructure.Lookup;
 public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
 {
     private readonly KeyInventoryDbContext _dbContext;
-    private readonly IKeyAccessPatternRoomAssignmentPersistencePort _roomAssignments;
+    private readonly IKeyAccessResolutionPort _accessResolution;
 
     public GlobalOperatorSearchAdapter(
         KeyInventoryDbContext dbContext,
-        IKeyAccessPatternRoomAssignmentPersistencePort roomAssignments)
+        IKeyAccessResolutionPort accessResolution)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _roomAssignments = roomAssignments ?? throw new ArgumentNullException(nameof(roomAssignments));
+        _accessResolution = accessResolution ?? throw new ArgumentNullException(nameof(accessResolution));
     }
 
     public async Task<GlobalOperatorSearchResult> SearchAsync(
@@ -92,12 +94,11 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
                 join room in _dbContext.Rooms.AsNoTracking() on assignment.RoomCode equals room.RoomCode
                 where assignment.IsActive
                     && memberCodes.Contains(assignment.WorkforceMemberCode)
-                orderby assignment.IsPrimary descending, room.RoomNumber
+                orderby room.RoomNumber
                 select new
                 {
                     assignment.WorkforceMemberCode,
-                    room.RoomNumber,
-                    assignment.IsPrimary
+                    room.RoomNumber
                 })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -107,13 +108,15 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
             .ToDictionary(
                 group => group.Key,
                 group => group
-                    .Select(item => new GlobalPersonWorkAssignment(item.RoomNumber, item.IsPrimary))
+                    .Select(item => new GlobalPersonWorkAssignment(item.RoomNumber))
                     .ToList(),
                 StringComparer.Ordinal);
 
         var openCustody = await (
                 from loan in _dbContext.Loans.AsNoTracking()
                 join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
+                join accessPattern in _dbContext.KeyAccessPatterns.AsNoTracking()
+                    on key.KeyNumber equals accessPattern.KeyNumber
                 where loan.Status == nameof(LoanStatus.Open)
                     && partyCodes.Contains(loan.BorrowerPartyReference)
                 orderby key.KeyNumber, key.MedecoKeyCode
@@ -122,16 +125,17 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
                     loan.BorrowerPartyReference,
                     key.KeyNumber,
                     key.MedecoKeyCode,
+                    accessPattern.Classification,
                     loan.IssuedAtUtc
                 })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
-            .ListForKeyNumbersAsync(
-                openCustody.Select(item => item.KeyNumber).Distinct(StringComparer.Ordinal),
-                cancellationToken)
-            .ConfigureAwait(false);
+        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey =
+            await ResolveRoomsForKeyNumbersAsync(
+                    openCustody.Select(item => item.KeyNumber).Distinct(StringComparer.Ordinal),
+                    cancellationToken)
+                .ConfigureAwait(false);
 
         Dictionary<string, List<GlobalPersonCurrentKey>> keysByParty = openCustody
             .GroupBy(item => item.BorrowerPartyReference, StringComparer.Ordinal)
@@ -141,6 +145,7 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
                     .Select(item => new GlobalPersonCurrentKey(
                         item.KeyNumber,
                         item.MedecoKeyCode,
+                        DomainCatalogMapper.ParseClassification(item.Classification),
                         item.IssuedAtUtc,
                         roomsByKey.TryGetValue(item.KeyNumber, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
                             ? rooms
@@ -170,12 +175,20 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
         int bound,
         CancellationToken cancellationToken)
     {
-        var rooms = await _dbContext.Rooms.AsNoTracking()
-            .Where(room => room.RoomNumber.Contains(pattern))
-            .OrderBy(room => room.RoomNumber)
-            .ThenBy(room => room.RoomCode)
+        var rooms = await (
+                from room in _dbContext.Rooms.AsNoTracking()
+                join department in _dbContext.Departments.AsNoTracking()
+                    on room.DepartmentId equals department.DepartmentId
+                where room.RoomNumber.Contains(pattern)
+                orderby room.RoomNumber, room.RoomCode
+                select new
+                {
+                    room.RoomCode,
+                    room.RoomNumber,
+                    room.Description,
+                    department.DepartmentCode
+                })
             .Take(bound)
-            .Select(room => new { room.RoomCode, room.RoomNumber, room.Description })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -186,28 +199,21 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
 
         HashSet<string> roomCodes = rooms.Select(room => room.RoomCode).ToHashSet(StringComparer.Ordinal);
 
-        var openings = await _dbContext.KeyAccessPatternRoomAssignments.AsNoTracking()
-            .Where(assignment => roomCodes.Contains(assignment.RoomCode))
-            .Select(assignment => new { assignment.RoomCode, assignment.KeyNumber })
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        Dictionary<string, List<string>> keysByRoom = openings
-            .GroupBy(item => item.RoomCode, StringComparer.Ordinal)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .Select(item => item.KeyNumber)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(key => key, StringComparer.OrdinalIgnoreCase)
-                    .ToList(),
-                StringComparer.Ordinal);
+        Dictionary<string, List<string>> keysByRoom = new(StringComparer.Ordinal);
+        foreach (string roomCode in roomCodes)
+        {
+            IReadOnlyList<string> keyNumbers = await _accessResolution
+                .ListKeyNumbersOpeningRoomAsync(roomCode, cancellationToken)
+                .ConfigureAwait(false);
+            keysByRoom[roomCode] = keyNumbers.ToList();
+        }
 
         return rooms
             .Select(room => new GlobalRoomSearchHit(
                 room.RoomCode,
                 room.RoomNumber,
                 room.Description,
+                room.DepartmentCode,
                 keysByRoom.TryGetValue(room.RoomCode, out List<string>? keys) ? keys : []))
             .ToArray();
     }
@@ -234,20 +240,25 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
 
         var patterns = await _dbContext.KeyAccessPatterns.AsNoTracking()
             .Where(patternEntity => keySet.Contains(patternEntity.KeyNumber))
-            .Select(patternEntity => new { patternEntity.KeyNumber, patternEntity.KeyTypeCode })
+            .Select(patternEntity => new
+            {
+                patternEntity.KeyNumber,
+                patternEntity.Classification,
+                patternEntity.RoomCode
+            })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        Dictionary<string, string> typeByKey = patterns.ToDictionary(
+        Dictionary<string, KeyAccessClassification> classificationByKey = patterns.ToDictionary(
             item => item.KeyNumber,
-            item => item.KeyTypeCode,
+            item => DomainCatalogMapper.ParseClassification(item.Classification),
             StringComparer.OrdinalIgnoreCase);
 
         var copies = await _dbContext.KeyAssets.AsNoTracking()
             .Where(key => keySet.Contains(key.KeyNumber))
             .OrderBy(key => key.KeyNumber)
             .ThenBy(key => key.MedecoKeyCode)
-            .Select(key => new { key.KeyAssetId, key.KeyNumber, key.MedecoKeyCode })
+            .Select(key => new { key.KeyAssetId, key.KeyNumber, key.MedecoKeyCode, key.Condition })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -255,9 +266,15 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
             await LoadOpenCustodyAsync(copies.Select(copy => copy.KeyAssetId), cancellationToken)
                 .ConfigureAwait(false);
 
-        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
-            .ListForKeyNumbersAsync(keyNumbers, cancellationToken)
-            .ConfigureAwait(false);
+        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey =
+            await _accessResolution.ResolveForPatternsAsync(
+                    patterns.Select(item => new KeyAccessResolutionRequest(
+                        item.KeyNumber,
+                        DomainCatalogMapper.ParseClassification(item.Classification),
+                        item.RoomCode)),
+                    expandMaster: false,
+                    cancellationToken)
+                .ConfigureAwait(false);
 
         return keyNumbers
             .Select(keyNumber =>
@@ -271,24 +288,26 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
                     .Where(copy => string.Equals(copy.KeyNumber, keyNumber, StringComparison.OrdinalIgnoreCase))
                     .Select(copy =>
                     {
-                        if (custody.TryGetValue(copy.KeyAssetId, out (string Availability, PartyHolderDisplay? Holder) state))
-                        {
-                            return new GlobalPhysicalCopyState(
-                                copy.MedecoKeyCode,
-                                state.Availability,
-                                state.Holder);
-                        }
-
+                        KeyPhysicalCondition condition = DomainCatalogMapper.ParseCondition(copy.Condition);
+                        bool isIssued = custody.ContainsKey(copy.KeyAssetId);
+                        string availability = OperationalKeyAvailability.DeriveCustody(condition, isIssued);
+                        PartyHolderDisplay? holder = isIssued ? custody[copy.KeyAssetId].Holder : null;
                         return new GlobalPhysicalCopyState(
                             copy.MedecoKeyCode,
-                            OperationalKeyAvailability.Available,
-                            null);
+                            condition,
+                            availability,
+                            holder);
                     })
                     .ToArray();
 
+                KeyAccessClassification classification =
+                    classificationByKey.TryGetValue(keyNumber, out KeyAccessClassification found)
+                        ? found
+                        : KeyAccessClassification.Regular;
+
                 return new GlobalKeyNumberSearchHit(
                     keyNumber,
-                    typeByKey.TryGetValue(keyNumber, out string? type) ? type : string.Empty,
+                    classification,
                     rooms,
                     copyStates);
             })
@@ -311,7 +330,9 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
                     key.KeyAssetId,
                     key.KeyNumber,
                     key.MedecoKeyCode,
-                    access.KeyTypeCode
+                    key.Condition,
+                    access.Classification,
+                    access.RoomCode
                 })
             .Take(bound)
             .ToListAsync(cancellationToken)
@@ -326,11 +347,21 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
             await LoadOpenCustodyAsync(copies.Select(copy => copy.KeyAssetId), cancellationToken)
                 .ConfigureAwait(false);
 
-        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
-            .ListForKeyNumbersAsync(
-                copies.Select(copy => copy.KeyNumber).Distinct(StringComparer.Ordinal),
-                cancellationToken)
-            .ConfigureAwait(false);
+        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey =
+            await _accessResolution.ResolveForPatternsAsync(
+                    copies
+                        .GroupBy(copy => copy.KeyNumber, StringComparer.Ordinal)
+                        .Select(group =>
+                        {
+                            var first = group.First();
+                            return new KeyAccessResolutionRequest(
+                                first.KeyNumber,
+                                DomainCatalogMapper.ParseClassification(first.Classification),
+                                first.RoomCode);
+                        }),
+                    expandMaster: false,
+                    cancellationToken)
+                .ConfigureAwait(false);
 
         return copies
             .Select(copy =>
@@ -340,26 +371,54 @@ public sealed class GlobalOperatorSearchAdapter : IGlobalOperatorSearchPort
                         ? opened
                         : [];
 
-                if (custody.TryGetValue(copy.KeyAssetId, out (string Availability, PartyHolderDisplay? Holder) state))
-                {
-                    return new GlobalMedecoSearchHit(
-                        copy.KeyNumber,
-                        copy.MedecoKeyCode,
-                        copy.KeyTypeCode,
-                        state.Availability,
-                        state.Holder,
-                        rooms);
-                }
+                KeyAccessClassification classification =
+                    DomainCatalogMapper.ParseClassification(copy.Classification);
+                KeyPhysicalCondition condition = DomainCatalogMapper.ParseCondition(copy.Condition);
+                bool isIssued = custody.ContainsKey(copy.KeyAssetId);
+                string availability = OperationalKeyAvailability.DeriveCustody(condition, isIssued);
+                PartyHolderDisplay? holder = isIssued ? custody[copy.KeyAssetId].Holder : null;
 
                 return new GlobalMedecoSearchHit(
                     copy.KeyNumber,
                     copy.MedecoKeyCode,
-                    copy.KeyTypeCode,
-                    OperationalKeyAvailability.Available,
-                    null,
+                    classification,
+                    condition,
+                    availability,
+                    holder,
                     rooms);
             })
             .ToArray();
+    }
+
+    private async Task<IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>>> ResolveRoomsForKeyNumbersAsync(
+        IEnumerable<string> keyNumbers,
+        CancellationToken cancellationToken)
+    {
+        List<string> numbers = keyNumbers
+            .Where(code => !string.IsNullOrWhiteSpace(code))
+            .Select(code => code.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (numbers.Count == 0)
+        {
+            return new Dictionary<string, IReadOnlyList<KeyOpenedRoomItem>>(StringComparer.Ordinal);
+        }
+
+        var patterns = await _dbContext.KeyAccessPatterns.AsNoTracking()
+            .Where(pattern => numbers.Contains(pattern.KeyNumber))
+            .Select(pattern => new { pattern.KeyNumber, pattern.Classification, pattern.RoomCode })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return await _accessResolution.ResolveForPatternsAsync(
+                patterns.Select(item => new KeyAccessResolutionRequest(
+                    item.KeyNumber,
+                    DomainCatalogMapper.ParseClassification(item.Classification),
+                    item.RoomCode)),
+                expandMaster: false,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private async Task<Dictionary<Guid, (string Availability, PartyHolderDisplay? Holder)>> LoadOpenCustodyAsync(

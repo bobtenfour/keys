@@ -9,7 +9,7 @@
 
 <header class="page-header page-header-compact">
     <h1>Key Catalog</h1>
-    <p class="lede">Registered keys with type, active flag, Available or Issued state, and Rooms opened.</p>
+    <p class="lede">Keys with classification, physical condition, custody, and access.</p>
 </header>
 
 <section class="card form-card">
@@ -33,7 +33,7 @@
     {
         <div class="empty-state">
             <strong>No keys in catalog</strong>
-            Register keys first, or adjust the filter.
+            Create keys first, or adjust the filter.
         </div>
     }
     else
@@ -44,10 +44,10 @@
                     <tr>
                         <th>KEY #</th>
                         <th>MEDECO</th>
-                        <th>Type</th>
-                        <th>Active</th>
-                        <th>Availability</th>
-                        <th>Rooms opened</th>
+                        <th>Classification</th>
+                        <th>Condition</th>
+                        <th>Custody</th>
+                        <th>Access</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,21 +56,25 @@
                     <tr>
                         <td>@row.KeyNumber</td>
                         <td>@row.MedecoKeyCode</td>
-                        <td>@row.TypeCode</td>
-                        <td>@(row.IsActive ? "Yes" : "No")</td>
+                        <td>@row.Classification</td>
+                        <td>@row.Condition</td>
                         <td>
                             @if (string.Equals(row.AvailabilityStatus, OperationalKeyAvailability.Issued, StringComparison.Ordinal))
                             {
                                 <span class="badge badge-attention">Issued</span>
                             }
-                            else
+                            else if (string.Equals(row.AvailabilityStatus, OperationalKeyAvailability.Available, StringComparison.Ordinal))
                             {
                                 <span class="badge badge-success">Available</span>
+                            }
+                            else
+                            {
+                                <span>—</span>
                             }
                         </td>
                         <td>
                             @{
-                                string rooms = KeyOpenedRoomDisplayFormatter.Format(row.OpenedRooms);
+                                string rooms = KeyOpenedRoomDisplayFormatter.FormatAccess(row.Classification, row.OpenedRooms);
                             }
                             @if (string.IsNullOrEmpty(rooms))
                             {

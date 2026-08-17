@@ -67,17 +67,7 @@ public interface ICorrectPartyUinUseCase
 
 public interface IEndWorkAssignmentUseCase
 {
-    Task ExecuteAsync(string workAssignmentCode, CancellationToken cancellationToken);
-}
-
-public interface IMarkWorkAssignmentPrimaryUseCase
-{
-    Task ExecuteAsync(string workAssignmentCode, CancellationToken cancellationToken);
-}
-
-public interface IClearWorkAssignmentPrimaryUseCase
-{
-    Task ExecuteAsync(string workAssignmentCode, CancellationToken cancellationToken);
+    Task ExecuteAsync(Guid workAssignmentId, CancellationToken cancellationToken);
 }
 
 public sealed class ActivateDepartmentUseCase : IActivateDepartmentUseCase
@@ -238,6 +228,27 @@ public sealed class UpdateWorkforceMemberDepartmentUseCase : IUpdateWorkforceMem
         if (department is null || !department.IsActive)
         {
             throw new InvalidOperationException("Department must exist and be active.");
+        }
+
+        if (department.DepartmentId != member.DepartmentId)
+        {
+            IReadOnlyList<ActiveWorkAssignmentWithRoomDepartment> activeAssignments = await _workforce
+                .ListActiveWorkAssignmentsWithRoomDepartmentAsync(member.WorkforceMemberCode, cancellationToken)
+                .ConfigureAwait(false);
+
+            List<ActiveWorkAssignmentWithRoomDepartment> mismatched = activeAssignments
+                .Where(item => item.RoomDepartmentId != department.DepartmentId)
+                .ToList();
+            if (mismatched.Count > 0)
+            {
+                string offenders = string.Join(
+                    ", ",
+                    mismatched.Select(item =>
+                        $"WorkAssignment {item.WorkAssignmentId:D} (Room {item.RoomCode} → {item.RoomDepartmentCode})"));
+                throw new InvalidOperationException(
+                    "Department change rejected: the workforce member has active room assignments in a different Department. End those room assignments first: "
+                    + offenders + ".");
+            }
         }
 
         member.AssignDepartment(department.DepartmentId);
@@ -479,93 +490,27 @@ public sealed class EndWorkAssignmentUseCase : IEndWorkAssignmentUseCase
         _audit = audit ?? throw new ArgumentNullException(nameof(audit));
     }
 
-    public async Task ExecuteAsync(string workAssignmentCode, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(Guid workAssignmentId, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(workAssignmentCode);
+        if (workAssignmentId == Guid.Empty)
+        {
+            throw new ArgumentException("WorkAssignmentId is required.", nameof(workAssignmentId));
+        }
+
         WorkAssignment? assignment = await _workforce
-            .FindWorkAssignmentAsync(workAssignmentCode.Trim(), cancellationToken)
+            .FindWorkAssignmentAsync(workAssignmentId, cancellationToken)
             .ConfigureAwait(false);
         if (assignment is null)
         {
-            throw new InvalidOperationException("The work assignment was not found.");
+            throw new InvalidOperationException("The room assignment was not found.");
         }
 
         assignment.End();
         _audit.Stage(
             OperatorAuditActions.WorkAssignmentEnded,
             OperatorAuditSubjects.WorkAssignment,
-            assignment.WorkAssignmentCode);
-        await _workforce.UpdateWorkAssignmentAsync(assignment, cancellationToken).ConfigureAwait(false);
-    }
-}
-
-public sealed class MarkWorkAssignmentPrimaryUseCase : IMarkWorkAssignmentPrimaryUseCase
-{
-    private readonly IWorkforcePersistencePort _workforce;
-    private readonly IOperatorAuditRecorder _audit;
-
-    public MarkWorkAssignmentPrimaryUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
-    {
-        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
-        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
-    }
-
-    public async Task ExecuteAsync(string workAssignmentCode, CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(workAssignmentCode);
-        WorkAssignment? assignment = await _workforce
-            .FindWorkAssignmentAsync(workAssignmentCode.Trim(), cancellationToken)
-            .ConfigureAwait(false);
-        if (assignment is null)
-        {
-            throw new InvalidOperationException("The work assignment was not found.");
-        }
-
-        if (!assignment.IsActive)
-        {
-            throw new InvalidOperationException("Only an active WorkAssignment may be primary.");
-        }
-
-        await _workforce.ClearPrimaryAssignmentsAsync(assignment.WorkforceMemberCode, cancellationToken)
-            .ConfigureAwait(false);
-        assignment.MarkPrimary();
-        _audit.Stage(
-            OperatorAuditActions.WorkAssignmentPrimaryChanged,
-            OperatorAuditSubjects.WorkAssignment,
-            assignment.WorkAssignmentCode,
-            "Primary=true");
-        await _workforce.UpdateWorkAssignmentAsync(assignment, cancellationToken).ConfigureAwait(false);
-    }
-}
-
-public sealed class ClearWorkAssignmentPrimaryUseCase : IClearWorkAssignmentPrimaryUseCase
-{
-    private readonly IWorkforcePersistencePort _workforce;
-    private readonly IOperatorAuditRecorder _audit;
-
-    public ClearWorkAssignmentPrimaryUseCase(IWorkforcePersistencePort workforce, IOperatorAuditRecorder audit)
-    {
-        _workforce = workforce ?? throw new ArgumentNullException(nameof(workforce));
-        _audit = audit ?? throw new ArgumentNullException(nameof(audit));
-    }
-
-    public async Task ExecuteAsync(string workAssignmentCode, CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(workAssignmentCode);
-        WorkAssignment? assignment = await _workforce
-            .FindWorkAssignmentAsync(workAssignmentCode.Trim(), cancellationToken)
-            .ConfigureAwait(false);
-        if (assignment is null)
-        {
-            throw new InvalidOperationException("The work assignment was not found.");
-        }
-
-        assignment.ClearPrimary();
-        _audit.Stage(
-            OperatorAuditActions.WorkAssignmentPrimaryChanged,
-            OperatorAuditSubjects.WorkAssignment,
-            assignment.WorkAssignmentCode,
-            "Primary=false");
+            assignment.WorkAssignmentId.ToString("D"),
+            $"WorkforceMember={assignment.WorkforceMemberCode}; Room={assignment.RoomCode}");
         await _workforce.UpdateWorkAssignmentAsync(assignment, cancellationToken).ConfigureAwait(false);
     }
 }

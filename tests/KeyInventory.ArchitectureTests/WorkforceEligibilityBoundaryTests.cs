@@ -27,7 +27,10 @@ public sealed class WorkforceEligibilityBoundaryTests
             .Distinct(StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Empty(domainUsages);
+        // Register page binds Regular/Master classification radios via the domain enum.
+        Assert.All(
+            domainUsages,
+            name => Assert.Equal("KeyInventory.Domain.Catalog.KeyAccessClassification", name));
     }
 
     [Fact]

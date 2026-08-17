@@ -10,7 +10,7 @@
 
 <header class="page-header">
     <h1>Issue Key</h1>
-    <p class="lede">Hand a physical MEDECO copy to an eligible key holder.</p>
+    <p class="lede">Hand a MEDECO key to an eligible key holder. Search the key first, then the holder.</p>
 </header>
 
 @if (!Model.Readiness.Snapshot.CanIssueKey && string.IsNullOrWhiteSpace(Model.SuccessMessage))
@@ -37,241 +37,153 @@
     {
         <div class="empty-state">
             <strong>No physical copies available to issue</strong>
-            Register an active MEDECO copy that is not already issued, then return here.
+            Create an active MEDECO key that is not already issued, then return here.
         </div>
         <div class="form-actions">
-            <a class="btn btn-primary" asp-page="/Catalog/Register">Register Key</a>
+            <a class="btn btn-primary" asp-page="/Catalog/Register">Create Key</a>
             <a class="btn btn-secondary" asp-page="/Operations/Active">View Active Loans</a>
         </div>
     }
     else if (showForm)
     {
-        <div class="form-grid">
+        <form method="post" class="form-grid" id="issue-key-form">
+            <div class="form-span-2">
+                <label>
+                    KEY # / MEDECO
+                    <div class="searchable-combobox"
+                         data-searchable-combobox
+                         data-search-url="/Operations/Issue?handler=SearchIssuableCopies"
+                         data-value-field="keyNumber|medecoKeyCode"
+                         data-value-separator="|"
+                         data-display-fields="keyNumber,medecoKeyCode"
+                         data-display-separator=" / "
+                         data-secondary-fields="classification,rooms">
+                        <input type="text"
+                               class="searchable-combobox-input"
+                               data-role="combobox-input"
+                               placeholder="Search KEY # or MEDECO..."
+                               autocomplete="off"
+                               value="@Model.SelectedKeyDisplay"
+                               aria-label="Search issuable KEY # / MEDECO" />
+                        <button type="button" class="searchable-combobox-toggle" data-role="combobox-toggle" aria-label="Browse issuable keys">▾</button>
+                        <input type="hidden" data-role="combobox-value" />
+                        <input type="hidden" asp-for="KeyNumber" data-role="combobox-value-part" data-part-index="0" />
+                        <input type="hidden" asp-for="MedecoKeyCode" data-role="combobox-value-part" data-part-index="1" />
+                        <ul class="searchable-combobox-panel" data-role="combobox-panel" role="listbox"></ul>
+                    </div>
+                    <span class="hint">Type KEY # or MEDECO. Only issuable (available, active) keys appear. Nothing is selected automatically.</span>
+                </label>
+            </div>
+
+            <label>
+                Classification
+                <input type="text" value="@Model.ClassificationDisplay" readonly placeholder="—" />
+                <span class="hint">Derived from the selected KEY #.</span>
+            </label>
+            <label>
+                Access
+                <input type="text" value="@Model.OpenedRoomsDisplay" readonly />
+                <span class="hint">Derived from the KEY #. Not entered at issue time.</span>
+            </label>
+
             <div class="form-span-2">
                 <label>
                     Key holder
-                    @if (!string.IsNullOrWhiteSpace(Model.SelectedHolderDisplay))
-                    {
-                        <input type="text" value="@Model.SelectedHolderDisplay" readonly />
-                    }
-                    else
-                    {
-                        <span class="hint">Search by name or UIN. Eligible matches only. Nothing is selected automatically.</span>
-                    }
-                </label>
-
-                @if (string.IsNullOrWhiteSpace(Model.SelectedHolderDisplay))
-                {
-                    <form method="post" asp-page="/Operations/Issue" asp-page-handler="SearchHolders" class="form-grid">
-                        <label>
-                            Search
-                            <input asp-for="HolderSearchText" placeholder="Search by name or UIN..." autocomplete="off" required />
-                        </label>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-secondary">Search</button>
-                        </div>
-                    </form>
-
-                    @if (Model.HolderSearchPerformed)
-                    {
-                        if (Model.HolderMatches.Count == 0)
-                        {
-                            <div class="empty-state">
-                                <strong>No eligible key holders matched</strong>
-                                Refine the name or UIN search.
-                            </div>
-                        }
-                        else
-                        {
-                            <ul class="activity-list" aria-label="Matching key holders">
-                                @foreach (var match in Model.HolderMatches)
-                                {
-                                    string label = PartyHolderDisplayFormatter.Format(match.FirstName, match.LastName, match.Uin);
-                                    <li>
-                                        <div class="activity-main">
-                                            <span class="activity-primary">@label</span>
-                                        </div>
-                                        <form method="post" asp-page="/Operations/Issue" asp-page-handler="SelectHolder">
-                                            <input type="hidden" name="WorkforceMemberCode" value="@match.WorkforceMemberCode" />
-                                            <button type="submit" class="btn btn-secondary">Select</button>
-                                        </form>
-                                    </li>
-                                }
-                            </ul>
-                        }
-                    }
-                }
-                else
-                {
-                    <form method="post" asp-page="/Operations/Issue" asp-page-handler="ClearHolder" class="form-actions">
-                        <button type="submit" class="btn btn-secondary">Change key holder</button>
-                    </form>
-                }
-            </div>
-        </div>
-
-        @if (!string.IsNullOrWhiteSpace(Model.SelectedHolderDisplay))
-        {
-            <div class="form-grid">
-                <div class="form-span-2">
-                    <label>
-                        KEY #
-                        @if (!string.IsNullOrWhiteSpace(Model.KeyNumber))
-                        {
-                            <input type="text" value="@Model.KeyNumber" readonly />
-                        }
-                        else
-                        {
-                            <span class="hint">Search available KEY # or MEDECO. Nothing is selected automatically.</span>
-                        }
-                    </label>
-
-                    @if (string.IsNullOrWhiteSpace(Model.KeyNumber))
-                    {
-                        <form method="post" asp-page="/Operations/Issue" asp-page-handler="SearchKeyCopies" class="form-grid">
-                            <label>
-                                Search
-                                <input asp-for="KeyCopySearchText" placeholder="Search KEY # or MEDECO..." autocomplete="off" required />
-                            </label>
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-secondary">Search</button>
-                            </div>
-                        </form>
-
-                        @if (Model.KeyCopySearchPerformed)
-                        {
-                            if (Model.KeyCopyMatches.Count == 0)
-                            {
-                                <div class="empty-state">
-                                    <strong>No available copies matched</strong>
-                                    Refine KEY # or MEDECO search.
-                                </div>
-                            }
-                            else
-                            {
-                                <ul class="activity-list" aria-label="Matching available KEY # values">
-                                    @foreach (var match in Model.KeyCopyMatches
-                                        .GroupBy(item => item.KeyNumber, StringComparer.OrdinalIgnoreCase)
-                                        .Select(group => group.First()))
-                                    {
-                                        <li>
-                                            <div class="activity-main">
-                                                <span class="activity-primary">KEY # @match.KeyNumber</span>
-                                                <span class="muted">Type @match.TypeCode</span>
-                                            </div>
-                                            <form method="post" asp-page="/Operations/Issue" asp-page-handler="SelectKeyNumber">
-                                                <input type="hidden" name="KeyNumber" value="@match.KeyNumber" />
-                                                <button type="submit" class="btn btn-secondary">Select</button>
-                                            </form>
-                                        </li>
-                                    }
-                                </ul>
-                            }
-                        }
-                    }
-                    else
-                    {
-                        <form method="post" asp-page="/Operations/Issue" asp-page-handler="ClearKeyNumber" class="form-actions">
-                            <button type="submit" class="btn btn-secondary">Change KEY #</button>
-                        </form>
-                    }
-                </div>
-            </div>
-
-            @if (!string.IsNullOrWhiteSpace(Model.KeyNumber))
-            {
-                <form method="post" asp-page="/Operations/Issue" class="form-grid" id="issue-key-form">
-                    <input type="hidden" asp-for="WorkforceMemberCode" />
-                    <input type="hidden" asp-for="KeyNumber" />
-                    <label>
-                        MEDECO Key Code
-                        <select asp-for="MedecoKeyCode" asp-items="Model.MedecoOptions" id="issue-medeco" required>
-                            <option value="">Select an available MEDECO...</option>
-                        </select>
-                        <span class="hint">Available physical copies for the selected KEY # only.</span>
-                    </label>
-                    <label>
-                        Rooms opened
-                        <input type="text" value="@Model.OpenedRoomsDisplay" readonly />
-                        <span class="hint">Derived from the KEY #. Not entered at issue time.</span>
-                    </label>
-                    <label>
-                        For
-                        <select asp-for="JustificationKind" id="issue-for-kind" required>
-                            <option value="">Select justification...</option>
-                            <option value="Department">Department</option>
-                            <option value="Room">Room</option>
-                        </select>
-                    </label>
-                    <label id="issue-for-department-label">
-                        Department
-                        <select asp-for="JustificationCode" asp-items="Model.DepartmentOptions" id="issue-for-department">
-                            <option value="">Select a department...</option>
-                        </select>
-                    </label>
-                    <label id="issue-for-room-label">
-                        Room
-                        <select asp-items="Model.RoomOptions" id="issue-for-room">
-                            <option value="">Select a room...</option>
-                        </select>
-                    </label>
-                    <label>
-                        Issued
-                        <input asp-for="IssuedLocalText" autocomplete="off" required />
-                        <span class="hint">Operator local time. Example: @OperatorTimestampFormatter.ToAbsoluteDisplay(DateTimeOffset.UtcNow)</span>
-                    </label>
-                    <label>
-                        Due
-                        <input asp-for="DueLocalText" autocomplete="off" required />
-                        <span class="hint">Operator local time.</span>
-                    </label>
-                    <label>
-                        Loan code
-                        <input asp-for="LoanCode" autocomplete="off" required />
-                        <span class="hint">Unique loan identity required by current authority. Automatic generation is not authorized.</span>
-                    </label>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Issue Key</button>
-                        <a class="btn btn-secondary" asp-page="/Index">Cancel</a>
+                    <div class="searchable-combobox"
+                         data-searchable-combobox
+                         data-search-url="/Operations/Issue?handler=SearchHolders"
+                         data-value-field="workforceMemberCode"
+                         data-display-fields="display">
+                        <input type="text"
+                               class="searchable-combobox-input"
+                               data-role="combobox-input"
+                               placeholder="Search by name or UIN..."
+                               autocomplete="off"
+                               value="@Model.SelectedHolderDisplay"
+                               aria-label="Search eligible key holder" />
+                        <button type="button" class="searchable-combobox-toggle" data-role="combobox-toggle" aria-label="Browse eligible key holders">▾</button>
+                        <input type="hidden" asp-for="WorkforceMemberCode" data-role="combobox-value" />
+                        <ul class="searchable-combobox-panel" data-role="combobox-panel" role="listbox"></ul>
                     </div>
-                </form>
-                <script>
-                    (function () {
-                        const kindEl = document.getElementById('issue-for-kind');
-                        const deptLabel = document.getElementById('issue-for-department-label');
-                        const roomLabel = document.getElementById('issue-for-room-label');
-                        const deptSelect = document.getElementById('issue-for-department');
-                        const roomSelect = document.getElementById('issue-for-room');
-                        if (!kindEl || !deptSelect || !roomSelect) return;
+                    <span class="hint">Eligible key holders only (active, current room assignment, key-eligible worker type). Nothing is selected automatically.</span>
+                </label>
+            </div>
 
-                        function syncJustification() {
-                            const isRoom = kindEl.value === 'Room';
-                            const isDept = kindEl.value === 'Department';
-                            deptLabel.hidden = !isDept;
-                            roomLabel.hidden = !isRoom;
-                            deptSelect.disabled = !isDept;
-                            roomSelect.disabled = !isRoom;
-                            deptSelect.name = isDept ? 'JustificationCode' : '';
-                            roomSelect.name = isRoom ? 'JustificationCode' : '';
-                            if (isRoom) {
-                                deptSelect.removeAttribute('required');
-                                roomSelect.setAttribute('required', 'required');
-                            } else if (isDept) {
-                                roomSelect.removeAttribute('required');
-                                deptSelect.setAttribute('required', 'required');
-                            } else {
-                                deptSelect.removeAttribute('required');
-                                roomSelect.removeAttribute('required');
-                                deptSelect.value = '';
-                                roomSelect.value = '';
-                            }
-                        }
+            <label>
+                For
+                <select asp-for="JustificationKind" id="issue-for-kind" required>
+                    <option value="">Select justification...</option>
+                    <option value="Department">Department</option>
+                    <option value="Room">Room</option>
+                </select>
+            </label>
+            <label id="issue-for-department-label">
+                Department
+                <select asp-for="JustificationCode" asp-items="Model.DepartmentOptions" id="issue-for-department">
+                    <option value="">Select a department...</option>
+                </select>
+            </label>
+            <label id="issue-for-room-label">
+                Room
+                <select asp-items="Model.RoomOptions" id="issue-for-room">
+                    <option value="">Select a room...</option>
+                </select>
+            </label>
+            <label>
+                Issued
+                <input asp-for="IssuedLocalText" autocomplete="off" required />
+                <span class="hint">Operator local time. Example: @OperatorTimestampFormatter.ToAbsoluteDisplay(DateTimeOffset.UtcNow)</span>
+            </label>
+            <label>
+                Due
+                <input asp-for="DueLocalText" autocomplete="off" required />
+                <span class="hint">Operator local time.</span>
+            </label>
+            <label>
+                Loan code
+                <input asp-for="LoanCode" autocomplete="off" required />
+                <span class="hint">Unique loan identity required by current authority. Automatic generation is not authorized.</span>
+            </label>
+            <div class="form-actions form-span-2">
+                <button type="submit" class="btn btn-primary">Issue Key</button>
+                <a class="btn btn-secondary" asp-page="/Index">Cancel</a>
+            </div>
+        </form>
+        <script>
+            (function () {
+                const kindEl = document.getElementById('issue-for-kind');
+                const deptLabel = document.getElementById('issue-for-department-label');
+                const roomLabel = document.getElementById('issue-for-room-label');
+                const deptSelect = document.getElementById('issue-for-department');
+                const roomSelect = document.getElementById('issue-for-room');
+                if (!kindEl || !deptSelect || !roomSelect) { return; }
 
-                        kindEl.addEventListener('change', syncJustification);
-                        syncJustification();
-                    })();
-                </script>
-            }
-        }
+                function syncJustification() {
+                    const isRoom = kindEl.value === 'Room';
+                    const isDept = kindEl.value === 'Department';
+                    deptLabel.hidden = !isDept;
+                    roomLabel.hidden = !isRoom;
+                    deptSelect.disabled = !isDept;
+                    roomSelect.disabled = !isRoom;
+                    deptSelect.name = isDept ? 'JustificationCode' : '';
+                    roomSelect.name = isRoom ? 'JustificationCode' : '';
+                    if (isRoom) {
+                        deptSelect.removeAttribute('required');
+                        roomSelect.setAttribute('required', 'required');
+                    } else if (isDept) {
+                        roomSelect.removeAttribute('required');
+                        deptSelect.setAttribute('required', 'required');
+                    } else {
+                        deptSelect.removeAttribute('required');
+                        roomSelect.removeAttribute('required');
+                        deptSelect.value = '';
+                        roomSelect.value = '';
+                    }
+                }
+
+                kindEl.addEventListener('change', syncJustification);
+                syncJustification();
+            })();
+        </script>
     }
 </section>

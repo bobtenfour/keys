@@ -1,9 +1,11 @@
 using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Reports;
+using KeyInventory.Domain.Catalog;
 using KeyInventory.Domain.Loans;
 using KeyInventory.Domain.Workforce;
 using KeyInventory.Infrastructure.Data;
+using KeyInventory.Infrastructure.Workflow;
 using Microsoft.EntityFrameworkCore;
 
 namespace KeyInventory.Infrastructure.Reports;
@@ -11,14 +13,14 @@ namespace KeyInventory.Infrastructure.Reports;
 public sealed class OperationalReportsAdapter : IOperationalReportsPort
 {
     private readonly KeyInventoryDbContext _dbContext;
-    private readonly IKeyAccessPatternRoomAssignmentPersistencePort _roomAssignments;
+    private readonly IKeyAccessResolutionPort _accessResolution;
 
     public OperationalReportsAdapter(
         KeyInventoryDbContext dbContext,
-        IKeyAccessPatternRoomAssignmentPersistencePort roomAssignments)
+        IKeyAccessResolutionPort accessResolution)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-        _roomAssignments = roomAssignments ?? throw new ArgumentNullException(nameof(roomAssignments));
+        _accessResolution = accessResolution ?? throw new ArgumentNullException(nameof(accessResolution));
     }
 
     public async Task<IReadOnlyList<CurrentKeyHolderReportRow>> ListCurrentKeyHoldersAsync(
@@ -234,8 +236,30 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        var closedWithoutReturn = await (
+                from loan in _dbContext.Loans.AsNoTracking()
+                join key in _dbContext.KeyAssets.AsNoTracking() on loan.KeyAssetId equals key.KeyAssetId
+                join party in _dbContext.Parties.AsNoTracking()
+                    on loan.BorrowerPartyReference equals party.PartyCode
+                where key.KeyNumber == keyNumber
+                    && (loan.Status == nameof(LoanStatus.Lost) || loan.Status == nameof(LoanStatus.Destroyed))
+                select new KeyHistoryReportRow(
+                    loan.LoanCode,
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
+                    party.FirstName,
+                    party.LastName,
+                    party.Uin,
+                    loan.IssuedAtUtc,
+                    loan.DueAtUtc,
+                    null,
+                    loan.Status))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
         return openRows
             .Concat(returnedRows)
+            .Concat(closedWithoutReturn)
             .OrderByDescending(row => row.IssuedAtUtc)
             .ThenBy(row => row.LoanCode, StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -305,22 +329,36 @@ public sealed class OperationalReportsAdapter : IOperationalReportsPort
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey = await _roomAssignments
-            .ListForKeyNumbersAsync(keys.Select(key => key.KeyNumber).Distinct(StringComparer.Ordinal), cancellationToken)
-            .ConfigureAwait(false);
+        IReadOnlyDictionary<string, IReadOnlyList<KeyOpenedRoomItem>> roomsByKey =
+            await _accessResolution.ResolveForPatternsAsync(
+                    keys.GroupBy(key => key.KeyNumber, StringComparer.Ordinal)
+                        .Select(group =>
+                        {
+                            KeyAssetEntity first = group.First();
+                            return new KeyAccessResolutionRequest(
+                                first.KeyNumber,
+                                DomainCatalogMapper.ParseClassification(first.AccessPattern.Classification),
+                                first.AccessPattern.RoomCode);
+                        }),
+                    expandMaster: false,
+                    cancellationToken)
+                .ConfigureAwait(false);
 
         return keys
-            .Select(key => new KeyCatalogReportRow(
-                key.KeyNumber,
-                key.MedecoKeyCode,
-                key.AccessPattern.KeyTypeCode,
-                key.IsActive,
-                issuedAssets.Contains(key.KeyAssetId)
-                    ? OperationalKeyAvailability.Issued
-                    : OperationalKeyAvailability.Available,
-                roomsByKey.TryGetValue(key.KeyNumber, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
-                    ? rooms
-                    : []))
+            .Select(key =>
+            {
+                KeyPhysicalCondition condition = DomainCatalogMapper.ParseCondition(key.Condition);
+                bool isIssued = issuedAssets.Contains(key.KeyAssetId);
+                return new KeyCatalogReportRow(
+                    key.KeyNumber,
+                    key.MedecoKeyCode,
+                    DomainCatalogMapper.ParseClassification(key.AccessPattern.Classification),
+                    condition,
+                    OperationalKeyAvailability.DeriveCustody(condition, isIssued),
+                    roomsByKey.TryGetValue(key.KeyNumber, out IReadOnlyList<KeyOpenedRoomItem>? rooms)
+                        ? rooms
+                        : []);
+            })
             .ToArray();
     }
 

@@ -8,6 +8,7 @@ using KeyInventory.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -45,7 +46,7 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ActivateAndRetireDepartmentRoomAndKeyType()
+    public async Task ActivateAndRetireDepartmentAndRoom()
     {
         using IServiceScope scope = CreateScope();
         ICreateDepartmentUseCase createDept = scope.ServiceProvider.GetRequiredService<ICreateDepartmentUseCase>();
@@ -54,19 +55,14 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
         ICreateRoomUseCase createRoom = scope.ServiceProvider.GetRequiredService<ICreateRoomUseCase>();
         IRetireRoomUseCase retireRoom = scope.ServiceProvider.GetRequiredService<IRetireRoomUseCase>();
         IActivateRoomUseCase activateRoom = scope.ServiceProvider.GetRequiredService<IActivateRoomUseCase>();
-        ICreateKeyAssetUseCase createKey = scope.ServiceProvider.GetRequiredService<ICreateKeyAssetUseCase>();
-        IRetireKeyTypeUseCase retireKeyType = scope.ServiceProvider.GetRequiredService<IRetireKeyTypeUseCase>();
-        IActivateKeyTypeUseCase activateKeyType = scope.ServiceProvider.GetRequiredService<IActivateKeyTypeUseCase>();
         IListDepartmentsUseCase listDepts = scope.ServiceProvider.GetRequiredService<IListDepartmentsUseCase>();
-        IListKeyTypesUseCase listTypes = scope.ServiceProvider.GetRequiredService<IListKeyTypesUseCase>();
         KeyInventoryDbContext db = scope.ServiceProvider.GetRequiredService<KeyInventoryDbContext>();
 
         await createDept.ExecuteAsync("am-dept", CancellationToken.None).ConfigureAwait(true);
         Guid amDeptId = (await listDepts.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.DepartmentCode == "am-dept").DepartmentId;
-        string roomCode = await createRoom.ExecuteAsync("101", "Lab", CancellationToken.None).ConfigureAwait(true);
-        await CatalogSeedHelper.CreateKeyTypeIfMissingAsync(scope.ServiceProvider, "am-type").ConfigureAwait(true);
-        await createKey.ExecuteAsync("AM-KEY-1", "01", "am-type", CancellationToken.None).ConfigureAwait(true);
+        string roomCode = await createRoom.ExecuteAsync("am-dept", "101", "Lab", CancellationToken.None).ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "AM-KEY-1", "01", KeyAccessClassification.Regular, CancellationToken.None).ConfigureAwait(true);
 
         await retireDept.ExecuteAsync(amDeptId, CancellationToken.None).ConfigureAwait(true);
         Assert.False((await listDepts.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
@@ -83,27 +79,11 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
         Assert.True((await listRooms.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
             .Single(item => item.RoomCode == roomCode).IsActive);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                retireKeyType.ExecuteAsync("am-type", CancellationToken.None))
-            .ConfigureAwait(true);
-        KeyAccessPatternEntity pattern = await db.KeyAccessPatterns.SingleAsync(item => item.KeyNumber == "AM-KEY-1")
-            .ConfigureAwait(true);
-        pattern.IsActive = false;
-        KeyAssetEntity key = await db.KeyAssets.SingleAsync(item => item.KeyNumber == "AM-KEY-1" && item.MedecoKeyCode == "01")
-            .ConfigureAwait(true);
-        key.IsActive = false;
-        await db.SaveChangesAsync().ConfigureAwait(true);
-        await retireKeyType.ExecuteAsync("am-type", CancellationToken.None).ConfigureAwait(true);
-        Assert.False((await listTypes.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
-            .Single(item => item.TypeCode == "am-type").IsActive);
-        await activateKeyType.ExecuteAsync("am-type", CancellationToken.None).ConfigureAwait(true);
-        Assert.True((await listTypes.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
-            .Single(item => item.TypeCode == "am-type").IsActive);
-
         Assert.Equal(1, await db.Departments.CountAsync(item => item.DepartmentCode == "am-dept").ConfigureAwait(true));
         Assert.Equal(1, await db.Rooms.CountAsync(item => item.RoomCode == roomCode).ConfigureAwait(true));
-        Assert.Equal(1, await db.KeyTypes.CountAsync(item => item.TypeCode == "am-type").ConfigureAwait(true));
+        Assert.Equal(1, await db.KeyAssets.CountAsync(item => item.KeyNumber == "AM-KEY-1").ConfigureAwait(true));
     }
+
 
     [Fact]
     public async Task RoomNumberPartyNameUinAndDepartmentUpdatesPersist()
@@ -126,6 +106,14 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "am-wm")
             .ConfigureAwait(true);
         await createDept.ExecuteAsync("am-wm-dept-2", CancellationToken.None).ConfigureAwait(true);
+
+        IEndWorkAssignmentUseCase endAssignment = scope.ServiceProvider.GetRequiredService<IEndWorkAssignmentUseCase>();
+        IListWorkAssignmentsUseCase listAssignments =
+            scope.ServiceProvider.GetRequiredService<IListWorkAssignmentsUseCase>();
+        Guid seededAssignmentId = (await listAssignments.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
+            .Single(item => item.IsActive && item.WorkforceMemberCode == seeded.MemberCode)
+            .WorkAssignmentId;
+        await endAssignment.ExecuteAsync(seededAssignmentId, CancellationToken.None).ConfigureAwait(true);
 
         await updateDepartment.ExecuteAsync(seeded.MemberCode, "am-wm-dept-2", CancellationToken.None)
             .ConfigureAwait(true);
@@ -186,7 +174,24 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
             .ConfigureAwait(true);
         await createDept.ExecuteAsync("am-term-dept-2", CancellationToken.None).ConfigureAwait(true);
 
+        ICreateRoomUseCase createRoom = scope.ServiceProvider.GetRequiredService<ICreateRoomUseCase>();
+        ICreateWorkAssignmentUseCase createAssignment =
+            scope.ServiceProvider.GetRequiredService<ICreateWorkAssignmentUseCase>();
+        IEndWorkAssignmentUseCase endAssignment = scope.ServiceProvider.GetRequiredService<IEndWorkAssignmentUseCase>();
+        IListWorkAssignmentsUseCase listAssignments =
+            scope.ServiceProvider.GetRequiredService<IListWorkAssignmentsUseCase>();
+        string newRoom = await createRoom.ExecuteAsync("am-term-dept-2", "301", "Moved", CancellationToken.None)
+            .ConfigureAwait(true);
+        await endAssignment.ExecuteAsync(
+                (await listAssignments.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
+                    .Single(item => item.IsActive && item.WorkforceMemberCode == seeded.MemberCode)
+                    .WorkAssignmentId,
+                CancellationToken.None)
+            .ConfigureAwait(true);
+
         await updateDepartment.ExecuteAsync(seeded.MemberCode, "am-term-dept-2", CancellationToken.None)
+            .ConfigureAwait(true);
+        await createAssignment.ExecuteAsync(seeded.MemberCode, newRoom, CancellationToken.None)
             .ConfigureAwait(true);
         await updateType.ExecuteAsync(seeded.MemberCode, "Contractor", CancellationToken.None).ConfigureAwait(true);
 
@@ -196,7 +201,7 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
         Assert.Equal(nameof(WorkforceType.Contractor), updated.WorkforceType);
         Assert.Equal(seeded.PartyCode, updated.PartyCode);
 
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "am-term-key", "01", "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "am-term-key", "01", KeyAccessClassification.Regular).ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 9, 18, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-am-term",
@@ -235,16 +240,12 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task WorkAssignmentEndAndPrimaryMaintenancePersistWithoutDelete()
+    public async Task WorkAssignmentEndPersistsWithoutDelete()
     {
         using IServiceScope scope = CreateScope();
         ICreateWorkAssignmentUseCase createAssignment =
             scope.ServiceProvider.GetRequiredService<ICreateWorkAssignmentUseCase>();
         IEndWorkAssignmentUseCase endAssignment = scope.ServiceProvider.GetRequiredService<IEndWorkAssignmentUseCase>();
-        IMarkWorkAssignmentPrimaryUseCase markPrimary =
-            scope.ServiceProvider.GetRequiredService<IMarkWorkAssignmentPrimaryUseCase>();
-        IClearWorkAssignmentPrimaryUseCase clearPrimary =
-            scope.ServiceProvider.GetRequiredService<IClearWorkAssignmentPrimaryUseCase>();
         IListWorkAssignmentsUseCase listAssignments =
             scope.ServiceProvider.GetRequiredService<IListWorkAssignmentsUseCase>();
         ICreateRoomUseCase createRoom = scope.ServiceProvider.GetRequiredService<ICreateRoomUseCase>();
@@ -252,27 +253,20 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "am-wa")
             .ConfigureAwait(true);
-        const string originalPrimary = "am-wa-wa-1";
-        string secondRoom = await createRoom.ExecuteAsync("202", "Office", CancellationToken.None).ConfigureAwait(true);
-        await createAssignment.ExecuteAsync("am-wa-2", seeded.MemberCode, secondRoom, isPrimary: false, CancellationToken.None)
+        string secondRoom = await createRoom.ExecuteAsync(seeded.DepartmentCode, "202", "Office", CancellationToken.None).ConfigureAwait(true);
+        await createAssignment.ExecuteAsync(seeded.MemberCode, secondRoom, CancellationToken.None)
             .ConfigureAwait(true);
 
-        await markPrimary.ExecuteAsync("am-wa-2", CancellationToken.None).ConfigureAwait(true);
-        IReadOnlyList<WorkAssignmentListItem> afterMark = await listAssignments.ExecuteAsync(CancellationToken.None)
-            .ConfigureAwait(true);
-        Assert.True(afterMark.Single(item => item.WorkAssignmentCode == "am-wa-2").IsPrimary);
-        Assert.False(afterMark.Single(item => item.WorkAssignmentCode == originalPrimary).IsPrimary);
+        WorkAssignmentListItem second = (await listAssignments.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
+            .Single(item => item.IsActive
+                && item.WorkforceMemberCode == seeded.MemberCode
+                && item.RoomCode == secondRoom);
 
-        await clearPrimary.ExecuteAsync("am-wa-2", CancellationToken.None).ConfigureAwait(true);
-        Assert.False((await listAssignments.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
-            .Single(item => item.WorkAssignmentCode == "am-wa-2").IsPrimary);
-
-        await endAssignment.ExecuteAsync("am-wa-2", CancellationToken.None).ConfigureAwait(true);
+        await endAssignment.ExecuteAsync(second.WorkAssignmentId, CancellationToken.None).ConfigureAwait(true);
         WorkAssignmentListItem ended = (await listAssignments.ExecuteAsync(CancellationToken.None).ConfigureAwait(true))
-            .Single(item => item.WorkAssignmentCode == "am-wa-2");
+            .Single(item => item.WorkAssignmentId == second.WorkAssignmentId);
         Assert.False(ended.IsActive);
-        Assert.False(ended.IsPrimary);
-        Assert.Equal(1, await db.WorkAssignments.CountAsync(item => item.WorkAssignmentCode == "am-wa-2")
+        Assert.Equal(1, await db.WorkAssignments.CountAsync(item => item.WorkAssignmentId == second.WorkAssignmentId)
             .ConfigureAwait(true));
     }
 
@@ -294,7 +288,7 @@ public sealed class AdminMaintenanceWorkflowTests : IAsyncLifetime
                 .ExecuteAsync(CancellationToken.None)
                 .ConfigureAwait(true))
             .Single(item => item.DepartmentCode == seeded.DepartmentCode).DepartmentId;
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "am-flow-key", "01", "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "am-flow-key", "01", KeyAccessClassification.Regular).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 9, 19, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(

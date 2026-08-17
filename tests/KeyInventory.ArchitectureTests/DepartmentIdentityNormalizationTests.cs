@@ -189,7 +189,7 @@ public sealed class DepartmentIdentityNormalizationTests : IAsyncLifetime
                 .ConfigureAwait(true))
             .Single(item => item.DepartmentCode == seeded.DepartmentCode).DepartmentId;
 
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "SNAP-KEY", "01", "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "SNAP-KEY", "01", KeyAccessClassification.Regular).ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 12, 16, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-snap-1",
@@ -241,7 +241,7 @@ public sealed class DepartmentIdentityNormalizationTests : IAsyncLifetime
     [Fact]
     public void LoanJustificationInvariants()
     {
-        KeyAsset keyAsset = CatalogTestFactory.CreateCopy("inv-key", "01", "mechanical");
+        KeyAsset keyAsset = CatalogTestFactory.CreateCopy("inv-key", "01", KeyAccessClassification.Regular);
         DateTimeOffset issued = new(2026, 8, 12, 12, 0, 0, TimeSpan.Zero);
         DateTimeOffset due = issued.AddDays(1);
         Guid departmentId = Guid.Parse("55555555-5555-5555-5555-555555555555");

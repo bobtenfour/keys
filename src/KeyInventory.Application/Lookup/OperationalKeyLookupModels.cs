@@ -1,4 +1,5 @@
 using KeyInventory.Application.Catalog;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.Application.Lookup;
 
@@ -11,7 +12,8 @@ public sealed record KeyLookupResult(
     Guid KeyAssetId,
     string KeyNumber,
     string MedecoKeyCode,
-    string TypeCode,
+    KeyAccessClassification Classification,
+    KeyPhysicalCondition Condition,
     string AvailabilityStatus,
     PartyHolderDisplay? CurrentHolder,
     string? OpenLoanCode,
@@ -22,6 +24,7 @@ public sealed record OperationalLoanDisplay(
     Guid KeyAssetId,
     string KeyNumber,
     string MedecoKeyCode,
+    KeyAccessClassification Classification,
     string HolderFirstName,
     string HolderLastName,
     string HolderUin,
@@ -52,6 +55,19 @@ public static class OperationalKeyAvailability
 {
     public const string Available = "Available";
     public const string Issued = "Issued";
+
+    /// <summary>
+    /// Custody is derived only for Active keys. Lost/Destroyed are not Available.
+    /// </summary>
+    public static string DeriveCustody(KeyPhysicalCondition condition, bool hasOpenLoan)
+    {
+        if (condition != KeyPhysicalCondition.Active)
+        {
+            return string.Empty;
+        }
+
+        return hasOpenLoan ? Issued : Available;
+    }
 }
 
 public static class PartyHolderDisplayFormatter

@@ -11,8 +11,28 @@ Define the logical entities and relationships required by the domain. It is not 
 - Authority: Human Governance identity rule — entity identity is a stable internal PK; business identifiers may be unique and editable and must not become persistence identity merely because they are unique.
 - Evidence / full audit: `documentation/erd-normalization-identity-authority-2026-08-12.md`; provenance: `documentation/department-historical-justification-provenance-2026-08-12.md`.
 - Active Department identity: **DepartmentId** (immutable PK) + **DepartmentCode** (unique editable business identifier).
-- Room dual-identity (RoomCode + RoomNumber), Party (PartyCode + UIN), KeyAssetId, KeyNumber-as-immutable-KEY #, and KeyAccessPatternRoomAssignment sole Room-access authority remain.
+- Room dual-identity (RoomCode + RoomNumber), Party (PartyCode + UIN), KeyAssetId, KeyNumber-as-immutable-KEY # remain.
 - Does not rewrite Accepted OPERATOR-EXPERIENCE-1 / KEY-ACCESS-COPY-1 historical records.
+
+## Active Structural Amendment — Room Department, Regular/Master, no KeyType (2026-08-14)
+- Decision: SUPERSEDE KeyType entity and master=multi-room inference for the active logical model.
+- Authority: Human Governance normalized model.
+- Active rules:
+  - **Room.DepartmentId** FK → Department (required; Room belongs to exactly one Department).
+  - **KeyAccessPattern.Classification** = `Regular` | `Master` (sole KEY # classification; not inferred from Room count).
+  - **No KeyType entity** in the active logical model.
+  - **WorkAssignment consistency:** Room.DepartmentId must match WorkforceMember.DepartmentId.
+  - KeyAsset has no holder/Department columns; Available/Issued derived from open Loan on KeyAssetId.
+- Does not rewrite Accepted OPERATOR-EXPERIENCE-1 / KEY-ACCESS-COPY-1 historical records.
+
+## Active Structural Amendment — Classification defines KEY # access (2026-08-16)
+- Decision: SUPERSEDE `KeyAccessPatternRoomAssignments` many-to-many join as Room-access authority.
+- Active schema:
+  - **KeyAccessPattern.RoomCode** nullable FK → Room (Regular required; Master NULL).
+  - Master access = all current Rooms derived from Classification; not stored per Room.
+  - KeyAsset has no Room columns.
+- Migration: `20260816180000_ClassificationDefinesKeyAccess`.
+- Does not rewrite Accepted KEY-ACCESS-COPY-1 historical records.
 
 ## Implementation status (2026-08-12)
 - **IMPLEMENTED** via migration `DepartmentIdentityNormalization`: DepartmentId PK; WM/WA/Loan FKs; structured Loan justification; one-time KeyIssued provenance extract (migration-scoped only); Department Edit/rename Application authority.
@@ -25,11 +45,12 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 - **PK:** DepartmentId (stable internal identity, Guid)
 - **AK:** DepartmentCode (unique, operator-facing, **editable**)
 - **Lifecycle:** IsActive (Activate/Retire)
-- **Relationships:** referenced by WorkforceMember.DepartmentId (live membership); may be referenced by Loan.JustificationDepartmentId (historical issue snapshot)
+- **Relationships:** referenced by WorkforceMember.DepartmentId (live membership); Room.DepartmentId (Room ownership); may be referenced by Loan.JustificationDepartmentId (historical issue snapshot)
 
 ### Room
 - **PK:** RoomCode (immutable technical identity)
 - **AK:** RoomNumber (unique, operator-facing, editable)
+- **FK:** **DepartmentId → Department** (required; exactly one Department)
 - **Attrs:** Description (editable), IsActive
 - **Relationships:** WorkAssignment.RoomCode FK; KeyAccessPatternRoomAssignment.RoomCode FK; Loan.JustificationRoomCode historical snapshot
 
@@ -46,21 +67,19 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 - **Cardinality:** Party 1 → 0..N WM (≤1 Active); Department 1 → 0..N WM
 
 ### WorkAssignment
-- **PK:** WorkAssignmentCode
+- **PK:** WorkAssignmentId (technical Guid; not operator-facing)
 - **FK:** WorkforceMemberCode → WorkforceMember; RoomCode → Room
-- **Attrs:** IsPrimary, IsActive (End)
-- Association entity; not Department-scoped
-
-### KeyType
-- **PK / classification code:** TypeCode (immutable classification; not KEY # authority)
-- **Lifecycle:** IsActive
-- **FK from:** KeyAccessPattern.KeyTypeCode
+- **Attrs:** IsActive (End)
+- **Consistency:** Room.DepartmentId must equal WorkforceMember.DepartmentId (cross-department WA forbidden)
+- **Uniqueness:** at most one active WorkAssignment per (WorkforceMemberCode, RoomCode)
+- Association entity; no independent WorkAssignmentCode; no Primary designation
 
 ### KeyAccessPattern (KEY #)
 - **PK / business identity:** KeyNumber (operator-facing KEY #; **immutable** by KEY-ACCESS-COPY-1)
-- **FK:** KeyTypeCode → KeyType
+- **Classification:** Regular | Master (required enum on KEY #; replaces KeyType entity)
 - **Lifecycle:** IsActive
 - Owns current Room openings via KeyAccessPatternRoomAssignment
+- Classification is not inferred from Room assignment count
 
 ### KeyAccessPatternRoomAssignment
 - **PK:** (KeyNumber, RoomCode)
@@ -70,15 +89,21 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 ### KeyAsset (MEDECO)
 - **PK:** KeyAssetId (Guid, immutable)
 - **AK:** (KeyNumber, MedecoKeyCode) unique
-- **FK:** KeyNumber → KeyAccessPattern
-- Rooms and KeyType **derived** from parent KEY # (not independently persisted authorities)
+- **FK:** KeyNumber → KeyAccessPattern; optional ReplacesKeyAssetId → KeyAsset (replacement lineage)
+- **Attrs:** MedecoKeyCode (unique within KEY #), Condition (Active | Lost | Destroyed), ReplacesKeyAssetId
+- Rooms and Classification **derived** from parent KEY # (not independently persisted authorities)
+- No holder column; no Department column; no IsActive / Retired physical-key flag
+- Available/Issued derived: Active + open Loan ⇒ Issued; Active + no open Loan ⇒ Available; Lost/Destroyed ⇒ not Available/not Issued
+- Replacement is an operation/relationship via ReplacesKeyAssetId on the new KeyAsset, not a Condition value
 
 ### Loan
 - **PK:** LoanCode
 - **FK:** KeyAssetId → KeyAsset; BorrowerPartyReference → Party
 - **Historical snapshot (immutable after issue):** JustificationKind; JustificationDepartmentId (nullable FK → Department when kind=Department); JustificationRoomCode (nullable FK → Room when kind=Room)
 - Snapshot ≠ live WorkforceMember.DepartmentId membership
-- Status, IssuedAtUtc, DueAtUtc
+- Status (Open | Returned | Lost | Destroyed | Cancelled), IssuedAtUtc, DueAtUtc
+- Open Loan is the authority for Issued custody of that KeyAsset
+- Lost/Destroyed close Open Loan without a Return; Returned requires Return
 
 ### Return
 - **PK:** ReturnCode
@@ -89,11 +114,10 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 - Append-only; SubjectReference/Details are soft refs and display snapshots; never rewritten on DepartmentCode rename
 
 ### Cardinality summary (target)
-- Department 1 — 0..N WorkforceMember
+- Department 1 — 0..N WorkforceMember; Department 1 — 0..N Room
 - Party 1 — 0..N WorkforceMember (≤1 Active)
 - WorkforceMember 1 — 0..N WorkAssignment
-- Room 1 — 0..N WorkAssignment; Room 1 — 0..N KeyAccessPatternRoomAssignment
-- KeyType 1 — 0..N KeyAccessPattern
+- Room 1 — 0..N WorkAssignment; Room 1 — 0..N KeyAccessPatternRoomAssignment; Room N — 1 Department
 - KeyAccessPattern 1 — 0..N KeyAsset; KeyAccessPattern M — N Room (via assignment)
 - KeyAsset 1 — 0..N Loan (≤1 Open)
 - Party 1 — 0..N Loan
@@ -105,7 +129,7 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 - KeyAsset
 - KeyRoomAssignment (historical; retired active authority under KEY-ACCESS-COPY-1)
 - KeySeries (non-operational seed; not KEY # authority)
-- KeyType
+- KeyType (historical; removed from active model — superseded by Regular|Master Classification)
 - Lock
 - Location
 - Building
@@ -143,21 +167,21 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 ## Entity Ownership Matrix
 | Entity | Owning aggregate or boundary | Authority document | Authoritative or derived | Lifecycle phase |
 |---|---|---|---|---|
-| KeyAccessPattern | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative KEY # / access-pattern identity and Room openings | KEY-ACCESS-COPY-1 |
+| KeyAccessPattern | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative KEY # / access-pattern identity, Regular\|Master Classification, and Room openings | KEY-ACCESS-COPY-1; Classification amendment 2026-08-14 |
 | KeyAccessPatternRoomAssignment | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative current KEY #↔Room opening association | KEY-ACCESS-COPY-1 |
-| KeyAsset | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative physical-copy identity (KeyAssetId + MEDECO within KEY #) | KEY-ACCESS-COPY-1 supersedes CatalogKeyCode-as-unique-identity |
+| KeyAsset | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative physical-copy identity (KeyAssetId + MEDECO within KEY #); no holder/Department | KEY-ACCESS-COPY-1 supersedes CatalogKeyCode-as-unique-identity |
 | KeyRoomAssignment | Key Catalog aggregate | key-inventory-domain-contract.md | Retired active KeyAsset↔Room authority | Historical KEY-ROOM-ASSIGNMENT-1 |
 | KeySeries | Key Catalog classification | key-inventory-domain-contract.md | Non-operational seed; not KEY # / Room / copy authority | KEY-ACCESS-COPY-1 |
-| KeyType | Key Catalog classification | key-inventory-domain-contract.md | Authoritative classification owned at KeyAccessPattern | KEY-ACCESS-COPY-1 |
+| KeyType | Key Catalog classification | key-inventory-domain-contract.md | Removed from active model; superseded by Regular\|Master on KeyAccessPattern | Superseded 2026-08-14 |
 | Lock | Key Catalog aggregate | key-inventory-domain-contract.md | Authoritative | Current baseline |
 | Location | Location boundary | key-inventory-domain-contract.md | Authoritative | Current baseline |
 | Building | Location boundary | key-inventory-domain-contract.md | Removed from active model (historical audit may reference) | OPERATOR-EXPERIENCE-1 |
-| Room | Location boundary | key-inventory-domain-contract.md | Authoritative; no Building; global RoomNumber | OPERATOR-EXPERIENCE-1 |
+| Room | Location boundary | key-inventory-domain-contract.md | Authoritative; DepartmentId required; no Building; global RoomNumber | OPERATOR-EXPERIENCE-1; Room→Department 2026-08-14 |
 | Party | Party boundary | key-inventory-domain-contract.md | Authoritative | Current baseline |
 | Organization | Workforce Eligibility boundary | key-inventory-domain-contract.md | Removed from active model (historical audit may reference) | OPERATOR-EXPERIENCE-1 |
 | Department | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative; no Organization; global DepartmentCode | OPERATOR-EXPERIENCE-1 |
 | WorkforceMember | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative; no Organization/ResponsibleManager | OPERATOR-EXPERIENCE-1 |
-| WorkAssignment | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative WM↔Room | OPERATOR-EXPERIENCE-1 |
+| WorkAssignment | Workforce Eligibility boundary | key-inventory-domain-contract.md | Authoritative WM↔Room; Room.Department must match WM.Department | OPERATOR-EXPERIENCE-1; consistency 2026-08-14 |
 | SecurityPrincipal | Identity boundary | security-capability-contract.md | Authoritative | IDENTITY-1 |
 | SecurityPrincipalType | Identity boundary | security-capability-contract.md | Authoritative vocabulary | IDENTITY-1 |
 | Role | Authorization boundary | security-capability-contract.md | Authoritative | IDENTITY-1 |
@@ -193,14 +217,14 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 
 ## Catalog Logical Contract
 ### KeyAccessPattern
-- Purpose: authoritative KEY # / shared access-pattern identity and Room access set for all physical copies under that KEY #.
+- Purpose: authoritative KEY # / shared access-pattern identity, Regular|Master Classification, and Room access set for all physical copies under that KEY #.
 - Owning aggregate or boundary: Key Catalog aggregate.
-- Authoritative or derived: Authoritative for KeyNumber and current KeyAccessPattern↔Room openings.
-- Required relationships: references exactly one KeyType; may have zero or more KeyAsset physical copies; may have zero or more KeyAccessPatternRoomAssignment records.
-- Cardinalities: one KeyType to zero or more KeyAccessPattern records; one KeyAccessPattern to zero or more KeyAsset records; one KeyAccessPattern to zero or more Rooms via assignments; one Room to zero or more KeyAccessPatterns.
+- Authoritative or derived: Authoritative for KeyNumber, Classification, and current KeyAccessPattern↔Room openings.
+- Required relationships: has exactly one Classification (Regular|Master); may have zero or more KeyAsset physical copies; may have zero or more KeyAccessPatternRoomAssignment records.
+- Cardinalities: one KeyAccessPattern to zero or more KeyAsset records; one KeyAccessPattern to zero or more Rooms via assignments; one Room to zero or more KeyAccessPatterns.
 - Required uniqueness: KeyNumber is unique across KeyAccessPattern records (installation-wide).
-- Required integrity constraints: KeyNumber required; KeyType required and active for new assignment; Building derived only through assigned Rooms; must not independently own Building; must not own custody.
-- Prohibited authority: possession, loan/return, lifecycle, audit history, master/sub-master hierarchy engine, KeySeries reinterpretation as this entity.
+- Required integrity constraints: KeyNumber required; Classification required as Regular or Master and not inferred from Room count; Building derived only through assigned Rooms; must not independently own Building; must not own custody.
+- Prohibited authority: possession, loan/return, lifecycle, audit history, master/sub-master hierarchy engine, KeyType entity, KeySeries reinterpretation as this entity, Master inferred from multi-room.
 
 ### KeyAccessPatternRoomAssignment
 - Purpose: current authoritative association of one KEY # to one Room that every physical copy under that KEY # opens.
@@ -209,18 +233,18 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 - Required relationships: references exactly one KeyAccessPattern; references exactly one Room.
 - Cardinalities: many-to-many between KeyAccessPattern and Room.
 - Required uniqueness: the pair (KeyAccessPattern, Room) is unique among current assignments.
-- Required integrity constraints: both references required; active operational assignment requires an active Room; KeyAsset and KeyType do not participate as assignment owners.
+- Required integrity constraints: both references required; active operational assignment requires an active Room; KeyAsset does not participate as assignment owner; Classification does not grant Room access.
 - Prohibited authority: dual KeyAsset↔Room authority; Lock mediation; assignment history as second truth; REPORTS-2.
 
 ### KeyAsset
-- Purpose: authoritative physical key copy under exactly one KeyAccessPattern.
+- Purpose: authoritative physical key under exactly one KeyAccessPattern.
 - Owning aggregate or boundary: Key Catalog aggregate.
-- Authoritative or derived: Authoritative for KeyAssetId and MEDECO within KEY #; Rooms and KeyType are derived from parent KeyAccessPattern.
-- Required relationships: references exactly one KeyAccessPattern.
+- Authoritative or derived: Authoritative for KeyAssetId, MEDECO within KEY #, Condition (Active|Lost|Destroyed), and optional ReplacesKeyAssetId; Rooms and Classification are derived from parent KeyAccessPattern; Available/Issued derived from Condition + open Loan.
+- Required relationships: references exactly one KeyAccessPattern; may reference one Lost source KeyAsset when created as Replacement.
 - Cardinalities: one KeyAccessPattern to zero or more KeyAsset records; each KeyAsset exactly one KeyAccessPattern.
-- Required uniqueness: KeyAssetId unique globally; MEDECO Key Code unique within parent KeyAccessPattern (not globally).
-- Required integrity constraints: KeyAssetId immutable; MEDECO required; must not own independent Room assignments; CatalogKeyCode is not unique physical business identity; opaque composite KEY#+MEDECO strings forbidden as identity authority.
-- Prohibited authority: possession, loan/return state, independent Room openings, independent mutable KeyType, KeySeries-as-KEY #.
+- Required uniqueness: KeyAssetId unique globally; MEDECO unique within parent KeyAccessPattern (not globally).
+- Required integrity constraints: KeyAssetId immutable; MEDECO required; Condition required; must not own independent Room assignments; must not store holder or Department; must not persist Available/Issued; physical IsActive/Retire/Activate removed; CatalogKeyCode is not unique physical business identity; opaque composite KEY#+MEDECO strings forbidden as identity authority.
+- Prohibited authority: possession/holder/Department columns, loan/return state as KeyAsset fields, independent Room openings, independent mutable Classification, KeySeries-as-KEY #, physical Retire/Activate.
 
 ### KeyRoomAssignment
 - Purpose (historical): former current association of KeyAsset to Room.
@@ -231,14 +255,8 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 - Status: must not be KEY #, Room-access, or physical-copy identity authority under KEY-ACCESS-COPY-1.
 
 ### KeyType
-- Purpose: authoritative catalog classification for the physical or operational kind of KEY # / KeyAccessPattern.
-- Owning aggregate or boundary: Key Catalog classification.
-- Authoritative or derived: Authoritative classification referenced by KeyAccessPattern; physical copies derive type.
-- Required relationships: classifies zero or more KeyAccessPattern records.
-- Cardinalities: one KeyType to zero or more KeyAccessPattern records; a KeyAccessPattern has exactly one KeyType.
-- Required uniqueness: TypeCode is unique across KeyType records.
-- Required integrity constraints: TypeCode is required; inactive KeyType must not be used for new KeyAccessPattern catalog assignment.
-- Prohibited authority: must not encode KEY # semantics, custody, loan, return, lifecycle, maintenance, authorization, policy, authentication, persistence, UI state, or Room assignments.
+- Purpose (historical): former catalog classification entity for KEY #.
+- Status: removed from the active logical model (2026-08-14); superseded by KeyAccessPattern.Classification Regular|Master. Must not remain as FK target or admin entity.
 
 ### Lock
 - Purpose: optional catalog identity for one controlled physical lock device.
@@ -272,12 +290,12 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 - Purpose: physical room for this installation used for WorkAssignment, Room-based key-issue justification, and KeyAccessPattern↔Room opening associations.
 - Owning aggregate or boundary: Location boundary.
 - Authoritative or derived: Authoritative for Room identity; Key Catalog owns KeyAccessPatternRoomAssignment references to Room.
-- Required relationships: may be referenced by zero or more WorkAssignment records; may be referenced by zero or more KeyAccessPatternRoomAssignment records; does not reference Building.
-- Cardinalities: one Room to zero or more WorkAssignment records; one Room to zero or more KeyAccessPatternRoomAssignment records.
+- Required relationships: references exactly one Department via DepartmentId; may be referenced by zero or more WorkAssignment records; may be referenced by zero or more KeyAccessPatternRoomAssignment records; does not reference Building.
+- Cardinalities: one Department to zero or more Room records; one Room to zero or more WorkAssignment records; one Room to zero or more KeyAccessPatternRoomAssignment records.
 - Required uniqueness: RoomCode is unique across Room records; RoomNumber is unique across all Room records.
-- Required integrity constraints: RoomNumber is required as the operator-facing room identifier (Room #); RoomCode is immutable technical identity; only an active Room may be used for active WorkAssignment, Room-based key-issue justification, or active KeyAccessPatternRoomAssignment.
-- Prohibited authority: must not own WorkforceMember eligibility decisions, Department, Loan, Return, custody, audit, authentication, Key Catalog identity, KeyAccessPattern↔Room assignment ownership, or UI; Room must not exist outside Location boundary place authority.
-- Lifecycle phase: OPERATOR-EXPERIENCE-1; Room↔KEY # cardinality governed by KEY-ACCESS-COPY-1.
+- Required integrity constraints: RoomNumber is required as the operator-facing room identifier (Room #); RoomCode is immutable technical identity; DepartmentId is required; only an active Room may be used for active WorkAssignment, Room-based key-issue justification, or active KeyAccessPatternRoomAssignment.
+- Prohibited authority: must not own WorkforceMember eligibility decisions, Loan, Return, custody, audit, authentication, Key Catalog identity, KeyAccessPattern↔Room assignment ownership, or UI; Room must not exist outside Location boundary place authority.
+- Lifecycle phase: OPERATOR-EXPERIENCE-1; Room↔KEY # cardinality governed by KEY-ACCESS-COPY-1; Room→Department amendment 2026-08-14.
 
 ## Workforce Eligibility Logical Contract
 ### Party
@@ -326,10 +344,10 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 - Authoritative or derived: Authoritative.
 - Required relationships: references exactly one WorkforceMember; references exactly one Room.
 - Cardinalities: one WorkforceMember to zero or more WorkAssignment records; one Room to zero or more WorkAssignment records.
-- Required uniqueness: a WorkforceMember must not have overlapping active assignments to the same Room; at most one active WorkAssignment per WorkforceMember may be marked primary.
-- Required integrity constraints: referenced Room must be active for an active assignment.
-- Prohibited authority: must not own Location hierarchy, RoomNumber uniqueness, WorkforceMember termination processing, Loan/Return mutation, custody, audit, or UI.
-- Lifecycle phase: OPERATOR-EXPERIENCE-1.
+- Required uniqueness: a WorkforceMember must not have overlapping active assignments to the same Room.
+- Required integrity constraints: referenced Room must be active for an active assignment; Room.DepartmentId must equal WorkforceMember.DepartmentId (cross-department Work Assignments forbidden).
+- Prohibited authority: must not own Location hierarchy, RoomNumber uniqueness, WorkforceMember termination processing, Loan/Return mutation, custody, audit, or UI; must not expose WorkAssignmentId as an operator business identifier; must not invent Primary designation.
+- Lifecycle phase: OPERATOR-EXPERIENCE-1; department consistency amendment 2026-08-14; WorkAssignmentCode/Primary removal amendment 2026-08-14.
 
 ## Identity and RBAC Logical Contract
 ### SecurityPrincipal
@@ -407,7 +425,7 @@ Logical persistence shape for current business tables. PK = primary key; AK = al
 - Issue justification persistence (active, 2026-08-12): Loan stores an **immutable historical snapshot** of the authorizing Department and/or Room identity used at Issue time. For Department: `JustificationKind=Department`, `JustificationDepartmentId` (FK), `JustificationDepartmentCodeSnapshot` (event-time code). For Room: `JustificationKind=Room`, `JustificationRoomCode` (FK to stable RoomCode); no RoomNumber snapshot field. Unrelated justification fields must be null. This snapshot is not live WorkforceMember membership and must not be updated when DepartmentCode or RoomNumber changes. OperatorAuditRecord Details remain immutable operator-readable snapshots and are **not** relational delete authority (see `department-historical-justification-provenance-2026-08-12.md`).
 - Cardinalities: one KeyAsset to zero or more Loan records with at most one Open Loan per KeyAsset; one Party to zero or more Loan records; one Loan to zero or one Return; multiple Open Loans may exist under one KEY # when they reference different physical copies.
 - Required uniqueness: LoanCode is unique across Loan records.
-- Required integrity constraints: LoanCode is required; KeyAssetId reference is required; KEY # alone must not be the Loan subject; Party borrower reference is required; IssuedAtUtc is required; DueAtUtc is required; DueAtUtc must be later than IssuedAtUtc; LoanStatus must be Open, Returned, or Cancelled; an Open Loan may have zero Returns; a Returned Loan must have exactly one Return; a Cancelled Loan must have zero Returns; WorkforceMember termination must not rewrite LoanStatus automatically; justification snapshot ids use stable DepartmentId / RoomCode.
+- Required integrity constraints: LoanCode is required; KeyAssetId reference is required; KEY # alone must not be the Loan subject; Party borrower reference is required; IssuedAtUtc is required; DueAtUtc is required; DueAtUtc must be later than IssuedAtUtc; LoanStatus must be Open, Returned, Lost, Destroyed, or Cancelled; an Open Loan may have zero Returns; a Returned Loan must have exactly one Return; Lost/Destroyed closed Loans must have zero Returns; a Cancelled Loan must have zero Returns; WorkforceMember termination must not rewrite LoanStatus automatically; justification snapshot ids use stable DepartmentId / RoomCode.
 - Prohibited authority: must not store current possession, current custodian, custody transfer history, catalog identity authority, Party profile data, WorkforceMember ownership, lifecycle state, lifecycle transition authority, audit history, authorization state, authentication state, policy state, persistence-provider configuration, or UI state; must not move custody to KEY # / KeyAccessPattern.
 
 ### Return

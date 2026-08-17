@@ -9,7 +9,7 @@ In-application **Help** (`/Help`) is the operator-invoked visual reference for t
 KeyInventory helps a key custodian:
 
 - maintain **KEY #** access patterns and the **Room #** values each KEY # opens
-- register **MEDECO** physical copies under a KEY #
+- create **MEDECO** keys under a KEY #
 - issue and return exact physical copies to people
 - see who currently holds each physical copy
 - correct authorized business records
@@ -21,9 +21,10 @@ There is no Organization or Building setup. Departments and Rooms belong directl
 
 | Term | Meaning |
 |---|---|
-| **KEY #** | Shared access number. Associated with the set of Rooms that open. Many physical copies may share one KEY #. |
-| **MEDECO Key Code** | Identifies the specific physical key copy issued to a person. Unique within a KEY #; may repeat under a different KEY #. |
-| **Room #** | Operator-facing room identifier. |
+| **KEY #** | Shared access number. Associated with the set of Rooms that open. Many physical copies may share one KEY #. Owns Regular or Master classification. |
+| **Classification** | Regular or Master on the KEY #. Explicit choice — not inferred from how many Rooms the KEY # opens. |
+| **MEDECO** | Identifies the specific key issued to a person. Unique within a KEY #; may repeat under a different KEY #. |
+| **Room #** | Operator-facing room identifier. Every Room belongs to exactly one Department. |
 
 **Example**
 
@@ -52,13 +53,12 @@ This guide and the Application readiness/eligibility model use the same dependen
 flowchart TB
   subgraph parallel ["Parallel setup"]
     D[Department]
-    R[Room]
-    KT[Key Type]
+    R[Room + Department]
   end
 
   WM[Workforce Member]
-  WA[Work Assignment]
-  KN[KEY # access pattern]
+  WA[Room Assignment]
+  KN[KEY # Regular or Master]
   KR[KEY # ↔ Room #]
   COPY[MEDECO physical copy]
   ISSUE[Issue Key]
@@ -67,9 +67,9 @@ flowchart TB
   HIST[History / Audit / Reports]
 
   D -->|mandatory| WM
+  D -->|mandatory| R
   R -->|mandatory| WA
   WM -->|mandatory| WA
-  KT -->|mandatory| KN
   KN -->|mandatory| COPY
   KN --> KR
   R --> KR
@@ -85,12 +85,11 @@ flowchart TB
 ### Minimum first-use path
 
 1. Sign in.
-2. Create **Department**, **Room #**, and **Key Type** in any order.
+2. Create **Department**, then **Room #** (Room requires a Department).
 3. Create the first **Workforce Member** (no second person required).
-4. Create a **Work Assignment** (member ↔ room) — required before Issue.
-5. Create a **KEY #** (with Key Type) and assign **Room #** openings to that KEY #.
-6. Register at least one **MEDECO** physical copy under that KEY #.
-7. **Issue Key** (person + KEY # + available MEDECO; Rooms derived) → **Active custody** → **Return** the same MEDECO copy when returned.
+4. Create a **Room Assignment** (member ↔ room in the same Department) — required before Issue.
+5. **Create Key** with **KEY #** + **MEDECO** on the same screen (Classification and Rooms when the KEY # is new).
+6. **Issue Key** (available key first, then person; Rooms derived) → **Active custody** → **Return** the same MEDECO when returned.
 
 Home remains an operational dashboard (metrics, Daily custody, Recent Activity) during and after initial configuration:
 
@@ -105,32 +104,32 @@ Reach a state where Issue Key is possible without guessing prerequisites. This s
 Signed-in operator account.
 
 ### Where to go
-**Administration** — Departments, Rooms, Workforce Members, Work Assignments, Audit Trail.  
-**Catalog** — Key Types, Register Key, KEY # ↔ Room.  
+**Administration** — Departments, Rooms, Workforce Members, Room Assignments, Audit Trail.  
+**Catalog** — Create Key, KEY # ↔ Room (no Key Types page).  
 **Operations → Issue Key** — when prerequisites are missing, Issue Key explains the missing Application-owned prerequisites and links to resolve them.
 
 ### Steps
-1. Create **Department**, **Room**, and **Key Type** in any order (Administration / Catalog).
-2. Create the first **Workforce Member**, then a **Work Assignment**.
-3. Register a **KEY #** / **MEDECO** copy in Catalog (assign Room openings on the KEY # as needed).
+1. Create **Department**, then **Room** (Room requires Department) under Administration.
+2. Create the first **Workforce Member**, then a **Room Assignment** (room must be in the member’s Department).
+3. Create a **KEY #** (Regular or Master) / **MEDECO** in Catalog → Create Key (assign Room openings on the KEY # as needed).
 4. Open **Operations → Issue Key**. If anything mandatory is still missing, resolve the items listed there, then issue.
 
 ### Expected result
 Issue Key becomes usable; Home stays focused on custody metrics and activity (no leftover onboarding checklist).
 
 ### Common problems
-- Issue blocked with no Work Assignment — create member-to-room assignment.
+- Issue blocked with no Room Assignment — create member-to-room assignment.
 - Cannot create Workforce Member — create Department first.
 
 ### What becomes available next
-Workforce Members → Work Assignments → Register Key → Issue.
+Workforce Members → Room Assignments → Create Key → Issue.
 
 ---
 
 ## Creating Departments
 
 ### Purpose
-Name organizational units used for membership and department-based issue justification. The department code is the operator-facing business identifier; under active identity authority it is editable without destroying the department’s relationships or history (stable internal DepartmentId is not an operator typing target).
+Name organizational units used for membership and department-based issue justification. **Department** is the operator-facing business identifier; under active identity authority it is editable without destroying the department’s relationships or history (stable internal DepartmentId is not an operator typing target; internal `DepartmentCode` authority is unchanged).
 
 ### Prerequisites
 None (parallel).
@@ -139,7 +138,7 @@ None (parallel).
 Administration → Departments → **+ Add department**
 
 ### Steps
-1. Enter a unique Department code (example: `FACILITIES`).
+1. Enter a unique Department (example: `FACILITIES`).
 2. Create Department.
 3. Confirm it appears on the Departments list (form returns clean for another add via redirect).
 
@@ -149,37 +148,39 @@ Active department listed.
 ![Departments](images/02-departments.png)
 
 ### Common problems
-Duplicate department code is rejected.
+Duplicate Department is rejected.
 
 ### What becomes available next
-Workforce Member creation can use that department.
+Workforce Member creation and Room creation can use that department.
 
 ---
 
 ## Creating Rooms
 
 ### Purpose
-Define places for work assignments and rooms opened by keys.
+Define places for room assignments and rooms opened by keys. Every Room belongs to exactly one Department.
 
 ### Prerequisites
-None (parallel). Room numbers are unique across the whole installation.
+**Mandatory:** active Department.
 
 ### Where to go
 Administration → Rooms → **+ Add room**
 
 ### Steps
-1. Enter Room number (operator identity) and optional description.
-2. Create Room (system assigns internal room identity automatically).
-3. Edit Room number/description later from Rooms → Edit when correction is needed.
+1. Select Department.
+2. Enter Room number (operator identity) and optional description.
+3. Create Room (system assigns internal room identity automatically).
+4. Edit Room number/description/Department later from Rooms → Edit when correction is needed.
 
 ### Expected result
-Room appears with its room number.
+Room appears with its room number and Department.
 
 ### Common problems
-Duplicate room number is rejected globally.
+- Missing Department.
+- Duplicate room number is rejected globally.
 
 ### What becomes available next
-Work Assignments and Key↔Room.
+Room Assignments (same Department as the member) and Key↔Room.
 
 ---
 
@@ -210,88 +211,91 @@ One Active member with name, UIN, type, department.
 - UIN already used by another person.
 
 ### What becomes available next
-Work Assignment for that member.
+Room Assignment for that member.
 
 ---
 
-## Creating Work Assignments
+## Assigning Rooms (Room Assignments)
 
 ### Purpose
-Link a workforce member to a room where they are authorized to work.  
-**Mandatory before Issue Key.**
+Assign a workforce member to a room where they are authorized to work.  
+**Mandatory before Issue Key.** Room Department must match the member’s Department.
 
 ### Prerequisites
-Active Workforce Member and active Room.
+Active Workforce Member and active Room in the same Department.
 
 ### Where to go
-Administration → Work Assignments → **+ Add**
+Administration → Room Assignments → **Assign Room**
 
 ### Steps
-1. Select member and room.
-2. Mark primary when appropriate (at most one active primary per member).
-3. Create.
+1. Search/select the workforce member (name or UIN). Confirm Name, UIN, and Department shown after selection.
+2. Search/select a Room in that member’s Department.
+3. **Assign Room**.
 
 ### Expected result
-Active assignment listed.
+Active assignment listed for the member and Room (no assignment code; no primary flag). Next Assign Room opens clean.
 
 ### Common problems
-Creating assignment before room or member exists.
+- Creating assignment before room or member exists.
+- Room and member in different Departments — rejected.
 
 ### What becomes available next
-Issue Key eligibility (together with a registered key).
+Issue Key eligibility (together with a created key).
 
 ---
 
-## Key Types, KEY #, and MEDECO copies
+## KEY #, Classification, and MEDECO copies
 
 ### Purpose
-Classify access patterns, record which Room # values a KEY # opens, and register physical MEDECO copies.
+Record which Room # values a KEY # opens, set Regular or Master classification on the KEY #, and create keys. There is no Key Types page.
 
 ### Prerequisites
-Create Key Types under **Catalog → Key Types → Add** before creating a new KEY #. Key Types are not created silently from Register Key.
+None for creating a KEY # beyond operator access. Classification is Regular or Master on the KEY # itself.
 
 ### Where to go
-Catalog → Key Types; Catalog → Register Key; Catalog → Keys → KEY # Rooms
+Catalog → Create Key; Catalog → Keys → KEY # Rooms
 
-### Steps — Register copy under existing KEY #
-1. Choose **Register copy under existing KEY #**.
-2. Search and select the existing KEY #.
-3. Confirm derived **Key Type** and **Rooms opened**.
-4. Enter the **MEDECO** code printed on the physical copy.
-5. Register physical copy — next registration opens clean.
+### Steps — New Key
+1. Choose **New Key**.
+2. Type or search a **KEY #** (existing or new; Application resolves which).
+3. If the KEY # already exists, confirm derived **Classification** and **Rooms** (read-only).
+4. If the KEY # does not exist, select **Regular** or **Master** and existing **Rooms** on the same form (nothing auto-selected; Master is not inferred from Room count).
+5. Enter the **MEDECO**.
+6. **Create Key** — KEY # and MEDECO are always required; next New Key opens clean.
 
-### Steps — Create new KEY #
-1. Choose **Create new KEY #**.
-2. Enter the new KEY #.
-3. Select an **existing** Key Type.
-4. Enter the first **MEDECO** code printed on the physical copy.
-5. Create KEY # and register copy.
-6. Assign **Rooms opened** afterward on KEY # Rooms.
+### Steps — Replace Lost Key
+1. Choose **Replace Lost Key**.
+2. Search and select a **Lost** key (KEY # / MEDECO; Available/Issued/Destroyed excluded).
+3. Confirm derived KEY #, Classification, and Rooms.
+4. Enter a **New MEDECO** (reuse not allowed).
+5. **Replace Key** — source remains Lost; new key starts Active/Available under the same KEY #.
 
 ### Expected result
-KEY # shows Rooms opened; MEDECO copies appear under that KEY # in catalog and Find Key.
+KEY # shows Classification and Rooms; keys appear under that KEY # in catalog and Find Key. Physical condition and custody are shown separately. Available/Issued follows Active + open Loan.
 
 ### What becomes available next
-Issue Key for an available MEDECO copy.
+Issue Key for an Available key.
 
 ---
 
-## Assigning rooms opened by a KEY #
+## KEY # access (Regular / Master)
 
 ### Purpose
-Record which Room # values a KEY # opens. Every MEDECO copy under that KEY # opens the same Rooms.
+Classification defines which Rooms a KEY # opens. Every MEDECO copy under that KEY # shares the same access.
 
 ### Prerequisites
-KEY # and active Room.  
-Room assignment is on the KEY #, not repeated on each physical copy.
+For a new Regular KEY #: an active Room.  
+Master KEY #: no Room selection — Access is All Rooms.  
+Room assignment on Work Assignments (member↔room) is a different concept.
 
 ### Where to go
-Catalog → Keys → **KEY # Rooms** (`/Catalog/KeyRooms`)
+Catalog → **Create Key** (`/Catalog/Register`)
 
 ### Steps
-1. Select KEY # and Room #.
-2. Assign.
-3. Remove only when the opening association should end.
+1. Enter KEY # and MEDECO.
+2. If the KEY # is new: choose Regular or Master. Regular requires exactly one Room; Master requires none.
+3. If the KEY # already exists: Classification and Access are shown read-only; only MEDECO is added.
+4. There is no KEY # Rooms assign/remove screen.
 
 ---
 
@@ -303,9 +307,9 @@ Hand an available MEDECO physical copy to an eligible person.
 ### Prerequisites (mandatory)
 - Active Workforce Member with valid Party identity
 - Active Department on that member
-- At least one active Work Assignment
+- At least one active Room Assignment
 - Available MEDECO physical copy under a KEY #
-- Justification: member’s Department **or** an assigned Work Assignment Room
+- Justification: member’s Department **or** an assigned Room Assignment Room
 
 ### Where to go
 Operations → Issue Key
@@ -313,15 +317,13 @@ Operations → Issue Key
 ![Issue Key](images/03-issue-key.png)
 
 ### Steps
-1. Search **Key holder** by name or UIN (eligible matches only; nothing is preselected).
-2. Select the holder deliberately.
-3. Search available **KEY #** or **MEDECO**, then select KEY # deliberately (no full KEY # dropdown).
-4. Select an **available MEDECO** copy under that KEY # (MEDECO stays empty until KEY # is chosen; nothing auto-selected).
-5. Confirm **Rooms opened** shown as derived from the KEY # (do not re-enter Rooms).
-6. Choose For = Department or Room and the matching justification (no default).
-7. Confirm Issued / Due as operator local times (human-readable entry).
-8. Enter Loan code.
-9. Issue Key — next Issue opens clean.
+1. Search/select the **physical key** first (KEY # / MEDECO searchable combobox for issuable copies; nothing is preselected).
+2. Confirm derived **Classification** and **Rooms opened** (do not re-enter Rooms).
+3. Search/select **Key holder** by name or UIN (eligible matches only; searchable combobox).
+4. Choose For = Department or Room and the matching justification (no default).
+5. Confirm Issued / Due as operator local times (human-readable entry).
+6. Enter Loan code.
+7. Issue Key — next Issue opens clean.
 
 ### Expected result
 Success message; Active custody shows KEY # + MEDECO for the open issue with human-readable times.
@@ -329,7 +331,7 @@ Success message; Active custody shows KEY # + MEDECO for the open issue with hum
 ![Active Loans](images/04-active-loans.png)
 
 ### Common problems
-- Readiness still shows missing Work Assignment or Key / MEDECO copy.
+- Readiness still shows missing Room Assignment or Key / MEDECO copy.
 - Selected MEDECO already issued.
 - Justification room not on the member’s assignments.
 
@@ -350,7 +352,7 @@ Open loan for the physical copy being returned.
 Operations → Active Loans → Receive/Return, or Operations → Receive Key
 
 ### Steps
-1. Search active issues by **KEY #**, **MEDECO**, holder name, or UIN (bounded matches; nothing is preselected). Deep-link from Active Loans may open one deliberate issue.
+1. Search open custody with the searchable combobox by **KEY #**, **MEDECO**, holder name, or UIN (bounded matches; nothing is preselected). Deep-link from Active Loans may open one deliberate issue.
 2. Select the matching open issue labeled **KEY # / MEDECO · holder — UIN** (for example KEY # 66800 / MEDECO 26 · …).
 3. Enter Receive reference and Received (operator local time).
 4. Complete return — next Receive opens clean.
@@ -372,11 +374,11 @@ Header search → Search Results (`/Search`). The header owns the Search box; th
 One header box accepts **name**, **UIN**, **Room #**, **KEY #**, or **MEDECO**. No search-type dropdown. Results are typed groups (People, Rooms, KEY #, MEDECO) — only groups with matches appear.
 
 ### Person results
-Show Full Name, UIN, Department, status, active **Work Assignment** Room # values, and **Current Key Custody** (open custody only). For each current physical copy: KEY #, MEDECO, Rooms opened by that KEY #, Issued time. A person with no current keys is still a valid result (`No keys currently issued.`). Work Assignment is not key custody. History is not listed here. There are no Member details / Member keys buttons on search results.
+Show Full Name, UIN, Department, status, active **Room Assignment** Room # values, and **Current Key Custody** (open custody only). For each current physical copy: KEY #, MEDECO, Rooms opened by that KEY #, Issued time. A person with no current keys is still a valid result (`No keys currently issued.`). Room Assignment is not key custody. History is not listed here. There are no Member details / Member keys buttons on search results.
 
 ### Room / KEY # / MEDECO results
 - Room #: description when available; KEY # values that open it.
-- KEY #: Rooms opened; MEDECO copies with Available/Issued and holder when issued.
+- KEY #: Classification; Rooms opened; MEDECO copies with Available/Issued and holder when issued.
 - MEDECO: always with parent KEY # (not globally unique); Rooms via KEY #; custody/holder.
 
 ### Zero results
@@ -387,7 +389,7 @@ Show Full Name, UIN, Department, status, active **Work Assignment** Room # value
 ## Find Key
 
 ### Purpose
-Key-specific search for KEY # / MEDECO / Key Type / Room # questions.
+Key-specific search for KEY # / MEDECO / Classification / Room # questions.
 
 ### Where to go
 Operations → Find Key (`/Operations/Find`).  
@@ -397,7 +399,7 @@ Operations → Find Key (`/Operations/Find`).
 Catalog data (KEY # Room openings and MEDECO copies).
 
 ### How to search
-One search box accepts **KEY #**, **MEDECO**, **Key Type**, or **Room #** (operator-facing room number). Matching is the same partial-match style used for KEY # / MEDECO / type. Searching a Room # returns every KEY # that opens that room (including multi-room / master KEY # values), with each MEDECO copy’s availability and current holder.
+One search box accepts **KEY #**, **MEDECO**, **Classification** (Regular/Master), or **Room #** (operator-facing room number). Matching is the same partial-match style used for KEY # / MEDECO / classification. Searching a Room # returns every KEY # that opens that room, with each MEDECO copy’s availability and current holder. Master classification is not the same as “opens multiple rooms.”
 
 ### What you should be able to answer
 - What Room # values does KEY # 66800 open?
@@ -414,13 +416,12 @@ Operators may correct:
 
 | Record | What you can correct |
 |---|---|
-| Room | Room number, description; activate/retire; **Delete** only when unused |
-| Department | **Edit** department code (same department kept); activate/retire; **Delete** only when unused |
+| Room | Room number, description, Department; activate/retire; **Delete** only when unused |
+| Department | **Edit** Department (same department kept); activate/retire; **Delete** only when unused |
 | Workforce Member | Department, type; terminate; **Delete** only when unused (no assignments/loans) |
 | Party | First/Last name; **UIN** via governed correction on the same person |
-| Work Assignment | End; primary flag; **Delete** only for active unused assignments |
-| Key Type | activate/retire; **Delete** only when no KEY # references it |
-| KEY # | activate/retire; **Delete** only with no MEDECO copies and no Room assignments |
+| Room Assignment | End; **Delete** only for active unused assignments |
+| KEY # | Classification (Regular/Master); activate/retire; **Delete** only with no MEDECO copies and no Room assignments |
 | MEDECO copy | activate/retire; **Delete** only with no loan history |
 | Key↔Room | assign/remove |
 
@@ -467,8 +468,8 @@ Timestamps appear in readable `yyyy-MM-dd HH:mm UTC` form in exports; on-screen 
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| Cannot find person at Issue | Inactive member, missing Work Assignment, or search terms | Verify active Workforce Member + Work Assignment; search by name or UIN |
-| No MEDECO available | None registered, or all issued/unavailable | Register a copy or return an open issue |
+| Cannot find person at Issue | Inactive member, missing Room Assignment, or search terms | Verify active Workforce Member + Room Assignment; search by name or UIN |
+| No MEDECO available | None created, or all issued/unavailable | Create a key or return an open issue |
 | Cannot Issue | Missing governed prerequisites | Use the contextual resolution links on Issue Key |
 | Cannot delete Department | Relationships or history block Delete | Retire when Delete is unavailable |
 | Cannot return | No matching open loan / wrong copy | Select the open KEY # / MEDECO issue on Receive |

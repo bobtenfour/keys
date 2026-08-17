@@ -34,11 +34,6 @@ public sealed class OperationalReadinessViewModel
                 return "Create a room";
             }
 
-            if (!Snapshot.HasKeyType)
-            {
-                return "Create a key type";
-            }
-
             if (!Snapshot.HasWorkforceMember)
             {
                 return "Add a workforce member";
@@ -46,12 +41,12 @@ public sealed class OperationalReadinessViewModel
 
             if (!Snapshot.HasWorkAssignment)
             {
-                return "Create a work assignment";
+                return "Assign a room";
             }
 
             if (!Snapshot.HasKey)
             {
-                return "Register a key";
+                return "Create a key";
             }
 
             return "Review Administration and Catalog";
@@ -74,12 +69,7 @@ public sealed class OperationalReadinessViewModel
 
             if (!Snapshot.HasRoom)
             {
-                return "A room is required before work assignments can be created.";
-            }
-
-            if (!Snapshot.HasKeyType)
-            {
-                return "A key type is required before a KEY # / physical copy can be registered.";
+                return "A room is required before room assignments can be created.";
             }
 
             if (!Snapshot.HasWorkforceMember)
@@ -89,7 +79,7 @@ public sealed class OperationalReadinessViewModel
 
             if (!Snapshot.HasWorkAssignment)
             {
-                return "A work assignment (member to room) is required before Issue Key.";
+                return "A room assignment (member to room) is required before Issue Key.";
             }
 
             if (!Snapshot.HasKey)
@@ -118,11 +108,6 @@ public sealed class OperationalReadinessViewModel
             if (!Snapshot.HasRoom)
             {
                 return "/Administration/Rooms/Add";
-            }
-
-            if (!Snapshot.HasKeyType)
-            {
-                return "/Catalog/KeyTypes";
             }
 
             if (!Snapshot.HasWorkforceMember)

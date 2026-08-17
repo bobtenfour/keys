@@ -33,7 +33,7 @@ public sealed class OperatorExperiencePresentationBoundaryTests
         Assert.Contains("Departments", view, StringComparison.Ordinal);
         Assert.Contains("Rooms", view, StringComparison.Ordinal);
         Assert.Contains("Workforce Members", view, StringComparison.Ordinal);
-        Assert.Contains("Work Assignments", view, StringComparison.Ordinal);
+        Assert.Contains("Room Assignments", view, StringComparison.Ordinal);
         Assert.Contains("Audit Trail", view, StringComparison.Ordinal);
 
         Assert.DoesNotContain("_OperationalReadiness", view, StringComparison.Ordinal);

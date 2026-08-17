@@ -1,18 +1,23 @@
 using KeyInventory.Application.Catalog;
 using KeyInventory.Application.Workflow;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.Application.Lookup;
 
 public sealed record AvailableKeyCopyCandidate(
     string KeyNumber,
     string MedecoKeyCode,
-    string TypeCode,
+    KeyAccessClassification Classification,
     IReadOnlyList<KeyOpenedRoomItem> OpenedRooms);
 
 public interface ISearchAvailableKeyCopiesUseCase
 {
     const int DefaultMaxResults = 25;
 
+    /// <summary>
+    /// Bounded search by KEY # / MEDECO. Empty term returns a bounded browse of the first
+    /// <see cref="DefaultMaxResults"/> available copies ordered by KEY #/MEDECO.
+    /// </summary>
     Task<IReadOnlyList<AvailableKeyCopyCandidate>> ExecuteAsync(
         string searchText,
         int maxResults,
@@ -55,23 +60,21 @@ public sealed class SearchAvailableKeyCopiesUseCase : ISearchAvailableKeyCopiesU
         int maxResults,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(searchText))
-        {
-            return [];
-        }
-
         int bound = maxResults < 1
             ? ISearchAvailableKeyCopiesUseCase.DefaultMaxResults
             : Math.Min(maxResults, ISearchAvailableKeyCopiesUseCase.DefaultMaxResults);
 
-        string term = searchText.Trim();
+        string term = (searchText ?? string.Empty).Trim();
         IReadOnlyList<AvailableKeyCopyCandidate> available = await ListAvailableInternalAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return available
-            .Where(item =>
+        IEnumerable<AvailableKeyCopyCandidate> filtered = term.Length == 0
+            ? available
+            : available.Where(item =>
                 item.KeyNumber.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || item.MedecoKeyCode.Contains(term, StringComparison.OrdinalIgnoreCase))
+                || item.MedecoKeyCode.Contains(term, StringComparison.OrdinalIgnoreCase));
+
+        return filtered
             .OrderBy(item => item.KeyNumber, StringComparer.OrdinalIgnoreCase)
             .ThenBy(item => item.MedecoKeyCode, StringComparer.OrdinalIgnoreCase)
             .Take(bound)
@@ -122,11 +125,11 @@ public sealed class SearchAvailableKeyCopiesUseCase : ISearchAvailableKeyCopiesU
         HashSet<Guid> issued = openItems.Select(item => item.KeyAssetId).ToHashSet();
 
         return keys
-            .Where(key => key.IsActive && !issued.Contains(key.KeyAssetId))
+            .Where(key => key.Condition == KeyPhysicalCondition.Active && !issued.Contains(key.KeyAssetId))
             .Select(key => new AvailableKeyCopyCandidate(
                 key.KeyNumber,
                 key.MedecoKeyCode,
-                key.TypeCode,
+                key.Classification,
                 key.OpenedRooms))
             .ToArray();
     }

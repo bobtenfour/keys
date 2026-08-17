@@ -1,32 +1,34 @@
+using KeyInventory.Domain.Catalog;
+
 namespace KeyInventory.Application.Workflow;
 
 /// <summary>
-/// Registers a physical MEDECO copy under a KEY #.
-/// Existing KEY # registration derives Key Type from the KEY #.
-/// New KEY # creation requires an existing Key Type (no silent Key Type creation).
+/// Registers a new key under Application authority. Creating a key is always one
+/// business operation that requires KEY # and MEDECO on the same request. Application
+/// resolves whether the KEY # already exists; the operator does not choose modes.
 /// </summary>
 public interface ICreateKeyAssetUseCase
 {
     /// <summary>
-    /// Creates a new KEY # with the first physical MEDECO copy, or registers a copy under an existing KEY #
-    /// when the KEY # already exists and the type matches. Requires an existing Key Type.
-    /// Prefer <see cref="RegisterPhysicalCopyUnderExistingKeyNumberAsync"/> or
-    /// <see cref="CreateNewKeyNumberWithFirstPhysicalCopyAsync"/> for explicit operator intent.
+    /// Single New Key operation.
+    /// When the KEY # exists: creates only a new KeyAsset under that KEY # (Classification/Rooms unchanged).
+    /// When the KEY # does not exist: atomically creates the KEY # with Classification and Rooms
+    /// together with its first KeyAsset. Failure must not leave an orphan KEY #.
+    /// Classification and roomCodes are required only when the KEY # does not yet exist;
+    /// they are rejected when the KEY # already exists.
     /// </summary>
-    Task ExecuteAsync(
+    Task<RegisterNewKeyResult> RegisterNewKeyAsync(
         string keyNumber,
         string medecoKeyCode,
-        string typeCode,
-        CancellationToken cancellationToken);
-
-    Task RegisterPhysicalCopyUnderExistingKeyNumberAsync(
-        string keyNumber,
-        string medecoKeyCode,
-        CancellationToken cancellationToken);
-
-    Task CreateNewKeyNumberWithFirstPhysicalCopyAsync(
-        string keyNumber,
-        string existingTypeCode,
-        string medecoKeyCode,
+        KeyAccessClassification? classification,
+        IReadOnlyList<string>? roomCodes,
         CancellationToken cancellationToken);
 }
+
+/// <summary>
+/// Outcome of a successful New Key registration.
+/// </summary>
+public sealed record RegisterNewKeyResult(
+    string KeyNumber,
+    string MedecoKeyCode,
+    bool CreatedNewKeyNumber);

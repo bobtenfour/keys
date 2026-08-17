@@ -7,7 +7,7 @@
 
 <header class="page-header">
     <h1>Receive Key</h1>
-    <p class="lede">Bring an issued physical key copy back under organizational control.</p>
+    <p class="lede">Bring an issued key back under organizational control. Search open custody first.</p>
 </header>
 
 <section class="card form-card">
@@ -24,75 +24,55 @@
             <a class="btn btn-secondary" asp-page="/Index">Return to Operations</a>
         </div>
     }
-    else if (Model.SelectedIssue is null)
-    {
-        <form method="post" asp-page-handler="SearchIssues" class="form-grid">
-            <label>
-                Search active issue
-                <input asp-for="IssueSearchText" placeholder="KEY #, MEDECO, holder name, or UIN..." autocomplete="off" required />
-                <span class="hint">Search matching active issues. Nothing is selected automatically.</span>
-            </label>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-secondary">Search</button>
-                <a class="btn btn-secondary" asp-page="/Index">Cancel</a>
-            </div>
-        </form>
-
-        @if (Model.IssueSearchPerformed)
-        {
-            if (Model.IssueMatches.Count == 0)
-            {
-                <div class="empty-state">
-                    <strong>No matching active issues</strong>
-                    Refine KEY #, MEDECO, holder name, or UIN.
-                </div>
-            }
-            else
-            {
-                <ul class="activity-list" aria-label="Matching active issues">
-                    @foreach (var match in Model.IssueMatches)
-                    {
-                        string label = $"{PartyHolderDisplayFormatter.FormatKeyCopy(match.KeyNumber, match.MedecoKeyCode)} · {PartyHolderDisplayFormatter.Format(match.HolderFirstName, match.HolderLastName, match.HolderUin)}";
-                        <li>
-                            <div class="activity-main">
-                                <span class="activity-primary">@label</span>
-                            </div>
-                            <form method="post" asp-page-handler="SelectIssue">
-                                <input type="hidden" name="IssueReference" value="@match.LoanCode" />
-                                <button type="submit" class="btn btn-secondary">Select</button>
-                            </form>
-                        </li>
-                    }
-                </ul>
-            }
-        }
-    }
     else
     {
-        <dl class="search-person-identity">
-            <div>
-                <dt>Active issue</dt>
-                <dd>
-                    @PartyHolderDisplayFormatter.FormatKeyCopy(Model.SelectedIssue.KeyNumber, Model.SelectedIssue.MedecoKeyCode)
-                    · @PartyHolderDisplayFormatter.Format(Model.SelectedIssue.HolderFirstName, Model.SelectedIssue.HolderLastName, Model.SelectedIssue.HolderUin)
-                </dd>
-            </div>
-        </dl>
-        <form method="post" asp-page-handler="ClearIssue" class="form-actions">
-            <button type="submit" class="btn btn-secondary">Change active issue</button>
-        </form>
         <form method="post" class="form-grid">
-            <input type="hidden" asp-for="IssueReference" />
+            <div class="form-span-2">
+                <label>
+                    Active issue
+                    <div class="searchable-combobox"
+                         data-searchable-combobox
+                         data-search-url="/Operations/Receive?handler=SearchOpenCustody"
+                         data-value-field="loanCode"
+                         data-display-fields="keyNumber,medecoKeyCode,holder"
+                         data-secondary-fields="classification,uin">
+                        <input type="text"
+                               class="searchable-combobox-input"
+                               data-role="combobox-input"
+                               placeholder="Search KEY #, MEDECO, holder name, or UIN..."
+                               autocomplete="off"
+                               value="@Model.SelectedDisplay"
+                               aria-label="Search open custody" />
+                        <button type="button" class="searchable-combobox-toggle" data-role="combobox-toggle" aria-label="Browse open custody">▾</button>
+                        <input type="hidden" asp-for="IssueReference" data-role="combobox-value" />
+                        <ul class="searchable-combobox-panel" data-role="combobox-panel" role="listbox"></ul>
+                    </div>
+                    <span class="hint">Only currently issued keys appear. Nothing is selected automatically.</span>
+                </label>
+            </div>
+
+            @if (Model.SelectedIssue is not null)
+            {
+                <dl class="search-person-identity form-span-2">
+                    <div><dt>KEY # / MEDECO</dt><dd>@Model.SelectedDisplay</dd></div>
+                    <div><dt>Classification</dt><dd>@Model.ClassificationDisplay</dd></div>
+                    <div><dt>Holder</dt><dd>@Model.HolderDisplay</dd></div>
+                    <div><dt>Issued</dt><dd>@Model.IssuedDisplay</dd></div>
+                </dl>
+            }
+
             <label>
                 Receive reference
                 <input asp-for="ReceiveReference" autocomplete="off" required />
+                <span class="hint">Operator-supplied receive identity. Required by current authority.</span>
             </label>
             <label>
                 Received
                 <input asp-for="ReceivedLocalText" autocomplete="off" required />
                 <span class="hint">Operator local time. Example: @OperatorTimestampFormatter.ToAbsoluteDisplay(DateTimeOffset.UtcNow)</span>
             </label>
-            <div class="form-actions">
+
+            <div class="form-actions form-span-2">
                 <button type="submit" class="btn btn-primary">Receive Key</button>
                 <a class="btn btn-secondary" asp-page="/Index">Cancel</a>
             </div>

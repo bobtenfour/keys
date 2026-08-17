@@ -8,5 +8,9 @@ public sealed class RoomEntity
 
     public string Description { get; set; } = string.Empty;
 
+    public Guid DepartmentId { get; set; }
+
     public bool IsActive { get; set; }
+
+    public DepartmentEntity Department { get; set; } = null!;
 }

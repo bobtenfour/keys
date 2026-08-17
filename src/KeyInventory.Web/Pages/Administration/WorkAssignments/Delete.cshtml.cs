@@ -24,7 +24,7 @@ public sealed class DeleteModel : PageModel
     }
 
     [BindProperty(SupportsGet = true)]
-    public string WorkAssignmentCode { get; set; } = string.Empty;
+    public Guid WorkAssignmentId { get; set; }
 
     [BindProperty]
     public bool ConfirmDelete { get; set; }
@@ -47,7 +47,7 @@ public sealed class DeleteModel : PageModel
         if (!Item!.Capabilities.CanDelete)
         {
             TempData["ErrorMessage"] = Item.Capabilities.DeleteBlockedReason
-                ?? "This work assignment can no longer be deleted. End it instead to preserve history.";
+                ?? "This room assignment can no longer be deleted. End it instead to preserve history.";
             return RedirectToPage("./Index");
         }
 
@@ -69,9 +69,9 @@ public sealed class DeleteModel : PageModel
 
         try
         {
-            await _lifecycle.DeleteWorkAssignmentAsync(WorkAssignmentCode, cancellationToken)
+            await _lifecycle.DeleteWorkAssignmentAsync(WorkAssignmentId, cancellationToken)
                 .ConfigureAwait(false);
-            TempData["SuccessMessage"] = $"Work assignment \"{WorkAssignmentCode}\" was deleted.";
+            TempData["SuccessMessage"] = "Room assignment was deleted.";
             return RedirectToPage("./Index");
         }
         catch (InvalidOperationException exception)
@@ -96,21 +96,19 @@ public sealed class DeleteModel : PageModel
 
     private async Task<bool> LoadAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(WorkAssignmentCode))
+        if (WorkAssignmentId == Guid.Empty)
         {
             return false;
         }
 
-        string code = WorkAssignmentCode.Trim();
         Item = (await _lifecycle.ListWorkAssignmentsAsync(cancellationToken).ConfigureAwait(false))
-            .FirstOrDefault(item =>
-                string.Equals(item.WorkAssignmentCode, code, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(item => item.WorkAssignmentId == WorkAssignmentId);
         if (Item is null)
         {
             return false;
         }
 
-        WorkAssignmentCode = Item.WorkAssignmentCode;
+        WorkAssignmentId = Item.WorkAssignmentId;
 
         WorkforceMemberListItem? member = (await _members.ExecuteAsync(cancellationToken).ConfigureAwait(false))
             .FirstOrDefault(item =>
@@ -136,6 +134,6 @@ public sealed class DeleteModel : PageModel
             return exception.Message;
         }
 
-        return "This work assignment can no longer be deleted. End it instead to preserve history.";
+        return "This room assignment can no longer be deleted. End it instead to preserve history.";
     }
 }

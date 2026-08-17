@@ -1,4 +1,5 @@
 using System.Reflection;
+using KeyInventory.Application.Lifecycle;
 using KeyInventory.Application.Workflow;
 using KeyInventory.Infrastructure;
 using Microsoft.AspNetCore.Builder;
@@ -25,7 +26,10 @@ public sealed class LoanVerticalBoundaryTests
             .Distinct(StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Empty(domainUsages);
+        // Register page binds Regular/Master classification radios via the domain enum.
+        Assert.All(
+            domainUsages,
+            name => Assert.Equal("KeyInventory.Domain.Catalog.KeyAccessClassification", name));
     }
 
     [Fact]
@@ -94,6 +98,9 @@ public sealed class LoanVerticalBoundaryTests
         using IServiceScope scope = app.Services.CreateScope();
 
         Assert.NotNull(scope.ServiceProvider.GetService<ICreateKeyAssetUseCase>());
+        Assert.NotNull(scope.ServiceProvider.GetService<IMarkKeyAssetLostUseCase>());
+        Assert.NotNull(scope.ServiceProvider.GetService<IDestroyKeyAssetUseCase>());
+        Assert.NotNull(scope.ServiceProvider.GetService<IReplaceLostKeyUseCase>());
         Assert.NotNull(scope.ServiceProvider.GetService<IIssueLoanUseCase>());
         Assert.NotNull(scope.ServiceProvider.GetService<ICompleteReturnUseCase>());
         Assert.NotNull(scope.ServiceProvider.GetService<IListOpenLoansUseCase>());

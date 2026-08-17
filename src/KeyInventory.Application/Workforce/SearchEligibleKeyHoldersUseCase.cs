@@ -7,7 +7,8 @@ public sealed record EligibleKeyHolderCandidate(
     string WorkforceMemberCode,
     string FirstName,
     string LastName,
-    string Uin);
+    string Uin,
+    string DepartmentCode = "");
 
 public sealed record KeyHolderJustificationOption(string Code, string Label);
 
@@ -45,17 +46,13 @@ public sealed class SearchEligibleKeyHoldersUseCase : ISearchEligibleKeyHoldersU
         int maxResults,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(searchText))
-        {
-            return [];
-        }
-
         int bound = maxResults < 1
             ? ISearchEligibleKeyHoldersUseCase.DefaultMaxResults
             : Math.Min(maxResults, ISearchEligibleKeyHoldersUseCase.DefaultMaxResults);
 
+        string term = (searchText ?? string.Empty).Trim();
         IReadOnlyList<EligibleKeyHolderCandidate> matches = await _workforce
-            .SearchEligibleKeyHoldersAsync(searchText.Trim(), bound, cancellationToken)
+            .SearchEligibleKeyHoldersAsync(term, bound, cancellationToken)
             .ConfigureAwait(false);
 
         List<EligibleKeyHolderCandidate> eligible = [];

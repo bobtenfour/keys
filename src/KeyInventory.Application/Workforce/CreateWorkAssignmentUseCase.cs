@@ -7,10 +7,8 @@ namespace KeyInventory.Application.Workforce;
 public interface ICreateWorkAssignmentUseCase
 {
     Task ExecuteAsync(
-        string workAssignmentCode,
         string workforceMemberCode,
         string roomCode,
-        bool isPrimary,
         CancellationToken cancellationToken);
 }
 
@@ -31,42 +29,44 @@ public sealed class CreateWorkAssignmentUseCase : ICreateWorkAssignmentUseCase
     }
 
     public async Task ExecuteAsync(
-        string workAssignmentCode,
         string workforceMemberCode,
         string roomCode,
-        bool isPrimary,
         CancellationToken cancellationToken)
     {
-        if (await _workforce.WorkAssignmentExistsAsync(workAssignmentCode, cancellationToken).ConfigureAwait(false))
-        {
-            throw new InvalidOperationException("A work assignment with this code already exists.");
-        }
-
         WorkforceMember? member = await _workforce.FindWorkforceMemberAsync(workforceMemberCode, cancellationToken)
             .ConfigureAwait(false);
         if (member is null || member.Status != WorkforceMemberStatus.Active)
         {
-            throw new InvalidOperationException("WorkAssignment requires an Active WorkforceMember.");
+            throw new InvalidOperationException(
+                "Room assignment requires an active workforce member.");
         }
 
         Room? room = await _workforce.FindRoomAsync(roomCode, cancellationToken).ConfigureAwait(false);
         if (room is null || !room.IsActive)
         {
-            throw new InvalidOperationException("WorkAssignment requires an active Room.");
+            throw new InvalidOperationException("Room assignment requires an active Room.");
         }
 
-        if (isPrimary)
+        if (room.DepartmentId != member.DepartmentId)
         {
-            await _workforce.ClearPrimaryAssignmentsAsync(member.WorkforceMemberCode, cancellationToken)
-                .ConfigureAwait(false);
+            throw new InvalidOperationException(
+                "Room assignment rejected: the Room's Department does not match the workforce member's Department. Cross-department room assignments are not allowed.");
         }
 
-        WorkAssignment assignment = new(workAssignmentCode, member.WorkforceMemberCode, room.RoomCode, isPrimary);
+        if (await _workforce
+                .ActiveWorkAssignmentExistsAsync(member.WorkforceMemberCode, room.RoomCode, cancellationToken)
+                .ConfigureAwait(false))
+        {
+            throw new InvalidOperationException(
+                "An active room assignment already exists for this workforce member and Room.");
+        }
+
+        WorkAssignment assignment = new(Guid.NewGuid(), member.WorkforceMemberCode, room.RoomCode);
         _audit.Stage(
             OperatorAuditActions.WorkAssignmentCreated,
             OperatorAuditSubjects.WorkAssignment,
-            assignment.WorkAssignmentCode,
-            $"WorkforceMember={assignment.WorkforceMemberCode}; Room={assignment.RoomCode}; Primary={assignment.IsPrimary}");
+            assignment.WorkAssignmentId.ToString("D"),
+            $"WorkforceMember={assignment.WorkforceMemberCode}; Room={assignment.RoomCode}");
         await _workforce.AddWorkAssignmentAsync(assignment, cancellationToken).ConfigureAwait(false);
     }
 }

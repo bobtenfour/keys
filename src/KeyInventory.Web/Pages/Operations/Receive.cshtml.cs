@@ -9,15 +9,19 @@ namespace KeyInventory.Web.Pages.Operations;
 public sealed class ReceiveModel : PageModel
 {
     private const string SuccessTempDataKey = "ReceiveSuccessMessage";
-    private const string SelectedIssueTempDataKey = "ReceiveSelectedIssueReference";
 
     private readonly ICompleteReturnUseCase _completeReturn;
     private readonly IOperationalKeyLookupUseCase _lookup;
+    private readonly ISearchOpenCustodyUseCase _searchOpenCustody;
 
-    public ReceiveModel(ICompleteReturnUseCase completeReturn, IOperationalKeyLookupUseCase lookup)
+    public ReceiveModel(
+        ICompleteReturnUseCase completeReturn,
+        IOperationalKeyLookupUseCase lookup,
+        ISearchOpenCustodyUseCase searchOpenCustody)
     {
         _completeReturn = completeReturn ?? throw new ArgumentNullException(nameof(completeReturn));
         _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
+        _searchOpenCustody = searchOpenCustody ?? throw new ArgumentNullException(nameof(searchOpenCustody));
     }
 
     [BindProperty]
@@ -29,14 +33,15 @@ public sealed class ReceiveModel : PageModel
     [BindProperty]
     public string ReceivedLocalText { get; set; } = string.Empty;
 
-    [BindProperty]
-    public string IssueSearchText { get; set; } = string.Empty;
-
-    public IReadOnlyList<OperationalLoanDisplay> IssueMatches { get; private set; } = [];
-
-    public bool IssueSearchPerformed { get; private set; }
-
     public OperationalLoanDisplay? SelectedIssue { get; private set; }
+
+    public string SelectedDisplay { get; private set; } = string.Empty;
+
+    public string ClassificationDisplay { get; private set; } = string.Empty;
+
+    public string HolderDisplay { get; private set; } = string.Empty;
+
+    public string IssuedDisplay { get; private set; } = string.Empty;
 
     public string? SuccessMessage { get; private set; }
 
@@ -49,76 +54,46 @@ public sealed class ReceiveModel : PageModel
             SuccessMessage = text;
         }
 
-        ReceiveReference = string.Empty;
         ReceivedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
 
-        // Deliberate deep-link from Active Loans / Member Keys only. Never auto-pick first/only issue.
         string? deepLink = string.IsNullOrWhiteSpace(issueReference) ? null : issueReference.Trim();
-        string? selectedFromSession = TempData.Peek(SelectedIssueTempDataKey) as string;
-        string? selectedCode = deepLink ?? selectedFromSession;
-        if (!string.IsNullOrWhiteSpace(selectedCode) && string.IsNullOrWhiteSpace(SuccessMessage))
+        if (!string.IsNullOrWhiteSpace(deepLink) && string.IsNullOrWhiteSpace(SuccessMessage))
         {
-            SelectedIssue = await _lookup.FindOpenLoanByLoanCodeAsync(selectedCode, cancellationToken)
+            SelectedIssue = await _lookup.FindOpenLoanByLoanCodeAsync(deepLink, cancellationToken)
                 .ConfigureAwait(false);
             if (SelectedIssue is not null)
             {
                 IssueReference = SelectedIssue.LoanCode;
-                TempData[SelectedIssueTempDataKey] = SelectedIssue.LoanCode;
+                PopulateSelectedDisplays(SelectedIssue);
             }
             else
             {
-                TempData.Remove(SelectedIssueTempDataKey);
-                if (!string.IsNullOrWhiteSpace(deepLink))
-                {
-                    ErrorMessage = "That active issue was not found or is no longer open.";
-                }
+                ErrorMessage = "That active issue was not found or is no longer open.";
             }
         }
     }
 
-    public async Task<IActionResult> OnPostSearchIssuesAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// JSON handler used by the searchable combobox to browse/search open custody.
+    /// </summary>
+    public async Task<IActionResult> OnGetSearchOpenCustodyAsync(string? q, CancellationToken cancellationToken)
     {
-        TempData.Remove(SelectedIssueTempDataKey);
-        SelectedIssue = null;
-        IssueReference = string.Empty;
-        IssueSearchPerformed = true;
-        ReceivedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
-        IssueMatches = await _lookup
-            .SearchOpenLoansWithHoldersAsync(
-                IssueSearchText,
-                IOperationalKeyLookupUseCase.DefaultOpenLoanSearchMaxResults,
-                cancellationToken)
+        IReadOnlyList<OperationalLoanDisplay> matches = await _searchOpenCustody
+            .ExecuteAsync(q ?? string.Empty, ISearchOpenCustodyUseCase.DefaultMaxResults, cancellationToken)
             .ConfigureAwait(false);
-        return Page();
-    }
 
-    public async Task<IActionResult> OnPostSelectIssueAsync(CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(IssueReference))
-        {
-            ErrorMessage = "Select the active issue being returned.";
-            ReceivedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
-            return Page();
-        }
-
-        OperationalLoanDisplay? match = await _lookup
-            .FindOpenLoanByLoanCodeAsync(IssueReference, cancellationToken)
-            .ConfigureAwait(false);
-        if (match is null)
-        {
-            ErrorMessage = "That active issue was not found or is no longer open.";
-            ReceivedLocalText = OperatorLocalTimestamp.ToOperatorEntryValue(DateTimeOffset.UtcNow);
-            return Page();
-        }
-
-        TempData[SelectedIssueTempDataKey] = match.LoanCode;
-        return RedirectToPage();
-    }
-
-    public IActionResult OnPostClearIssue()
-    {
-        TempData.Remove(SelectedIssueTempDataKey);
-        return RedirectToPage();
+        object[] result = matches
+            .Select(item => new
+            {
+                loanCode = item.LoanCode,
+                keyNumber = item.KeyNumber,
+                medecoKeyCode = item.MedecoKeyCode,
+                classification = item.Classification.ToString(),
+                holder = PartyHolderDisplayFormatter.Format(item.HolderFirstName, item.HolderLastName, item.HolderUin),
+                uin = item.HolderUin
+            })
+            .ToArray();
+        return new JsonResult(result);
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
@@ -148,7 +123,6 @@ public sealed class ReceiveModel : PageModel
             await _completeReturn.ExecuteAsync(ReceiveReference, IssueReference, receivedAtUtc, cancellationToken)
                 .ConfigureAwait(false);
 
-            TempData.Remove(SelectedIssueTempDataKey);
             TempData[SuccessTempDataKey] = $"Received {selectedLabel}.";
             return RedirectToPage();
         }
@@ -161,7 +135,7 @@ public sealed class ReceiveModel : PageModel
                     .ConfigureAwait(false);
                 if (SelectedIssue is not null)
                 {
-                    TempData[SelectedIssueTempDataKey] = SelectedIssue.LoanCode;
+                    PopulateSelectedDisplays(SelectedIssue);
                 }
             }
 
@@ -172,5 +146,13 @@ public sealed class ReceiveModel : PageModel
 
             return Page();
         }
+    }
+
+    private void PopulateSelectedDisplays(OperationalLoanDisplay issue)
+    {
+        SelectedDisplay = PartyHolderDisplayFormatter.FormatKeyCopy(issue.KeyNumber, issue.MedecoKeyCode);
+        ClassificationDisplay = issue.Classification.ToString();
+        HolderDisplay = PartyHolderDisplayFormatter.Format(issue.HolderFirstName, issue.HolderLastName, issue.HolderUin);
+        IssuedDisplay = OperatorTimestampFormatter.ToAbsoluteDisplay(issue.IssuedAtUtc);
     }
 }

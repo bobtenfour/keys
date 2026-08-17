@@ -24,13 +24,11 @@ public sealed class AdminMaintenanceBoundaryTests
             typeof(KeyInventory.Web.Pages.Administration.Rooms.IndexModel),
             typeof(KeyInventory.Web.Pages.Administration.WorkforceMembers.IndexModel),
             typeof(KeyInventory.Web.Pages.Administration.WorkAssignments.IndexModel),
-            typeof(KeyTypesModel),
             typeof(KeysModel),
             typeof(DeleteModel),
             typeof(KeyInventory.Web.Pages.Administration.Rooms.DeleteModel),
             typeof(KeyInventory.Web.Pages.Administration.WorkforceMembers.DeleteModel),
             typeof(KeyInventory.Web.Pages.Administration.WorkAssignments.DeleteModel),
-            typeof(KeyInventory.Web.Pages.Catalog.KeyTypes.DeleteModel),
             typeof(KeyInventory.Web.Pages.Catalog.Keys.DeleteModel),
             typeof(KeyInventory.Web.Pages.Catalog.Keys.DeletePatternModel)
         ];
@@ -50,9 +48,6 @@ public sealed class AdminMaintenanceBoundaryTests
 
         Assert.Contains(
             typeof(IndexModel).GetConstructors().Single().GetParameters(),
-            parameter => parameter.ParameterType == typeof(IConfigurationLifecycleUseCase));
-        Assert.Contains(
-            typeof(KeyTypesModel).GetConstructors().Single().GetParameters(),
             parameter => parameter.ParameterType == typeof(IConfigurationLifecycleUseCase));
         Assert.Contains(
             typeof(KeysModel).GetConstructors().Single().GetParameters(),
@@ -112,13 +107,10 @@ public sealed class AdminMaintenanceBoundaryTests
         Assert.NotNull(provider.GetService<IRetireDepartmentUseCase>());
         Assert.NotNull(provider.GetService<IUpdateRoomNumberUseCase>());
         Assert.NotNull(provider.GetService<IRetireRoomUseCase>());
-        Assert.NotNull(provider.GetService<IActivateKeyTypeUseCase>());
-        Assert.NotNull(provider.GetService<IRetireKeyTypeUseCase>());
         Assert.NotNull(provider.GetService<IUpdateWorkforceMemberDepartmentUseCase>());
         Assert.NotNull(provider.GetService<IUpdatePartyNameUseCase>());
         Assert.NotNull(provider.GetService<ICorrectPartyUinUseCase>());
         Assert.NotNull(provider.GetService<IEndWorkAssignmentUseCase>());
-        Assert.NotNull(provider.GetService<IMarkWorkAssignmentPrimaryUseCase>());
         Assert.NotNull(provider.GetService<ITerminateWorkforceMemberUseCase>());
         Assert.NotNull(provider.GetService<IConfigurationLifecycleUseCase>());
     }

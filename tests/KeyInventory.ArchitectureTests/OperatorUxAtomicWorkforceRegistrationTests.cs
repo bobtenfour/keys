@@ -8,6 +8,7 @@ using KeyInventory.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -148,7 +149,7 @@ public sealed class OperatorUxAtomicWorkforceRegistrationTests : IAsyncLifetime
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "term")
             .ConfigureAwait(true);
 
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "TERM-KEY-1", "01", "mechanical")
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "TERM-KEY-1", "01", KeyAccessClassification.Regular)
             .ConfigureAwait(true);
 
         DateTimeOffset issued = DateTimeOffset.UtcNow;

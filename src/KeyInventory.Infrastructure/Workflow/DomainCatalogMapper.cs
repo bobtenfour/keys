@@ -5,31 +5,12 @@ namespace KeyInventory.Infrastructure.Workflow;
 
 internal static class DomainCatalogMapper
 {
-    internal static KeyType ToDomain(KeyTypeEntity entity)
-    {
-        KeyType keyType = new(entity.TypeCode);
-        if (!entity.IsActive)
-        {
-            keyType.Retire(hasActiveKeyAccessPatterns: false);
-        }
-
-        return keyType;
-    }
-
-    internal static KeyAccessPattern ToDomain(
-        KeyAccessPatternEntity entity,
-        IEnumerable<string> openedRoomCodes)
+    internal static KeyAccessPattern ToDomain(KeyAccessPatternEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
-        ArgumentNullException.ThrowIfNull(openedRoomCodes);
 
-        // Domain construction requires an active KeyType; historical rows may reference a later-retired type.
-        KeyType keyType = new(entity.KeyType.TypeCode);
-        KeyAccessPattern pattern = new(entity.KeyNumber, keyType);
-        foreach (string roomCode in openedRoomCodes)
-        {
-            pattern.AssignOpenedRoom(roomCode);
-        }
+        KeyAccessClassification classification = ParseClassification(entity.Classification);
+        KeyAccessPattern pattern = new(entity.KeyNumber, classification, entity.RoomCode);
 
         if (!entity.IsActive)
         {
@@ -39,62 +20,80 @@ internal static class DomainCatalogMapper
         return pattern;
     }
 
-    internal static KeyAsset ToDomain(
-        KeyAssetEntity entity,
-        IEnumerable<string> openedRoomCodes)
+    internal static KeyAsset ToDomain(KeyAssetEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
-        ArgumentNullException.ThrowIfNull(openedRoomCodes);
+        ArgumentNullException.ThrowIfNull(entity.AccessPattern);
 
-        // Build pattern as active first so physical-copy construction is allowed, then apply inactive flags.
-        KeyType keyType = new(entity.AccessPattern.KeyType.TypeCode);
-        KeyAccessPattern pattern = new(entity.AccessPattern.KeyNumber, keyType);
-        foreach (string roomCode in openedRoomCodes)
-        {
-            pattern.AssignOpenedRoom(roomCode);
-        }
-
-        KeyAsset keyAsset = new(entity.KeyAssetId, pattern, entity.MedecoKeyCode);
-        if (!entity.IsActive)
-        {
-            keyAsset.Retire();
-        }
-
-        if (!entity.AccessPattern.IsActive)
-        {
-            pattern.Retire(hasActivePhysicalCopies: false);
-        }
-
-        return keyAsset;
-    }
-
-    internal static KeyTypeEntity ToEntity(KeyType keyType)
-    {
-        return new KeyTypeEntity
-        {
-            TypeCode = keyType.TypeCode,
-            IsActive = keyType.IsActive
-        };
+        KeyAccessPattern pattern = ToDomain(entity.AccessPattern);
+        KeyPhysicalCondition condition = ParseCondition(entity.Condition);
+        return KeyAsset.Rehydrate(
+            entity.KeyAssetId,
+            pattern,
+            entity.MedecoKeyCode,
+            condition,
+            entity.ReplacesKeyAssetId);
     }
 
     internal static KeyAccessPatternEntity ToEntity(KeyAccessPattern pattern)
     {
+        ArgumentNullException.ThrowIfNull(pattern);
         return new KeyAccessPatternEntity
         {
             KeyNumber = pattern.KeyNumber,
-            KeyTypeCode = pattern.KeyType.TypeCode,
+            Classification = pattern.Classification.ToString(),
+            RoomCode = pattern.RoomCode,
             IsActive = pattern.IsActive
         };
     }
 
     internal static KeyAssetEntity ToEntity(KeyAsset keyAsset)
     {
+        ArgumentNullException.ThrowIfNull(keyAsset);
         return new KeyAssetEntity
         {
             KeyAssetId = keyAsset.KeyAssetId,
             KeyNumber = keyAsset.KeyNumber,
             MedecoKeyCode = keyAsset.MedecoKeyCode,
-            IsActive = keyAsset.IsActive
+            Condition = keyAsset.Condition.ToString(),
+            ReplacesKeyAssetId = keyAsset.ReplacesKeyAssetId
         };
+    }
+
+    internal static KeyAccessClassification ParseClassification(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException("KeyAccessPattern.Classification value is missing.");
+        }
+
+        if (!Enum.TryParse(value.Trim(), ignoreCase: false, out KeyAccessClassification classification)
+            || classification is not (KeyAccessClassification.Regular or KeyAccessClassification.Master))
+        {
+            throw new InvalidOperationException(
+                $"Unsupported KEY # classification '{value}'. Must be 'Regular' or 'Master'.");
+        }
+
+        return classification;
+    }
+
+    internal static KeyPhysicalCondition ParseCondition(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException("KeyAsset.Condition value is missing.");
+        }
+
+        if (!Enum.TryParse(value.Trim(), ignoreCase: false, out KeyPhysicalCondition condition)
+            || condition is not (
+                KeyPhysicalCondition.Active
+                or KeyPhysicalCondition.Lost
+                or KeyPhysicalCondition.Destroyed))
+        {
+            throw new InvalidOperationException(
+                $"Unsupported key condition '{value}'. Must be 'Active', 'Lost', or 'Destroyed'.");
+        }
+
+        return condition;
     }
 }

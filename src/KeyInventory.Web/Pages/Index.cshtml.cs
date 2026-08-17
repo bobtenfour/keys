@@ -1,5 +1,6 @@
 using KeyInventory.Application.Lookup;
 using KeyInventory.Application.Workflow;
+using KeyInventory.Domain.Catalog;
 using KeyInventory.Web.Presentation;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -38,7 +39,9 @@ public sealed class IndexModel : PageModel
 
         ActiveLoanCount = openLoans.Count;
         OverdueCount = openLoans.Count(loan => loan.DueAtUtc < now);
-        KeysAvailableCount = keys.Count(key => key.IsActive && !issuedKeyAssetIds.Contains(key.KeyAssetId));
+        KeysAvailableCount = keys.Count(key =>
+            key.Condition == KeyPhysicalCondition.Active
+            && !issuedKeyAssetIds.Contains(key.KeyAssetId));
 
         RecentActivity = openLoans
             .Select(loan => new OperationsActivityItem(

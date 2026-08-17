@@ -2,50 +2,37 @@ namespace KeyInventory.Domain.Workforce;
 
 /// <summary>
 /// Workforce Eligibility boundary — Room assignment for key-issue justification.
+/// Links an Active WorkforceMember to an Active Room in the same Department.
+/// Technical identity is WorkAssignmentId; no operator-facing assignment code.
 /// </summary>
 public sealed class WorkAssignment
 {
     public WorkAssignment(
-        string workAssignmentCode,
+        Guid workAssignmentId,
         string workforceMemberCode,
-        string roomCode,
-        bool isPrimary)
+        string roomCode)
     {
-        WorkAssignmentCode = WorkforceText.Require(workAssignmentCode, nameof(workAssignmentCode));
+        if (workAssignmentId == Guid.Empty)
+        {
+            throw new ArgumentException("WorkAssignmentId is required.", nameof(workAssignmentId));
+        }
+
+        WorkAssignmentId = workAssignmentId;
         WorkforceMemberCode = WorkforceText.Require(workforceMemberCode, nameof(workforceMemberCode));
         RoomCode = WorkforceText.Require(roomCode, nameof(roomCode));
-        IsPrimary = isPrimary;
         IsActive = true;
     }
 
-    public string WorkAssignmentCode { get; }
+    public Guid WorkAssignmentId { get; }
 
     public string WorkforceMemberCode { get; }
 
     public string RoomCode { get; }
 
-    public bool IsPrimary { get; private set; }
-
     public bool IsActive { get; private set; }
-
-    public void MarkPrimary()
-    {
-        if (!IsActive)
-        {
-            throw new InvalidOperationException("Only an active WorkAssignment may be primary.");
-        }
-
-        IsPrimary = true;
-    }
-
-    public void ClearPrimary()
-    {
-        IsPrimary = false;
-    }
 
     public void End()
     {
         IsActive = false;
-        IsPrimary = false;
     }
 }

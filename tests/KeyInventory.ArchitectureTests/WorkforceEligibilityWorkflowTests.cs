@@ -5,6 +5,7 @@ using KeyInventory.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using KeyInventory.Domain.Catalog;
 
 namespace KeyInventory.ArchitectureTests;
 
@@ -50,10 +51,10 @@ public sealed class WorkforceEligibilityWorkflowTests : IAsyncLifetime
         IListRoomsUseCase listRooms = scope.ServiceProvider.GetRequiredService<IListRoomsUseCase>();
 
         await createDept.ExecuteAsync("dept-p", CancellationToken.None).ConfigureAwait(true);
-        string roomCode = await createRoom.ExecuteAsync("101", "One", CancellationToken.None).ConfigureAwait(true);
+        string roomCode = await createRoom.ExecuteAsync("dept-p", "101", "One", CancellationToken.None).ConfigureAwait(true);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            createRoom.ExecuteAsync("101", "Dup", CancellationToken.None));
+            createRoom.ExecuteAsync("dept-p", "101", "Dup", CancellationToken.None));
 
         IReadOnlyList<RoomListItem> rooms = await listRooms.ExecuteAsync(CancellationToken.None).ConfigureAwait(true);
         Assert.Contains(rooms, room => room.RoomCode == roomCode && room.RoomNumber == "101");
@@ -69,7 +70,7 @@ public sealed class WorkforceEligibilityWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "wf-issue")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-wf-1", "01", "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-wf-1", "01", KeyAccessClassification.Regular).ConfigureAwait(true);
 
         DateTimeOffset issued = new(2026, 8, 6, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
@@ -114,7 +115,7 @@ public sealed class WorkforceEligibilityWorkflowTests : IAsyncLifetime
 
         var seeded = await WorkforceEligibilityTestFixture.SeedEligibleMemberAsync(scope.ServiceProvider, "wf-term")
             .ConfigureAwait(true);
-        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-wf-term", "01", "mechanical").ConfigureAwait(true);
+        await CatalogSeedHelper.CreatePhysicalKeyAsync(scope.ServiceProvider, "key-wf-term", "01", KeyAccessClassification.Regular).ConfigureAwait(true);
         DateTimeOffset issued = new(2026, 8, 6, 12, 0, 0, TimeSpan.Zero);
         await issue.ExecuteAsync(
                 "loan-wf-term",

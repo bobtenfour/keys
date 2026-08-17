@@ -56,6 +56,7 @@ public sealed class AddModel : PageModel
                     cancellationToken)
                 .ConfigureAwait(false);
             TempData["SuccessMessage"] = $"Workforce member {FirstName.Trim()} {LastName.Trim()} was created.";
+            TempData["JustCreated"] = true;
             return RedirectToPage("./Details", new { member = memberCode });
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)

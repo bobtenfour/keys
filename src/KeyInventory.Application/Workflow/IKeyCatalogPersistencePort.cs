@@ -16,6 +16,7 @@ public interface IKeyCatalogPersistencePort
 
     /// <summary>
     /// Bounded active KEY # search for registration under an existing KEY #.
+    /// Returns Classification alongside each pattern.
     /// </summary>
     Task<IReadOnlyList<KeyAccessPatternListItem>> SearchActiveKeyAccessPatternsAsync(
         string searchText,
@@ -27,23 +28,17 @@ public interface IKeyCatalogPersistencePort
         string medecoKeyCode,
         CancellationToken cancellationToken);
 
-    Task<KeyType?> FindKeyTypeAsync(string typeCode, CancellationToken cancellationToken);
-
-    Task AddKeyTypeAsync(KeyType keyType, CancellationToken cancellationToken);
-
-    Task UpdateKeyTypeAsync(KeyType keyType, CancellationToken cancellationToken);
-
-    Task DeleteKeyTypeAsync(string typeCode, CancellationToken cancellationToken);
-
-    Task<int> CountActiveKeyAccessPatternsForTypeAsync(string typeCode, CancellationToken cancellationToken);
-
-    Task<int> CountKeyAccessPatternsForTypeAsync(string typeCode, CancellationToken cancellationToken);
-
-    Task<int> CountAllKeyAccessPatternsForTypeAsync(string typeCode, CancellationToken cancellationToken);
-
-    Task<IReadOnlyList<KeyTypeListItem>> ListKeyTypesAsync(CancellationToken cancellationToken);
-
     Task AddKeyAssetAsync(KeyAsset keyAsset, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Atomically persists a new KEY # and its first key.
+    /// Regular patterns carry RoomCode on the pattern; Master carries null RoomCode.
+    /// Failure must not leave an orphan KEY # without its first key.
+    /// </summary>
+    Task AddNewKeyNumberWithFirstKeyAsync(
+        KeyAccessPattern pattern,
+        KeyAsset firstKey,
+        CancellationToken cancellationToken);
 
     Task UpdateKeyAssetAsync(KeyAsset keyAsset, CancellationToken cancellationToken);
 

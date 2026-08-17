@@ -9,6 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] · KeyInventory</title>
     <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/searchable-combobox.css" />
     @RenderSection("Styles", required: false)
 </head>
 <body>
@@ -21,8 +22,8 @@
             {
                 <nav class="primary-nav" aria-label="Primary">
                     <a asp-page="/Index" class="@(section == "home" ? "is-active" : null)">Home</a>
-                    <a asp-page="/Operations/Issue" class="@(section == "operations" ? "is-active" : null)">Operations</a>
                     <a asp-page="/Catalog/Keys" class="@(section == "catalog" ? "is-active" : null)">Catalog</a>
+                    <a asp-page="/Operations/Issue" class="@(section == "operations" ? "is-active" : null)">Operations</a>
                     <a asp-page="/Reports/Index" class="@(section == "reports" ? "is-active" : null)">Reports</a>
                     <a asp-page="/Administration/Index" class="@(section == "administration" ? "is-active" : null)">Administration</a>
                     <a asp-page="/Help" class="@(section == "help" ? "is-active" : null)">Help</a>
@@ -67,8 +68,7 @@
             <div class="subnav">
                 <nav class="shell" aria-label="Catalog">
                     <a asp-page="/Catalog/Keys" class="@(page.Contains("/Catalog/Keys", StringComparison.Ordinal) ? "is-active" : null)">Keys</a>
-                    <a asp-page="/Catalog/KeyTypes" class="@(page.Contains("/Catalog/KeyTypes", StringComparison.Ordinal) ? "is-active" : null)">Key Types</a>
-                    <a asp-page="/Catalog/Register" class="@(page.Contains("/Catalog/Register", StringComparison.Ordinal) ? "is-active" : null)">Register Key</a>
+                    <a asp-page="/Catalog/Register" class="@(page.Contains("/Catalog/Register", StringComparison.Ordinal) ? "is-active" : null)">Create Key</a>
                 </nav>
             </div>
         }
@@ -93,7 +93,7 @@
                     <a asp-page="/Administration/Departments/Index" class="@(page.Contains("/Administration/Departments", StringComparison.Ordinal) ? "is-active" : null)">Departments</a>
                     <a asp-page="/Administration/Rooms/Index" class="@(page.Contains("/Administration/Rooms", StringComparison.Ordinal) ? "is-active" : null)">Rooms</a>
                     <a asp-page="/Administration/WorkforceMembers/Index" class="@(page.Contains("/Administration/WorkforceMembers", StringComparison.Ordinal) ? "is-active" : null)">Workforce Members</a>
-                    <a asp-page="/Administration/WorkAssignments/Index" class="@(page.Contains("/Administration/WorkAssignments", StringComparison.Ordinal) ? "is-active" : null)">Work Assignments</a>
+                    <a asp-page="/Administration/WorkAssignments/Index" class="@(page.Contains("/Administration/WorkAssignments", StringComparison.Ordinal) ? "is-active" : null)">Room Assignments</a>
                     <a asp-page="/Administration/AuditTrail" class="@(page.Contains("/Administration/AuditTrail", StringComparison.Ordinal) ? "is-active" : null)">Audit Trail</a>
                 </nav>
             </div>
@@ -102,5 +102,6 @@
     <main class="shell site-main">
         @RenderBody()
     </main>
+    <script src="~/js/searchable-combobox.js" defer></script>
 </body>
 </html>

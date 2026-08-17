@@ -42,9 +42,17 @@ public sealed class HelpPresentationTests
         Assert.Contains("asp-page=\"/Operations/Issue\"", help, StringComparison.Ordinal);
         Assert.Contains("asp-page=\"/Operations/Receive\"", help, StringComparison.Ordinal);
         Assert.Contains("asp-page=\"/Operations/Find\"", help, StringComparison.Ordinal);
-        Assert.Contains("asp-page=\"/Catalog/KeyRooms\"", help, StringComparison.Ordinal);
+        Assert.Contains("asp-page=\"/Catalog/Register\"", help, StringComparison.Ordinal);
+        Assert.DoesNotContain("asp-page=\"/Catalog/KeyRooms\"", help, StringComparison.Ordinal);
         Assert.Contains("asp-page=\"/Administration/Departments/Index\"", help, StringComparison.Ordinal);
         Assert.Contains("asp-page=\"/Reports/Index\"", help, StringComparison.Ordinal);
+        Assert.Contains("Creating keys", help, StringComparison.Ordinal);
+        Assert.Contains("Open Create Key", help, StringComparison.Ordinal);
+        Assert.Contains("<strong>Catalog</strong> — Keys, Create Key.", help, StringComparison.Ordinal);
+        Assert.Contains("<strong>Home</strong>", help, StringComparison.Ordinal);
+        Assert.Contains("<strong>Catalog</strong>", help, StringComparison.Ordinal);
+        Assert.Contains("<strong>Operations</strong>", help, StringComparison.Ordinal);
+        Assert.DoesNotContain("Register Key", help, StringComparison.Ordinal);
         Assert.DoesNotContain("KeyInventoryDbContext", help, StringComparison.Ordinal);
         Assert.DoesNotContain("@inject", help, StringComparison.Ordinal);
         Assert.DoesNotContain("CatalogKeyCode", help, StringComparison.Ordinal);
@@ -62,11 +70,20 @@ public sealed class HelpPresentationTests
     }
 
     [Fact]
-    public void GlobalNavigationIncludesHelpAndHomeHasNoSetupChecklist()
+    public void GlobalNavigationOrdersHomeCatalogOperationsAndIncludesHelp()
     {
         string layout = File.ReadAllText(Path.Combine(RepoRoot(), "src/KeyInventory.Web/Pages/Shared/_Layout.cshtml"));
         Assert.Contains("asp-page=\"/Help\"", layout, StringComparison.Ordinal);
         Assert.Contains(">Help<", layout, StringComparison.Ordinal);
+
+        int primaryStart = layout.IndexOf("aria-label=\"Primary\"", StringComparison.Ordinal);
+        int primaryEnd = layout.IndexOf("</nav>", primaryStart, StringComparison.Ordinal);
+        string primary = layout[primaryStart..primaryEnd];
+        Assert.True(
+            primary.IndexOf(">Home<", StringComparison.Ordinal)
+                < primary.IndexOf(">Catalog<", StringComparison.Ordinal)
+            && primary.IndexOf(">Catalog<", StringComparison.Ordinal)
+                < primary.IndexOf(">Operations<", StringComparison.Ordinal));
 
         string composition = File.ReadAllText(Path.Combine(
             RepoRoot(),

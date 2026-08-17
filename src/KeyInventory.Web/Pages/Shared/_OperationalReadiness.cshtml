@@ -33,14 +33,6 @@
                     <a asp-page="/Administration/Rooms/Add">Create</a>
                 </li>
             }
-            @if (!s.HasKeyType)
-            {
-                <li class="is-missing">
-                    <span>Key type</span>
-                    <span>Required</span>
-                    <a asp-page="/Catalog/KeyTypes">Create</a>
-                </li>
-            }
             @if (!s.HasWorkforceMember)
             {
                 <li class="is-missing">
@@ -52,17 +44,17 @@
             @if (!s.HasWorkAssignment)
             {
                 <li class="is-missing">
-                    <span>Work assignment</span>
+                    <span>Room Assignment</span>
                     <span>Required</span>
-                    <a asp-page="/Administration/WorkAssignments/Add">Create</a>
+                    <a asp-page="/Administration/WorkAssignments/Add">Assign Room</a>
                 </li>
             }
             @if (!s.HasKey)
             {
                 <li class="is-missing">
-                    <span>Registered key</span>
+                    <span>Key</span>
                     <span>Required</span>
-                    <a asp-page="/Catalog/Register">Register</a>
+                    <a asp-page="/Catalog/Register">Create Key</a>
                 </li>
             }
         </ul>
